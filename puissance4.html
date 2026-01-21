@@ -312,12 +312,16 @@
                     
                     if (!isInitial) render();
                 } else if (!data && isInitial) {
-                    // This case is for when you visit a room URL that doesn't exist yet.
-                    // We prevent creating a new game automatically.
-                    console.log('Room does not exist yet');
-                    roomId = null; 
-                    window.history.pushState({}, '', window.location.pathname);
-                    document.getElementById('main-btn').innerText = "Démarrer";
+                    // Room doesn't exist yet on server, but that's OK if we have a roomId
+                    // The room was just created locally, server will get it on next push
+                    if (roomId) {
+                        console.log('Room not on server yet (normal when joining early)');
+                        // Don't reset roomId! Keep waiting for the creator to sync their data
+                    } else {
+                        console.log('No room and no roomId - error');
+                        window.history.pushState({}, '', window.location.pathname);
+                        document.getElementById('main-btn').innerText = "Démarrer";
+                    }
                 } else if (data) {
                     console.log('State unchanged from server');
                 }
