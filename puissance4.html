@@ -90,7 +90,13 @@
                 <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
             </div>
         </div>
-         <p id="join-info" class="text-center mt-4 text-slate-400 font-bold hidden">En attente d'un 2ème joueur... Partage le lien !</p>
+         <div id="join-info" class="text-center mt-4 font-bold hidden space-y-4">
+            <p class="text-slate-400">En attente d'un 2ème joueur... Partage le lien !</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="copyRoomLink()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-xl font-bold text-sm uppercase border transition">📋 Copier le lien</button>
+                <input type="text" id="room-link" readonly class="bg-white border-2 border-yellow-300 px-4 py-2 rounded-xl font-mono text-sm flex-1 max-w-xs" style="display:none;">
+            </div>
+        </div>
     </div>
 
     <div id="game" class="hidden max-w-2xl w-full">
@@ -273,10 +279,13 @@
         async function syncPush() {
             if (!roomId) return;
             try {
+                console.log('syncPush:', roomId, 'sending:', gameState);
                 const response = await fetch(`${API}?action=sync&roomId=${roomId}`, { 
                     method: 'POST', 
                     body: JSON.stringify(gameState) 
                 });
+                const text = await response.text();
+                console.log('syncPush response:', text);
                 return response;
             } catch (e) {
                 console.error("Sync push error:", e);
@@ -288,7 +297,10 @@
             try {
                 const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
                 const data = await r.json();
+                console.log('syncPull:', roomId, 'got data:', data, 'isInitial:', isInitial);
+                
                 if (data && JSON.stringify(data) !== JSON.stringify(gameState)) {
+                    console.log('State updated from server');
                     gameState = data;
                     // Mettre à jour myColor si nécessaire
                     const me = gameState.players.find(p => p.name === myName);
@@ -298,9 +310,12 @@
                 } else if (!data && isInitial) {
                     // This case is for when you visit a room URL that doesn't exist yet.
                     // We prevent creating a new game automatically.
+                    console.log('Room does not exist yet');
                     roomId = null; 
                     window.history.pushState({}, '', window.location.pathname);
                     document.getElementById('main-btn').innerText = "Démarrer";
+                } else if (data) {
+                    console.log('State unchanged from server');
                 }
             } catch (e) {
                 console.error("Sync error:", e);
@@ -604,8 +619,14 @@
         }
         
         function copyRoomLink() { 
-            navigator.clipboard.writeText(window.location.href); 
-            alert("Lien de la partie copié !"); 
+            const link = window.location.href;
+            console.log('Copying link:', link);
+            navigator.clipboard.writeText(link).then(() => {
+                alert("✅ Lien copié !\n" + link);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert("Lien :\n" + link + "\n\nCopie manuelle si besoin.");
+            });
         }
 
     </script>
