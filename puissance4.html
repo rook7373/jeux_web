@@ -294,7 +294,8 @@
                 // Pas de vérification ici
             } else {
                 // Mode remote
-                if (gameState.currentPlayer !== myColor || gameState.players.length < 2) return;
+                if (gameState.players.length < 2) return; // Attendre que les 2 joueurs soient présents
+                if (gameState.currentPlayer !== myColor) return; // Vérifier que c'est ton tour
             }
 
             for (let row = ROWS - 1; row >= 0; row--) {
@@ -460,8 +461,11 @@
         function render() {
             if (!myName || !gameState.players || gameState.players.length === 0) return; 
 
+            // Mettre à jour myColor basé sur les données du serveur
             const me = gameState.players.find(p => p.name === myName);
-            if (me) myColor = me.color;
+            if (me) {
+                myColor = me.color;
+            }
 
             // --- Render board ---
             boardDiv.innerHTML = '';
