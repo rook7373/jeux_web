@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Puissance 4 - ScoreMaster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #board {
+            background-color: #0369a1; /* sky-700 */
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 6px solid #075985; /* sky-800 */
+        }
+        .cell {
+            background-color: #f8fafc; /* slate-50 */
+            border-radius: 50%;
+            aspect-ratio: 1 / 1;
+            transition: background-color 0.2s;
+        }
+        .column {
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .column:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .cell.red {
+            background-color: #ef4444; /* red-500 */
+            box-shadow: inset 0 -4px 6px rgba(0,0,0,0.3);
+        }
+        .cell.yellow {
+            background-color: #f59e0b; /* amber-500 */
+            box-shadow: inset 0 -4px 6px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900 flex items-center justify-center">
+
+    <div id="setup" class="max-w-md w-full">
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-2xl">
+            <h2 class="text-3xl font-black mb-6 text-sky-600 uppercase italic tracking-tighter text-center">Puissance 4 <span class="text-slate-200">Live</span></h2>
+            
+            <div class="space-y-6">
+                <div class="bg-sky-50 p-6 rounded-3xl border-2 border-sky-100">
+                    <label class="text-[10px] font-black uppercase text-sky-600 mb-2 block font-bold">Ton nom :</label>
+                    <input type="text" id="my-name-in" onkeyup="if(event.key === 'Enter') startAction()" placeholder="Entre ton nom..." class="w-full bg-white border-2 border-sky-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
+                </div>
+                
+                <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
+            </div>
+        </div>
+         <p id="join-info" class="text-center mt-4 text-slate-400 font-bold hidden">En attente d'un 2ème joueur... Partage le lien !</p>
+    </div>
+
+    <div id="game" class="hidden max-w-md w-full">
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-2xl">
+            <div id="game-info" class="flex justify-between items-center mb-4 p-4 bg-slate-50 rounded-2xl border">
+                <div id="players-display" class="flex gap-4 items-center"></div>
+                <button onclick="copyRoomLink()" class="bg-yellow-50 text-yellow-600 px-3 py-2 rounded-xl font-bold text-[10px] uppercase border">LIEN</button>
+            </div>
+
+            <p class="font-bold text-center mb-2">Tour de: <span id="player-turn" class="font-black text-xl"></span></p>
+
+            <div id="board-container" class="relative">
+                <div id="board"></div>
+                <div id="win-message" class="absolute inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center flex-col gap-4 rounded-[1rem]">
+                     <p class="text-white text-3xl font-black uppercase tracking-widest"></p>
+                     <button id="play-again" class="bg-yellow-500 text-black px-8 py-4 rounded-2xl font-black uppercase text-sm hover:bg-yellow-400 transition-all">Rejouer</button>
+                </div>
+            </div>
+        </div>
+        <footer class="text-center mt-4">
+             <a href="index.html" class="text-slate-400 text-xs font-bold hover:underline">Retour à l'accueil</a>
+        </footer>
+    </div>
+
+    <script>
+        const API = 'api.php';
+        const ROWS = 6;
+        const COLS = 7;
+
+        // --- DOM Elements ---
+        const setupDiv = document.getElementById('setup');
+        const gameDiv = document.getElementById('game');
+        const myNameIn = document.getElementById('my-name-in');
+        const joinInfo = document.getElementById('join-info');
+        const boardDiv = document.getElementById('board');
+        const playerTurnEl = document.getElementById('player-turn');
+        const playersDisplayEl = document.getElementById('players-display');
+        const winMessageEl = document.getElementById('win-message');
+        const winMessageText = winMessageEl.querySelector('p');
+        const playAgainButton = document.getElementById('play-again');
+
+        // --- Game State ---
+        let roomId = new URLSearchParams(window.location.search).get('room');
+        let myName = '';
+        let myColor = '';
+        let gameState = {};
+        let syncInterval;
+
+        // =================================================================
+        // INITIALIZATION
+        // =================================================================
+
+        window.onload = async () => {
+            if (roomId) {
+                document.getElementById('main-btn').innerText = "Rejoindre la partie";
+                await syncPull(true); // Initial pull to see if room exists
+            }
+        };
+
+        async function startAction() {
+            const name = myNameIn.value.trim();
+            if (!name) return alert("Indique ton nom !");
+            myName = name;
+
+            if (!roomId) {
+                // CREATE a new room
+                roomId = Math.random().toString(36).substring(2, 8);
+                window.history.pushState({}, '', `?room=${roomId}`);
+                myColor = 'red';
+                gameState = getInitialGameState(myName);
+                joinInfo.classList.remove('hidden');
+            } else {
+                // JOIN an existing room
+                await syncPull(true);
+                if (gameState.players.length === 1 && gameState.players[0].name !== myName) {
+                    myColor = 'yellow';
+                    gameState.players.push({ name: myName, color: 'yellow' });
+                } else {
+                    const existingPlayer = gameState.players.find(p => p.name === myName);
+                    if (!existingPlayer) return alert("La partie est pleine ou une erreur est survenue.");
+                    myColor = existingPlayer.color;
+                }
+            }
+            
+            setupDiv.classList.add('hidden');
+            gameDiv.classList.remove('hidden');
+
+            await syncPush();
+            syncInterval = setInterval(syncPull, 2000);
+            render();
+        }
+
+        function getInitialGameState(creatorName) {
+            return {
+                players: [{ name: creatorName, color: 'red' }],
+                board: Array(ROWS).fill(null).map(() => Array(COLS).fill(null)),
+                currentPlayer: 'red',
+                gameOver: false,
+                winner: null,
+                isDraw: false,
+            };
+        }
+
+        // =================================================================
+        // API SYNC
+        // =================================================================
+
+        async function syncPush() {
+            if (!roomId) return;
+            return fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) });
+        }
+
+        async function syncPull(isInitial = false) {
+            if (!roomId) return;
+            try {
+                const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
+                const data = await r.json();
+                if (data && JSON.stringify(data) !== JSON.stringify(gameState)) {
+                    gameState = data;
+                    if (!isInitial) render();
+                } else if (!data && isInitial) {
+                    // This case is for when you visit a room URL that doesn't exist yet.
+                    // We prevent creating a new game automatically.
+                    roomId = null; 
+                    window.history.pushState({}, '', window.location.pathname);
+                    document.getElementById('main-btn').innerText = "Démarrer";
+
+                }
+            } catch (e) {
+                console.error("Sync error:", e);
+            }
+        }
+
+        // =================================================================
+        // GAME LOGIC
+        // =================================================================
+        
+        function handleColumnClick(col) {
+            if (gameState.gameOver || gameState.currentPlayer !== myColor || gameState.players.length < 2) return;
+
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (!gameState.board[row][col]) {
+                    gameState.board[row][col] = gameState.currentPlayer;
+                    
+                    if (checkWin(row, col)) {
+                        gameState.gameOver = true;
+                        gameState.winner = gameState.currentPlayer;
+                    } else if (gameState.board.flat().every(cell => cell)) {
+                        gameState.gameOver = true;
+                        gameState.isDraw = true;
+                    } else {
+                        gameState.currentPlayer = gameState.currentPlayer === 'red' ? 'yellow' : 'red';
+                    }
+                    syncPush().then(render);
+                    return;
+                }
+            }
+        }
+
+        function checkWin(row, col) {
+            const player = gameState.board[row][col];
+            const directions = [ {r:0,c:1}, {r:1,c:0}, {r:1,c:1}, {r:1,c:-1} ];
+            for (const dir of directions) {
+                let count = 1;
+                for (let i = 1; i < 4; i++) {
+                    const r = row + dir.r * i;
+                    const c = col + dir.c * i;
+                    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && gameState.board[r][c] === player) count++;
+                    else break;
+                }
+                for (let i = 1; i < 4; i++) {
+                    const r = row - dir.r * i;
+                    const c = col - dir.c * i;
+                    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && gameState.board[r][c] === player) count++;
+                    else break;
+                }
+                if (count >= 4) return true;
+            }
+            return false;
+        }
+
+        function resetGame() {
+            // Only the original creator can reset
+            if (myName !== gameState.players[0].name) return;
+            
+            const originalPlayers = [...gameState.players];
+            const creatorName = originalPlayers[0].name;
+
+            gameState = getInitialGameState(creatorName);
+            
+            // Keep both players, but swap their colors for the next round
+            if (originalPlayers.length > 1) {
+                const secondPlayer = originalPlayers[1];
+                gameState.players.push(secondPlayer);
+                
+                // Swap colors
+                const p1_old_color = originalPlayers[0].color;
+                gameState.players[0].color = originalPlayers[1].color;
+                gameState.players[1].color = p1_old_color;
+            }
+            
+            syncPush().then(render);
+        }
+        playAgainButton.addEventListener('click', resetGame);
+
+        // =================================================================
+        // UI RENDERING
+        // =================================================================
+        
+        function render() {
+            if (!myName || !gameState.players || gameState.players.length === 0) return; 
+
+            const me = gameState.players.find(p => p.name === myName);
+            if (me) myColor = me.color;
+            else { // If I'm not in the player list, maybe I'm a spectator or there's an issue.
+                console.log("You are not a player in this game.");
+                // Potentially show a spectator view or an error. For now, we'll just not render the interactive parts.
+            }
+
+            // --- Render board ---
+            boardDiv.innerHTML = '';
+            for (let col = 0; col < COLS; col++) {
+                const columnEl = document.createElement('div');
+                columnEl.classList.add('column');
+                columnEl.dataset.col = col;
+                columnEl.addEventListener('click', () => handleColumnClick(col));
+                for (let row = 0; row < ROWS; row++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.classList.add('cell');
+                    if (gameState.board[row][col]) {
+                        cellEl.classList.add(gameState.board[row][col]);
+                    }
+                    columnEl.appendChild(cellEl);
+                }
+                boardDiv.appendChild(columnEl);
+            }
+
+            // --- Render player info ---
+            const opponent = gameState.players.find(p => p.name !== myName);
+            playersDisplayEl.innerHTML = `
+                <div class="flex items-center gap-2 p-2 rounded-lg ${myColor === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
+                    <div class="w-6 h-6 rounded-full ${myColor}" style="background-color: ${myColor};"></div>
+                    <span class="font-bold text-sm uppercase">${myName} (Toi)</span>
+                </div>
+                <div class="flex items-center gap-2 p-2 rounded-lg ${opponent && opponent.color === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
+                    <div class="w-6 h-6 rounded-full" style="background-color: ${opponent?.color};"></div>
+                    <span class="font-bold text-sm uppercase">${opponent?.name || '...'}</span>
+                </div>`;
+            
+            if (gameState.players.length < 2) {
+                 playerTurnEl.textContent = "En attente...";
+                 playerTurnEl.style.color = '#64748b';
+            } else {
+                 const currentPlayerName = gameState.players.find(p => p.color === gameState.currentPlayer)?.name;
+                 playerTurnEl.textContent = (currentPlayerName === myName) ? "C'est ton tour !" : `Tour de ${currentPlayerName}`;
+                 playerTurnEl.style.color = gameState.currentPlayer;
+            }
+            
+            // --- Render win/draw message ---
+            if (gameState.gameOver) {
+                winMessageEl.classList.remove('hidden');
+                winMessageEl.classList.add('flex');
+                if (gameState.isDraw) {
+                    winMessageText.innerText = "Match Nul!";
+                } else {
+                    const winnerName = gameState.players.find(p => p.color === gameState.winner)?.name;
+                    winMessageText.innerText = (winnerName === myName) ? "Tu as gagné !" : `${winnerName} a gagné !`;
+                }
+                // Only show "Rejouer" to the original creator
+                playAgainButton.classList.toggle('hidden', myName !== gameState.players[0]?.name);
+            } else {
+                winMessageEl.classList.add('hidden');
+                winMessageEl.classList.remove('flex');
+            }
+        }
+        
+        function copyRoomLink() { 
+            navigator.clipboard.writeText(window.location.href); 
+            alert("Lien de la partie copié !"); 
+        }
+
+    </script>
+</body>
+</html>
