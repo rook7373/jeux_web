@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Petit Bac LIVE - ScoreMaster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style> 
+        .word-refused { text-decoration: line-through; color: #ef4444 !important; opacity: 0.5; border-color: #fecaca !important; background-color: #fef2f2 !important; } 
+        .word-duplicate { color: #f59e0b; border-color: #fde68a !important; background-color: #fffbeb !important; }
+        
+        .cat-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.4rem; 
+        }
+        @media (min-width: 768px) { .cat-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
+
+        input, select { border-radius: 1rem; -webkit-appearance: none; font-size: 16px !important; } 
+        .cat-chip { transition: all 0.2s; border: 1px solid #e2e8f0; text-align: center; padding: 0.6rem 0.2rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; border-radius: 0.75rem; background: white; color: #64748b; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .cat-chip.active { background-color: #eab308; color: white; border-color: #ca8a04; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .animate-pulse-fast { animation: pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900">
+
+    <div id="setup" class="max-w-7xl mx-auto mt-2 bg-white p-6 rounded-[2.5rem] shadow-2xl">
+        <h2 id="setup-title" class="text-3xl font-black mb-6 text-yellow-500 uppercase italic tracking-tighter text-center">Petit Bac <span class="text-slate-200">Live</span></h2>
+        
+        <div class="space-y-6">
+            <div id="creator-fields" class="space-y-4">
+                <div class="flex justify-between items-center px-1">
+                    <p class="text-[10px] font-black uppercase text-slate-400">Thèmes (80 dispos - 6 par ligne)</p>
+                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-indigo-600 text-white px-4 py-2 rounded-full uppercase shadow-lg active:scale-95 transition">🎲 Aléatoire (6)</button>
+                </div>
+                
+                <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-[400px] overflow-y-auto"></div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-3xl border text-center">
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Chrono (sec)</label>
+                        <input type="number" id="max-time-in" value="120" class="w-full bg-transparent outline-none font-black text-2xl text-center" inputmode="numeric">
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-3xl border text-center">
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Manches</label>
+                        <input type="number" id="max-rounds-in" value="5" class="w-full bg-transparent outline-none font-black text-2xl text-center" inputmode="numeric">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 p-6 rounded-3xl border-2 border-yellow-100">
+                <label class="text-[10px] font-black uppercase text-yellow-600 mb-2 block font-bold">Identité du joueur :</label>
+                <input type="text" id="my-name-in" onkeyup="if(event.key === 'Enter') startAction()" placeholder="Ton nom..." class="w-full bg-white border-2 border-yellow-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
+            </div>
+            
+            <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
+        </div>
+    </div>
+
+    <div id="game" class="hidden max-w-5xl mx-auto">
+        <div class="bg-white p-4 rounded-3xl shadow-xl mb-4 flex justify-between items-center border-t-8 border-yellow-500">
+            <div class="flex items-center gap-3">
+                <div id="round-indicator" class="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-full uppercase text-slate-400">0/0</div>
+                <div id="cur-letter" class="bg-yellow-500 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl shadow-lg">?</div>
+                <div id="timer-display" class="hidden font-mono font-black text-red-500 text-2xl">00s</div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="copyRoomLink()" class="bg-yellow-50 text-yellow-600 px-3 py-2 rounded-xl font-bold text-[10px] uppercase border">LIEN</button>
+                <button onclick="saveAndExit()" class="bg-blue-600 text-white px-3 py-2 rounded-xl font-black text-[10px] uppercase shadow">FIN</button>
+            </div>
+        </div>
+
+        <div id="play-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl mb-6 border-4 border-yellow-400">
+            <div id="bac-inputs" class="space-y-4"></div>
+            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-2xl shadow-xl active:scale-95 transition">STOP !</button>
+        </div>
+
+        <div id="val-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-green-500 mb-6">
+            <h3 class="text-center font-black text-green-700 mb-6 uppercase text-xl italic tracking-widest">Votes en direct</h3>
+            <div id="val-list" class="space-y-6"></div>
+            <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-10 bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Valider les scores</button>
+            <p id="wait-msg" class="hidden text-center mt-6 text-gray-400 font-bold italic animate-pulse-fast uppercase text-xs">Attente du Master...</p>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border">
+            <table class="w-full border-collapse">
+                <thead id="t-head" class="bg-slate-50 text-[10px] uppercase text-slate-400"></thead>
+                <tbody id="t-body" class="text-center font-black text-lg"></tbody>
+                <tfoot id="t-foot" class="bg-slate-900 text-white"></tfoot>
+            </table>
+            <button id="btn-next" onclick="startLetter()" class="w-full bg-yellow-500 text-white py-6 font-black text-2xl uppercase tracking-widest shadow-inner active:scale-95 transition">Nouvelle Lettre</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [], selectedCats = [], usedLetters = [], refusedWords = [], status = 'setup', currentLetter = '', myName = '';
+        let roomId = new URLSearchParams(window.location.search).get('room');
+        let maxTime = 120, maxRounds = 5, currentRoundCount = 0, timeLeft = 0;
+        let timerInterval = null, lastStatus = 'setup', isInputRendered = false;
+        const API = 'api.php';
+
+        const categoriesList = [
+            "Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", 
+            "Film", "Série TV", "Chanson", "Gros mot", "Phrase de beauf", "Lieu coquin", "Dans ma chambre", "Mème", 
+            "Pokémon", "Jeu Vidéo", "Harry Potter", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", 
+            "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", 
+            "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", 
+            "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan",
+            "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "Slogan",
+            "Expression", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation",
+            "Façon de mourir", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal",
+            "Objet rouge", "Chaud", "Froid", "Lourd", "Léger", "Dans une voiture", "Dans une école", "Dans la forêt",
+            "Cadeau pourri", "Excuse d'absence"
+        ];
+
+        window.onload = async () => {
+            renderCatList();
+            if (roomId) {
+                document.getElementById('creator-fields').classList.add('hidden');
+                document.getElementById('setup-title').innerText = "Rejoindre";
+                await syncPull();
+            }
+        };
+
+        function renderCatList() {
+            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `
+                <button id="cat-${c}" onclick="toggleCat('${c}')" class="cat-chip font-black uppercase bg-white">${c}</button>
+            `).join('');
+        }
+
+        function toggleCat(c) {
+            if(selectedCats.includes(c)) {
+                selectedCats = selectedCats.filter(x=>x!==c);
+                document.getElementById(`cat-${c}`).classList.remove('active');
+            } else {
+                selectedCats.push(c);
+                document.getElementById(`cat-${c}`).classList.add('active');
+            }
+        }
+
+        function pickRandom6() {
+            selectedCats = [];
+            document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
+            [...categoriesList].sort(() => 0.5 - Math.random()).slice(0, 6).forEach(c => toggleCat(c));
+        }
+
+        async function startAction() {
+            const name = document.getElementById('my-name-in').value.trim();
+            if(!name) return alert("Indique ton nom !");
+            myName = name;
+            if (!roomId) {
+                if(selectedCats.length === 0) return alert("Choisis des thèmes !");
+                maxTime = parseInt(document.getElementById('max-time-in').value) || 120;
+                maxRounds = parseInt(document.getElementById('max-rounds-in').value) || 5;
+                roomId = Math.random().toString(36).substring(2, 8);
+                window.history.pushState({}, '', `?room=${roomId}`);
+                players = [{ name: myName, rounds: [], currentInputs: {} }];
+            } else {
+                await syncPull();
+                if (!players.find(p => p.name === myName)) {
+                    players.push({ name: myName, rounds: Array(currentRoundCount).fill(0), currentInputs: {} });
+                }
+            }
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+            await syncPush();
+            setInterval(syncPull, 2000);
+            refreshUI();
+        }
+
+        async function syncPush() {
+            if(!roomId) return;
+            const data = { players, status, currentLetter, usedLetters, selectedCats, refusedWords, maxTime, maxRounds, currentRoundCount, timeLeft };
+            return fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(data) });
+        }
+
+        async function syncPull() {
+            const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
+            const data = await r.json();
+            if (data) {
+                // VERROUILLAGE : Si le serveur dit validation, on force l'état local
+                if (data.status === 'validation') status = 'validation';
+
+                data.players.forEach((p, i) => {
+                    if (players[i]) {
+                        players[i].rounds = p.rounds;
+                        if (p.name !== myName) players[i].currentInputs = p.currentInputs;
+                    } else { players[i] = p; }
+                });
+
+                if (myName !== players[0].name && data.status !== 'validation') status = data.status;
+
+                currentLetter = data.currentLetter; 
+                usedLetters = data.usedLetters;
+                selectedCats = data.selectedCats; 
+                refusedWords = data.refusedWords || [];
+                maxTime = data.maxTime; 
+                maxRounds = data.maxRounds; 
+                currentRoundCount = data.currentRoundCount; 
+                timeLeft = data.timeLeft;
+                refreshUI();
+            }
+        }
+
+        function refreshUI() {
+            document.getElementById('cur-letter').innerText = currentLetter || '?';
+            const mMax = maxRounds > 0 ? maxRounds : '∞';
+            document.getElementById('round-indicator').innerText = `${currentRoundCount}/${mMax}`;
+            document.getElementById('timer-display').innerText = timeLeft + "s";
+            document.getElementById('timer-display').classList.toggle('hidden', maxTime === 0 || status !== 'playing');
+            
+            if (status !== lastStatus) {
+                if (status === 'playing') renderInputsOnce();
+                if (status === 'validation') renderValidation();
+                if (status === 'setup') isInputRendered = false; 
+                lastStatus = status;
+            }
+            if (status === 'validation') renderValidation();
+
+            document.getElementById('play-area').classList.toggle('hidden', status !== 'playing');
+            document.getElementById('val-area').classList.toggle('hidden', status !== 'validation');
+            
+            const isCreator = myName === players[0].name;
+            document.getElementById('btn-confirm-round').classList.toggle('hidden', !isCreator || status !== 'validation');
+            document.getElementById('wait-msg').classList.toggle('hidden', isCreator || status !== 'validation');
+            document.getElementById('btn-next').classList.toggle('hidden', (maxRounds > 0 && currentRoundCount >= maxRounds) || status !== 'setup' || !isCreator);
+
+            renderTable();
+        }
+
+        function renderInputsOnce() {
+            if (isInputRendered) return;
+            const div = document.getElementById('bac-inputs');
+            div.innerHTML = selectedCats.map(c => `
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">${c}</label>
+                    <input type="text" id="in-${c}" value="" 
+                        oninput="updateMyWord('${c}',this.value)" 
+                        autocomplete="off" autocorrect="off" spellcheck="false"
+                        class="w-full border-2 border-slate-100 p-5 rounded-2xl outline-none focus:border-yellow-400 font-black text-xl shadow-sm">
+                </div>
+            `).join('');
+            isInputRendered = true;
+        }
+
+        function updateMyWord(c,v) { 
+            const me = players.find(p=>p.name===myName);
+            me.currentInputs[c] = v.trim(); 
+            syncPush(); 
+        }
+
+        function renderValidation() {
+            const list = document.getElementById('val-list');
+            let h = "";
+            selectedCats.forEach(cat => {
+                h += `<div class="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 shadow-sm"><p class="text-[11px] font-black uppercase text-slate-400 mb-4 ml-1 tracking-widest">${cat}</p><div class="space-y-3">`;
+                players.forEach((p, pi) => {
+                    const id = `${pi}-${cat}`;
+                    const word = (p.currentInputs[cat] || '').trim();
+                    const isRefused = refusedWords.includes(id);
+                    const isDuplicate = word !== "" && players.some((other, oi) => oi !== pi && (other.currentInputs[cat] || '').trim().toLowerCase() === word.toLowerCase());
+                    let pts = isRefused ? 0 : (isDuplicate ? 5 : 10);
+                    if (word === "") pts = 0;
+                    h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-5 rounded-2xl border-2 transition-all ${isRefused ? 'word-refused' : (isDuplicate ? 'word-duplicate' : 'bg-white border-white shadow-sm')}">
+                            <span class="font-black uppercase text-sm">${p.name}: ${word || '-'}</span>
+                            <span class="text-xs font-black">${pts} Pts</span>
+                          </button>`;
+                });
+                h += `</div></div>`;
+            });
+            if (list.innerHTML !== h) list.innerHTML = h;
+        }
+
+        async function toggleRefuse(id) { 
+            if(refusedWords.includes(id)) refusedWords = refusedWords.filter(x=>x!==id); 
+            else refusedWords.push(id); 
+            renderValidation();
+            await syncPush();    
+        }
+
+        async function triggerStop() { 
+            status = 'validation'; 
+            await syncPush(); 
+            refreshUI();
+        }
+
+        function startLetter() {
+            const alpha = "ABCDEFGHIJKLMNOPRSTUV";
+            currentLetter = alpha[Math.floor(Math.random()*alpha.length)];
+            usedLetters.push(currentLetter); 
+            status = 'playing'; 
+            currentRoundCount++;
+            refusedWords = []; 
+            players.forEach(p=>p.currentInputs={});
+            if(maxTime > 0) { timeLeft = maxTime; startTimer(); }
+            syncPush();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (myName === players[0].name && status === 'playing') {
+                    timeLeft--;
+                    if (timeLeft <= 0) { timeLeft = 0; status = 'validation'; }
+                    syncPush();
+                }
+            }, 1000);
+        }
+
+        function renderTable() {
+            let h = `<tr><th class="p-4 text-[10px] text-slate-400">Joueurs</th>`;
+            players.forEach(p => h += `<th class="p-4 border-l text-center font-black text-indigo-600 uppercase tracking-widest">${p.name}</th>`);
+            document.getElementById('t-head').innerHTML = h + `</tr>`;
+            let b = ""; const rowCount = players[0]?.rounds.length || 0;
+            for(let r=0; r<rowCount; r++) {
+                b += `<tr class="border-b"><td class="p-4 text-center font-bold text-slate-300 italic">${r+1}</td>
+                    ${players.map(p => `<td class="p-4 border-l text-center font-black text-slate-600">${p.rounds[r]??0}</td>`).join('')}</tr>`;
+            }
+            document.getElementById('t-body').innerHTML = b;
+            let f = `<tr class="bg-slate-900 text-white"><td class="p-4 font-black">TOTAL</td>`;
+            players.forEach(p => f += `<td class="p-4 border-l text-center font-black text-2xl text-yellow-500">${p.rounds.reduce((a,b)=>a+b,0)}</td>`);
+            document.getElementById('t-foot').innerHTML = f + `</tr>`;
+        }
+
+        async function confirmRound() {
+            const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
+            const data = await r.json();
+            if (data) {
+                refusedWords = data.refusedWords || [];
+                data.players.forEach((p, i) => { if (players[i] && p.name !== myName) players[i].currentInputs = p.currentInputs; });
+            }
+            players.forEach((p, pi) => {
+                let mancheTotal = 0;
+                selectedCats.forEach(cat => {
+                    const word = (p.currentInputs[cat] || '').trim();
+                    const isRefused = refusedWords.includes(`${pi}-${cat}`);
+                    if (word !== "" && !isRefused) {
+                        const isDuplicate = players.some((other, oi) => oi !== pi && (other.currentInputs[cat] || '').trim().toLowerCase() === word.toLowerCase());
+                        mancheTotal += isDuplicate ? 5 : 10;
+                    }
+                });
+                p.rounds.push(mancheTotal);
+            });
+            status = 'setup'; currentLetter = ''; 
+            await syncPush(); 
+        }
+
+        function copyRoomLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
+        async function saveAndExit() {
+            const h = await (await fetch('api.php?action=stats')).json();
+            let res = { game: "Petit Bac", results: players.map(p => ({name:p.name, score: p.rounds.reduce((a,b)=>a+b,0)})) };
+            res.winner = [...res.results].sort((a,b)=>b.score-a.score)[0].name;
+            res.date = new Date().toLocaleDateString();
+            h.push(res);
+            await fetch('api.php?action=stats', {method:'POST', body: JSON.stringify(h)});
+            location.href='index.html';
+        }
+    </script>
+</body>
+</html>

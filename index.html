@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScoreMaster Hub - Jonathan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .card-hover:hover { transform: translateY(-8px); border-color: rgba(252, 211, 77, 0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        input::placeholder { color: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body class="bg-slate-950 min-h-screen p-4 sm:p-8 font-sans text-white">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-12 text-center">
+            <h1 class="text-6xl sm:text-7xl font-black italic tracking-tighter uppercase text-yellow-500">
+                Score<span class="text-white">Master</span>
+            </h1>
+            <p class="text-slate-500 font-bold uppercase tracking-[0.4em] text-[10px] mt-4">Platform Control • 2026</p>
+        </header>
+
+        <section class="mb-12 glass p-6 rounded-[2.5rem] border-yellow-500/20 max-w-2xl mx-auto">
+            <h2 class="text-center text-xs font-black uppercase tracking-widest mb-6 text-yellow-500/50">Lancement Rapide</h2>
+            <form action="yams_games.html" method="GET" class="flex flex-col sm:flex-row gap-4">
+                <input type="text" name="p1" placeholder="JOUEUR 1" class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-yellow-500 font-bold uppercase text-sm">
+                <input type="text" name="p2" placeholder="JOUEUR 2" class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-yellow-500 font-bold uppercase text-sm">
+                <button type="submit" class="bg-yellow-500 text-black px-8 py-4 rounded-2xl font-black uppercase text-xs hover:bg-yellow-400 transition-all">
+                    GO YAMS 3D
+                </button>
+            </form>
+        </section>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            
+            <a href="yams_games.html" class="glass p-8 rounded-[3rem] transition-all card-hover group border-l-4 border-green-500">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="bg-green-600 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-green-600/20">
+                        <span class="text-2xl">🎲</span>
+                    </div>
+                    <span class="text-[9px] font-black bg-white/10 px-2 py-1 rounded text-green-400 uppercase">Pro 3D</span>
+                </div>
+                <h3 class="text-2xl font-black uppercase italic tracking-tighter">Yam's Pro</h3>
+                <p class="text-slate-500 text-[10px] font-bold uppercase mt-2">Dés Vegas & Couleurs</p>
+            </a>
+
+            <a href="skyjo.html" class="glass p-8 rounded-[3rem] transition-all card-hover group border-l-4 border-blue-500">
+                <div class="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-600/20">
+                    <span class="text-2xl">🃏</span>
+                </div>
+                <h3 class="text-2xl font-black uppercase italic tracking-tighter">Skyjo</h3>
+                <p class="text-slate-500 text-[10px] font-bold uppercase mt-2">Jeu de cartes officiel</p>
+            </a>
+
+            <a href="bac.html" class="glass p-8 rounded-[3rem] transition-all card-hover group border-l-4 border-yellow-500">
+                <div class="bg-yellow-500 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-yellow-500/20">
+                    <span class="text-2xl">✍️</span>
+                </div>
+                <h3 class="text-2xl font-black uppercase italic tracking-tighter">Petit Bac</h3>
+                <p class="text-slate-500 text-[10px] font-bold uppercase mt-2">Multi-joueurs synchronisé</p>
+            </a>
+
+            <a href="yams.html" class="glass p-8 rounded-[3rem] transition-all card-hover group opacity-60 hover:opacity-100">
+                <div class="bg-slate-600 w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
+                    <span class="text-2xl">🎲</span>
+                </div>
+                <h3 class="text-2xl font-black uppercase italic tracking-tighter text-slate-300">Yam's Light</h3>
+                <p class="text-slate-500 text-[10px] font-bold uppercase mt-2">Version standard</p>
+            </a>
+
+            <a href="scores.html" class="glass p-8 rounded-[3rem] transition-all card-hover group">
+                <div class="bg-slate-800 w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
+                    <span class="text-2xl">📊</span>
+                </div>
+                <h3 class="text-2xl font-black uppercase italic tracking-tighter">Hall of Fame</h3>
+                <p class="text-slate-500 text-[10px] font-bold uppercase mt-2">Stats & Historique</p>
+            </a>
+
+            <a href="libre.html" class="glass p-8 rounded-[3rem] transition-all card-hover group">
+                <div class="bg-purple-900/40 w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
+                    <span class="text-2xl">🔓</span>
+                </div>
+                <h3 class="text-2xl font-black uppercase italic tracking-tighter">Mode Libre</h3>
+                <p class="text-slate-500 text-[10px] font-bold uppercase mt-2">Tableau personnalisé</p>
+            </a>
+
+        </div>
+
+        <footer class="mt-20 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-700 uppercase tracking-widest">
+            <p>Host: PC-SERVEUR /var/www/html/jeux</p>
+            <p>ScoreMaster System &copy; 2026</p>
+        </footer>
+    </div>
+
+</body>
+</html>
