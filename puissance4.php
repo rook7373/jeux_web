@@ -43,12 +43,7 @@ if (isset($_GET['action'])) {
             width: 100%;
             max-width: 600px;
         }
-        .cell {
-            background-color: #f8fafc;
-            border-radius: 50%;
-            aspect-ratio: 1 / 1;
-            transition: background-color 0.2s;
-        }
+        .cell { background-color: #f8fafc; border-radius: 50%; aspect-ratio: 1 / 1; transition: background-color 0.2s; }
         .column { cursor: pointer; display: flex; flex-direction: column; gap: 0.75rem; border-radius: 0.5rem; }
         .column:hover { background-color: rgba(255,255,255,0.2); }
         .cell.red { background-color: #ef4444; box-shadow: inset 0 -4px 6px rgba(0,0,0,0.3); }
@@ -61,17 +56,22 @@ if (isset($_GET['action'])) {
         <h2 class="text-3xl font-black mb-6 text-sky-600 uppercase text-center italic">Puissance 4 <span class="text-slate-200">Live</span></h2>
         
         <div id="mode-selector" class="grid grid-cols-2 gap-3 mb-6">
-            <button onclick="selectGameMode('local')" id="btn-local" class="bg-blue-500 text-white py-3 rounded-2xl font-black uppercase text-sm">Local</button>
-            <button onclick="selectGameMode('remote')" id="btn-remote" class="bg-purple-500 text-white py-3 rounded-2xl font-black uppercase text-sm opacity-60">En ligne</button>
+            <button onclick="selectGameMode('local')" id="btn-local" class="bg-blue-500 text-white py-3 rounded-2xl font-black uppercase text-sm transition">Local</button>
+            <button onclick="selectGameMode('remote')" id="btn-remote" class="bg-purple-500 text-white py-3 rounded-2xl font-black uppercase text-sm opacity-60 transition">En ligne</button>
         </div>
 
         <div class="space-y-4">
-            <input type="text" id="my-name-in" placeholder="Ton nom..." class="w-full border-2 border-sky-100 p-4 rounded-2xl outline-none font-black text-xl">
+            <div class="bg-sky-50 p-4 rounded-2xl border-2 border-sky-100">
+                <label class="text-[10px] font-black uppercase text-sky-600 mb-1 block">Ton nom :</label>
+                <input type="text" id="my-name-in" placeholder="Entre ton nom..." class="w-full bg-white border-2 border-sky-100 p-4 rounded-xl outline-none font-black text-xl">
+            </div>
+
             <div id="local-options" class="hidden grid grid-cols-2 gap-3">
                 <button onclick="localOpponent='ai'" class="bg-green-500 text-white py-3 rounded-2xl font-bold uppercase text-xs">vs IA</button>
                 <button onclick="localOpponent='player'" class="bg-orange-500 text-white py-3 rounded-2xl font-bold uppercase text-xs">vs Humain</button>
             </div>
-            <button onclick="startAction()" id="main-btn" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl">Démarrer</button>
+            
+            <button onclick="startAction()" id="main-btn" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
         </div>
     </div>
 
@@ -85,7 +85,7 @@ if (isset($_GET['action'])) {
             <div id="board"></div>
             <div id="win-overlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm hidden flex-col items-center justify-center rounded-[1rem]">
                 <p class="text-white text-3xl font-black mb-4 uppercase"></p>
-                <button onclick="location.reload()" class="bg-yellow-500 px-8 py-4 rounded-2xl font-black">REJOUER</button>
+                <button onclick="location.href='puissance4.php'" class="bg-yellow-500 px-8 py-4 rounded-2xl font-black uppercase">Accueil</button>
             </div>
         </div>
     </div>
@@ -97,7 +97,15 @@ if (isset($_GET['action'])) {
         let myName = '', myColor = '', gameMode = roomId ? 'remote' : 'local', localOpponent = null;
         let gameState = { board: Array(6).fill(null).map(() => Array(7).fill(null)), players: [], currentPlayer: 'red', gameOver: false };
 
-        window.onload = () => { if(roomId) { selectGameMode('remote'); document.getElementById('main-btn').innerText = "Rejoindre"; } };
+        // INITIALISATION AU CHARGEMENT
+        window.onload = () => {
+            if(roomId) {
+                // MASQUER LES OPTIONS DE MODE SI ON REJOINT
+                document.getElementById('mode-selector').classList.add('hidden');
+                document.getElementById('main-btn').innerText = "Rejoindre la partie";
+                gameMode = 'remote';
+            }
+        };
 
         function selectGameMode(m) {
             gameMode = m;
@@ -111,25 +119,34 @@ if (isset($_GET['action'])) {
             if(!myName) return alert("Nom requis !");
 
             if(gameMode === 'remote') {
-                if(!roomId) { // CRÉATION
+                if(!roomId) {
+                    // CRÉATION
                     roomId = Math.random().toString(36).substring(2, 8);
                     window.history.pushState({}, '', `?room=${roomId}`);
                     myColor = 'red';
                     gameState.players = [{name: myName, color: 'red'}];
                     await syncPush();
-                } else { // REJOINDRE
+                } else {
+                    // REJOINDRE
                     await syncPull();
-                    if(!gameState.players.length) { // Petit délai si le serveur est lent
-                        await new Promise(r => setTimeout(r, 1000));
-                        await syncPull();
-                    }
-                    const exist = gameState.players.find(p => p.name === myName);
-                    if(exist) myColor = exist.color;
-                    else if(gameState.players.length === 1) {
-                        myColor = 'yellow';
-                        gameState.players.push({name: myName, color: 'yellow'});
+                    
+                    // Si la partie n'existe pas encore sur le serveur (latence)
+                    if(!gameState.players || gameState.players.length === 0) {
+                        myColor = 'red';
+                        gameState.players = [{name: myName, color: 'red'}];
                         await syncPush();
-                    } else return alert("Partie pleine !");
+                    } else {
+                        const exist = gameState.players.find(p => p.name === myName);
+                        if(exist) {
+                            myColor = exist.color;
+                        } else if(gameState.players.length === 1) {
+                            myColor = 'yellow';
+                            gameState.players.push({name: myName, color: 'yellow'});
+                            await syncPush();
+                        } else {
+                            return alert("Partie pleine !");
+                        }
+                    }
                 }
                 setInterval(syncPull, 2000);
             } else {
@@ -142,22 +159,36 @@ if (isset($_GET['action'])) {
         }
 
         async function syncPush() {
-            await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) });
+            if(!roomId) return;
+            await fetch(`${API}?action=sync&roomId=${roomId}`, { 
+                method: 'POST', 
+                body: JSON.stringify(gameState) 
+            });
         }
 
         async function syncPull() {
+            if(!roomId) return;
             const r = await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`);
             const data = await r.json();
-            if(data) { gameState = data; render(); }
+            if(data) { 
+                gameState = data; 
+                render(); 
+            }
         }
 
         function handleMove(col) {
             if(gameState.gameOver || (gameMode==='remote' && gameState.currentPlayer !== myColor)) return;
+            if(gameMode==='remote' && gameState.players.length < 2) return alert("Attendez le deuxième joueur !");
+
             for(let r = ROWS-1; r >= 0; r--) {
                 if(!gameState.board[r][col]) {
                     gameState.board[r][col] = gameState.currentPlayer;
-                    if(checkWin(r, col)) { gameState.gameOver = true; gameState.winner = gameState.currentPlayer; }
-                    else gameState.currentPlayer = gameState.currentPlayer === 'red' ? 'yellow' : 'red';
+                    if(checkWin(r, col)) { 
+                        gameState.gameOver = true; 
+                        gameState.winner = gameState.currentPlayer; 
+                    } else {
+                        gameState.currentPlayer = gameState.currentPlayer === 'red' ? 'yellow' : 'red';
+                    }
                     if(gameMode==='remote') syncPush();
                     render();
                     if(!gameState.gameOver && gameMode==='local' && localOpponent==='ai' && gameState.currentPlayer==='yellow') setTimeout(aiMove, 600);
@@ -186,7 +217,8 @@ if (isset($_GET['action'])) {
         }
 
         function render() {
-            const b = document.getElementById('board'); b.innerHTML = '';
+            const b = document.getElementById('board'); 
+            b.innerHTML = '';
             for(let c=0; c<COLS; c++) {
                 const colEl = document.createElement('div'); colEl.className = 'column'; colEl.onclick = () => handleMove(c);
                 for(let r=0; r<ROWS; r++) {
@@ -196,17 +228,28 @@ if (isset($_GET['action'])) {
                 }
                 b.appendChild(colEl);
             }
-            const p1 = gameState.players[0], p2 = gameState.players[1] || {name: 'Attente...', color: 'slate-400'};
-            document.getElementById('players-display').innerHTML = `<span class="${gameState.currentPlayer==='red'?'text-red-600 underline':''}">${p1.name}</span> <span class="text-slate-300">VS</span> <span class="${gameState.currentPlayer==='yellow'?'text-amber-500 underline':''}">${p2.name}</span>`;
+            const p1 = gameState.players[0] || {name: '...', color: 'red'};
+            const p2 = gameState.players[1] || {name: 'Attente...', color: 'slate-400'};
+            
+            document.getElementById('players-display').innerHTML = `
+                <span class="${gameState.currentPlayer==='red'?'text-red-600 underline':''}">${p1.name}</span> 
+                <span class="text-slate-300">VS</span> 
+                <span class="${gameState.currentPlayer==='yellow'?'text-amber-500 underline':''}">${p2.name}</span>
+            `;
+            
             document.getElementById('player-turn').innerText = gameState.currentPlayer === 'red' ? 'ROUGE' : 'JAUNE';
             document.getElementById('player-turn').style.color = gameState.currentPlayer === 'red' ? '#ef4444' : '#f59e0b';
+            
             if(gameState.gameOver) {
                 document.getElementById('win-overlay').classList.replace('hidden', 'flex');
                 document.querySelector('#win-overlay p').innerText = "Gagné : " + (gameState.winner === 'red' ? p1.name : p2.name);
             }
         }
 
-        function copyRoomLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
+        function copyRoomLink() { 
+            navigator.clipboard.writeText(window.location.href); 
+            alert("Lien de la partie copié !"); 
+        }
     </script>
 </body>
 </html>
