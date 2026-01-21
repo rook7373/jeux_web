@@ -1,3 +1,50 @@
+<?php
+// --- PARTIE SERVEUR (PHP) ---
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST");
+header("Access-Control-Allow-Headers: Content-Type");
+
+// Si c'est une requête API (sync ou stats)
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    
+    // Créer le répertoire rooms s'il n'existe pas
+    if (!is_dir('rooms')) {
+        mkdir('rooms', 0777, true);
+    }
+
+    $action = $_GET['action'];
+    $roomId = $_GET['roomId'] ?? '';
+
+    if ($action === 'sync' && $roomId) {
+        $file = "rooms/room_$roomId.json";
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = file_get_contents('php://input');
+            $written = file_put_contents($file, $data);
+            echo json_encode(["status" => "saved", "size" => $written]);
+        } else {
+            if (file_exists($file)) {
+                echo file_get_contents($file);
+            } else {
+                echo json_encode(null);
+            }
+        }
+        exit;
+    }
+
+    if ($action === 'stats') {
+        $file = 'stats.json';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            file_put_contents($file, file_get_contents('php://input'));
+            echo json_encode(["status" => "stats_saved"]);
+        } else {
+            echo file_exists($file) ? file_get_contents($file) : json_encode([]);
+        }
+        exit;
+    }
+}
+// Si ce n'est pas une requête API, on continue vers l'affichage du HTML
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -7,23 +54,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         #board {
-            background-color: #0369a1; /* sky-700 */
+            background-color: #0369a1;
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 0.75rem;
             padding: 1rem;
             border-radius: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border: 8px solid #075985; /* sky-800 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 8px solid #075985;
             width: 100%;
             max-width: 600px;
         }
         .cell {
-            background-color: #f8fafc; /* slate-50 */
+            background-color: #f8fafc;
             border-radius: 50%;
             aspect-ratio: 1 / 1;
             transition: background-color 0.2s;
-            min-width: 60px;
+            min-width: 40px;
         }
         .column {
             cursor: pointer;
@@ -33,17 +80,9 @@
             flex-direction: column;
             gap: 0.75rem;
         }
-        .column:hover {
-            background-color: rgba(255,255,255,0.2);
-        }
-        .cell.red {
-            background-color: #ef4444; /* red-500 */
-            box-shadow: inset 0 -4px 6px rgba(0,0,0,0.3);
-        }
-        .cell.yellow {
-            background-color: #f59e0b; /* amber-500 */
-            box-shadow: inset 0 -4px 6px rgba(0,0,0,0.3);
-        }
+        .column:hover { background-color: rgba(255,255,255,0.2); }
+        .cell.red { background-color: #ef4444; box-shadow: inset 0 -4px 6px rgba(0,0,0,0.3); }
+        .cell.yellow { background-color: #f59e0b; box-shadow: inset 0 -4px 6px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900 flex items-center justify-center">
@@ -53,586 +92,257 @@
             <h2 class="text-3xl font-black mb-6 text-sky-600 uppercase italic tracking-tighter text-center">Puissance 4 <span class="text-slate-200">Live</span></h2>
             
             <div id="mode-selector" class="space-y-4 mb-6">
-                <p class="text-center text-sm font-bold text-slate-600">Choisir un mode :</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="local-mode-btn" onclick="selectGameMode('local')" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
-                        Local
-                    </button>
-                    <button id="remote-mode-btn" onclick="selectGameMode('remote')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition opacity-60">
-                        En ligne
-                    </button>
+                    <button id="local-mode-btn" onclick="selectGameMode('local')" class="bg-blue-500 text-white py-3 rounded-2xl font-black uppercase text-sm transition">Local</button>
+                    <button id="remote-mode-btn" onclick="selectGameMode('remote')" class="bg-purple-500 text-white py-3 rounded-2xl font-black uppercase text-sm transition opacity-60">En ligne</button>
                 </div>
             </div>
 
             <div class="space-y-6">
                 <div class="bg-sky-50 p-6 rounded-3xl border-2 border-sky-100">
-                    <label class="text-[10px] font-black uppercase text-sky-600 mb-2 block font-bold">Ton nom :</label>
-                    <input type="text" id="my-name-in" onkeyup="if(event.key === 'Enter') focusNextInput()" placeholder="Entre ton nom..." class="w-full bg-white border-2 border-sky-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
+                    <label class="text-[10px] font-black uppercase text-sky-600 mb-2 block">Ton nom :</label>
+                    <input type="text" id="my-name-in" placeholder="Entre ton nom..." class="w-full bg-white border-2 border-sky-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
                 </div>
 
                 <div id="local-options" class="hidden space-y-4">
-                    <p class="text-center text-sm font-bold text-slate-600">Contre qui jouer ?</p>
                     <div class="grid grid-cols-2 gap-3">
-                        <button id="vs-ai-btn" onclick="selectLocalOpponent('ai')" class="bg-green-500 hover:bg-green-600 text-white py-3 rounded-2xl font-black uppercase text-xs transition">
-                            vs IA
-                        </button>
-                        <button id="vs-player-btn" onclick="selectLocalOpponent('player')" class="bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-2xl font-black uppercase text-xs transition">
-                            vs Joueur
-                        </button>
-                    </div>
-
-                    <div id="second-player-input" class="hidden bg-sky-50 p-6 rounded-3xl border-2 border-sky-100">
-                        <label class="text-[10px] font-black uppercase text-sky-600 mb-2 block font-bold">Nom du 2ème joueur :</label>
-                        <input type="text" id="player2-name-in" onkeyup="if(event.key === 'Enter') startAction()" placeholder="Entre le nom..." class="w-full bg-white border-2 border-sky-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
+                        <button id="vs-ai-btn" onclick="selectLocalOpponent('ai')" class="bg-green-500 text-white py-3 rounded-2xl font-black uppercase text-xs">vs IA</button>
+                        <button id="vs-player-btn" onclick="selectLocalOpponent('player')" class="bg-orange-500 text-white py-3 rounded-2xl font-black uppercase text-xs">vs Joueur</button>
                     </div>
                 </div>
                 
                 <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
             </div>
         </div>
-         <div id="join-info" class="text-center mt-4 font-bold hidden space-y-4">
-            <p class="text-slate-400">En attente d'un 2ème joueur... Partage le lien !</p>
-            <div class="flex gap-3 justify-center">
-                <button onclick="copyRoomLink()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-xl font-bold text-sm uppercase border transition">📋 Copier le lien</button>
-                <input type="text" id="room-link" readonly class="bg-white border-2 border-yellow-300 px-4 py-2 rounded-xl font-mono text-sm flex-1 max-w-xs" style="display:none;">
-            </div>
-        </div>
     </div>
 
     <div id="game" class="hidden max-w-2xl w-full">
         <div class="bg-white p-6 rounded-[2.5rem] shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <a href="index.html" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs uppercase transition">← Accueil</a>
-                <button onclick="copyRoomLink()" id="copy-link-btn" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-600 px-3 py-2 rounded-xl font-bold text-[10px] uppercase border transition hidden">COPIER LIEN</button>
-            </div>
-
             <div id="game-info" class="flex justify-between items-center mb-4 p-4 bg-slate-50 rounded-2xl border">
                 <div id="players-display" class="flex gap-4 items-center flex-wrap"></div>
             </div>
-
             <p class="font-bold text-center mb-2">Tour de: <span id="player-turn" class="font-black text-xl"></span></p>
-
             <div id="board-container" class="relative flex justify-center">
                 <div id="board"></div>
                 <div id="win-message" class="absolute inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center flex-col gap-4 rounded-[1rem]">
-                     <p class="text-white text-3xl font-black uppercase tracking-widest"></p>
-                     <button id="play-again" class="bg-yellow-500 text-black px-8 py-4 rounded-2xl font-black uppercase text-sm hover:bg-yellow-400 transition-all">Rejouer</button>
+                     <p class="text-white text-3xl font-black uppercase"></p>
+                     <button id="play-again" class="bg-yellow-500 text-black px-8 py-4 rounded-2xl font-black uppercase text-sm">Rejouer</button>
                 </div>
+            </div>
+            <div class="mt-4 flex justify-center">
+                <button onclick="copyRoomLink()" id="copy-link-btn" class="bg-yellow-500 text-white px-6 py-2 rounded-xl font-bold text-xs uppercase hidden">📋 Copier le lien de la partie</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API = 'api.php';
+        // ON UTILISE LE MEME FICHIER POUR L'API
+        const API = 'puissance4.php'; 
         const ROWS = 6;
         const COLS = 7;
 
-        // --- DOM Elements ---
-        const setupDiv = document.getElementById('setup');
-        const gameDiv = document.getElementById('game');
-        const myNameIn = document.getElementById('my-name-in');
-        const joinInfo = document.getElementById('join-info');
-        const boardDiv = document.getElementById('board');
-        const playerTurnEl = document.getElementById('player-turn');
-        const playersDisplayEl = document.getElementById('players-display');
-        const winMessageEl = document.getElementById('win-message');
-        const winMessageText = winMessageEl.querySelector('p');
-        const playAgainButton = document.getElementById('play-again');
-        const copyLinkBtn = document.getElementById('copy-link-btn');
-
-        // --- Game State ---
         let roomId = new URLSearchParams(window.location.search).get('room');
-        console.log('Page loaded - roomId from URL:', roomId);
         let myName = '';
         let myColor = '';
-        let gameMode = 'remote'; // 'remote' ou 'local'
+        let gameMode = roomId ? 'remote' : 'local';
+        let localOpponent = null;
         let gameState = {};
         let syncInterval;
 
-        // =================================================================
-        // INITIALIZATION
-        // =================================================================
-
-        window.onload = async () => {
-            console.log('window.onload - roomId:', roomId);
+        window.onload = () => {
             if (roomId) {
-                // Si on a un room ID, c'est du remote, on cache les choix
-                gameMode = 'remote';
-                console.log('Room detected! Setting gameMode to remote');
                 document.getElementById('mode-selector').classList.add('hidden');
-                document.getElementById('local-options').classList.add('hidden');
                 document.getElementById('main-btn').innerText = "Rejoindre la partie";
+                selectGameMode('remote');
             }
         };
 
         function selectGameMode(mode) {
             gameMode = mode;
-            const localBtn = document.getElementById('local-mode-btn');
-            const remoteBtn = document.getElementById('remote-mode-btn');
-            
-            if (mode === 'local') {
-                localBtn.classList.remove('opacity-60');
-                remoteBtn.classList.add('opacity-60');
-                document.getElementById('local-options').classList.remove('hidden');
-            } else {
-                remoteBtn.classList.remove('opacity-60');
-                localBtn.classList.add('opacity-60');
-                document.getElementById('local-options').classList.add('hidden');
-            }
+            document.getElementById('local-mode-btn').classList.toggle('opacity-60', mode !== 'local');
+            document.getElementById('remote-mode-btn').classList.toggle('opacity-60', mode !== 'remote');
+            document.getElementById('local-options').classList.toggle('hidden', mode !== 'local');
         }
 
-        function selectLocalOpponent(opponent) {
-            localOpponent = opponent;
-            document.getElementById('vs-ai-btn').classList.toggle('bg-green-700', opponent === 'ai');
-            document.getElementById('vs-player-btn').classList.toggle('bg-orange-700', opponent === 'player');
-            document.getElementById('second-player-input').classList.toggle('hidden', opponent !== 'player');
-        }
-
-        function focusNextInput() {
-            if (gameMode === 'local' && localOpponent === 'player') {
-                document.getElementById('player2-name-in').focus();
-            } else if (event.key === 'Enter') {
-                startAction();
-            }
+        function selectLocalOpponent(opp) {
+            localOpponent = opp;
+            document.getElementById('vs-ai-btn').classList.toggle('bg-green-700', opp === 'ai');
+            document.getElementById('vs-player-btn').classList.toggle('bg-orange-700', opp === 'player');
         }
 
         async function startAction() {
             const name = document.getElementById('my-name-in').value.trim();
             if (!name) return alert("Indique ton nom !");
             myName = name;
-            console.log('startAction called - myName:', myName, 'gameMode:', gameMode, 'roomId:', roomId);
 
             if (gameMode === 'local') {
-                if (!localOpponent) return alert("Choisis contre qui jouer !");
-                
-                if (localOpponent === 'ai') {
-                    // MODE LOCAL vs IA
-                    myColor = 'red';
-                    gameState = getInitialGameState(myName);
-                    gameState.players.push({ name: 'IA', color: 'yellow' });
-                } else {
-                    // MODE LOCAL vs JOUEUR
-                    const player2Name = document.getElementById('player2-name-in').value.trim();
-                    if (!player2Name) return alert("Indique le nom du 2ème joueur !");
-                    
-                    myColor = 'red';
-                    gameState = getInitialGameState(myName);
-                    gameState.players.push({ name: player2Name, color: 'yellow' });
-                }
-                
-                setupDiv.classList.add('hidden');
-                gameDiv.classList.remove('hidden');
-                copyLinkBtn.classList.add('hidden');
-                render();
+                if (!localOpponent) return alert("Choisis ton adversaire !");
+                myColor = 'red';
+                gameState = getInitialGameState(myName);
+                gameState.players.push({ name: localOpponent === 'ai' ? 'IA' : 'Joueur 2', color: 'yellow' });
+                showGame();
             } else {
-                // MODE REMOTE: Jeu en ligne
                 if (!roomId) {
-                    // CREATE a new room
+                    // CRÉATION
                     roomId = Math.random().toString(36).substring(2, 8);
                     window.history.pushState({}, '', `?room=${roomId}`);
                     myColor = 'red';
                     gameState = getInitialGameState(myName);
-                    joinInfo.classList.remove('hidden');
-                    
-                    setupDiv.classList.add('hidden');
-                    gameDiv.classList.remove('hidden');
-                    copyLinkBtn.classList.remove('hidden');
-                    
                     await syncPush();
-                    syncInterval = setInterval(syncPull, 2000);
-                    render();
                 } else {
-                    // JOIN an existing room
+                    // REJOINDRE
                     await syncPull();
-                    if (gameState.players && gameState.players.length === 1 && gameState.players[0].name !== myName) {
-                        myColor = 'yellow';
-                        gameState.players.push({ name: myName, color: 'yellow' });
-                    } else if (!gameState.players || gameState.players.length === 0) {
-                        // Room n'existe pas encore, on crée avec nous en jaune
-                        myColor = 'yellow';
-                        gameState = getInitialGameState('?');
-                        gameState.players = [{ name: '?', color: 'red' }, { name: myName, color: 'yellow' }];
-                    } else {
-                        const existingPlayer = gameState.players && gameState.players.find(p => p.name === myName);
-                        if (existingPlayer) {
-                            myColor = existingPlayer.color;
+                    if (!gameState.players) {
+                        gameState = getInitialGameState('Hôte'); // Fallback si room vide
+                    }
+                    // Si on est pas déjà dans la liste, on s'ajoute en Jaune
+                    if (!gameState.players.find(p => p.name === myName)) {
+                        if (gameState.players.length === 1) {
+                            gameState.players.push({ name: myName, color: 'yellow' });
                         }
                     }
-                    
-                    setupDiv.classList.add('hidden');
-                    gameDiv.classList.remove('hidden');
-                    copyLinkBtn.classList.remove('hidden');
-
+                    myColor = gameState.players.find(p => p.name === myName)?.color || 'yellow';
                     await syncPush();
-                    // Récupérer les données sauvegardées
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1s
-                    await syncPull();
-                    
-                    syncInterval = setInterval(syncPull, 2000);
-                    render();
                 }
+                showGame();
+                syncInterval = setInterval(syncPull, 2000);
             }
         }
 
-        function getInitialGameState(creatorName) {
+        function showGame() {
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+            if (gameMode === 'remote') document.getElementById('copy-link-btn').classList.remove('hidden');
+            render();
+        }
+
+        function getInitialGameState(name) {
             return {
-                players: [{ name: creatorName, color: 'red' }],
+                players: [{ name: name, color: 'red' }],
                 board: Array(ROWS).fill(null).map(() => Array(COLS).fill(null)),
                 currentPlayer: 'red',
                 gameOver: false,
-                winner: null,
-                isDraw: false,
+                winner: null
             };
         }
 
-        // =================================================================
-        // API SYNC
-        // =================================================================
-
         async function syncPush() {
             if (!roomId) return;
-            try {
-                console.log('syncPush:', roomId, 'sending:', gameState);
-                const response = await fetch(`${API}?action=sync&roomId=${roomId}`, { 
-                    method: 'POST', 
-                    body: JSON.stringify(gameState) 
-                });
-                const text = await response.text();
-                console.log('syncPush response:', text);
-                return response;
-            } catch (e) {
-                console.error("Sync push error:", e);
-            }
+            await fetch(`${API}?action=sync&roomId=${roomId}`, { 
+                method: 'POST', 
+                body: JSON.stringify(gameState) 
+            });
         }
 
         async function syncPull() {
             if (!roomId) return;
-            try {
-                const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
-                const data = await r.json();
-                console.log('syncPull:', roomId, 'got data:', data);
-                
-                if (data) {
-                    // On a des données du serveur, on les fusionne
-                    gameState = data;
-                    const me = gameState.players.find(p => p.name === myName);
-                    if (me) myColor = me.color;
-                    render();
-                } else {
-                    console.log('No data from server yet, waiting...');
-                }
-            } catch (e) {
-                console.error("Sync pull error:", e);
+            const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
+            const data = await r.json();
+            if (data) {
+                gameState = data;
+                render();
             }
         }
 
-        // =================================================================
-        // GAME LOGIC
-        // =================================================================
-        
         function handleColumnClick(col) {
-            console.log('Click col:', col, 'myColor:', myColor, 'currentPlayer:', gameState.currentPlayer, 'gameOver:', gameState.gameOver);
-            
-            if (gameState.gameOver) {
-                console.log('Game is over');
-                return;
-            }
-            
-            // En mode local vs joueur : laisser jouer qui peut jouer
-            // En mode local vs IA : vérifier que c'est le tour du joueur (pas l'IA)
-            // En mode remote : vérifier que c'est le tour du joueur
-            
-            if (gameMode === 'local' && localOpponent === 'ai') {
-                // Vs IA : seulement le joueur humain peut jouer
-                if (gameState.currentPlayer !== myColor) {
-                    console.log('Not your turn (AI mode)');
-                    return;
-                }
-            } else if (gameMode === 'local' && localOpponent === 'player') {
-                // Vs joueur : les deux peuvent jouer sur cet apareil
-                // Pas de vérification ici
-            } else {
-                // Mode remote
-                if (gameState.players.length < 2) {
-                    console.log('Not enough players:', gameState.players.length);
-                    return;
-                }
-                if (gameState.currentPlayer !== myColor) {
-                    console.log('Not your turn (remote mode)');
-                    return;
-                }
-            }
+            if (gameState.gameOver) return;
+            if (gameMode === 'remote' && gameState.currentPlayer !== myColor) return;
+            if (gameMode === 'remote' && gameState.players.length < 2) return alert("Attends le 2ème joueur !");
 
-            // Chercher la première case vide dans cette colonne
             for (let row = ROWS - 1; row >= 0; row--) {
                 if (!gameState.board[row][col]) {
-                    console.log('Playing at row:', row, 'col:', col);
                     gameState.board[row][col] = gameState.currentPlayer;
-                    
                     if (checkWin(row, col)) {
                         gameState.gameOver = true;
                         gameState.winner = gameState.currentPlayer;
-                        console.log('Winner:', gameState.winner);
-                    } else if (gameState.board.flat().every(cell => cell)) {
-                        gameState.gameOver = true;
-                        gameState.isDraw = true;
-                        console.log('Draw');
                     } else {
                         gameState.currentPlayer = gameState.currentPlayer === 'red' ? 'yellow' : 'red';
-                        console.log('Next player:', gameState.currentPlayer);
-                        
-                        // En mode local vs IA, faire jouer l'IA
-                        if (gameMode === 'local' && localOpponent === 'ai' && gameState.currentPlayer === 'yellow' && !gameState.gameOver) {
-                            setTimeout(() => aiPlay(), 500);
+                        if (gameMode === 'local' && localOpponent === 'ai' && gameState.currentPlayer === 'yellow') {
+                            setTimeout(aiPlay, 500);
                         }
                     }
-                    
-                    if (gameMode === 'remote') {
-                        console.log('Syncing push...');
-                        syncPush().then(() => {
-                            console.log('Push done, calling render');
-                            render();
-                        });
-                    } else {
-                        render();
-                    }
-                    return;
-                }
-            }
-            console.log('Column full');
-        }
-
-        function aiPlay() {
-            if (gameState.gameOver) return;
-            
-            // Stratégie simple : chercher à gagner, bloquer, ou jouer au hasard
-            const col = findBestMove();
-            
-            for (let row = ROWS - 1; row >= 0; row--) {
-                if (!gameState.board[row][col]) {
-                    gameState.board[row][col] = 'yellow';
-                    
-                    if (checkWin(row, col)) {
-                        gameState.gameOver = true;
-                        gameState.winner = 'yellow';
-                    } else if (gameState.board.flat().every(cell => cell)) {
-                        gameState.gameOver = true;
-                        gameState.isDraw = true;
-                    } else {
-                        gameState.currentPlayer = 'red';
-                    }
-                    
+                    if (gameMode === 'remote') syncPush();
                     render();
                     return;
                 }
             }
         }
 
-        function findBestMove() {
-            // Chercher à gagner
-            for (let col = 0; col < COLS; col++) {
-                for (let row = ROWS - 1; row >= 0; row--) {
-                    if (!gameState.board[row][col]) {
-                        gameState.board[row][col] = 'yellow';
-                        if (checkWin(row, col)) {
-                            gameState.board[row][col] = null;
-                            return col;
-                        }
-                        gameState.board[row][col] = null;
-                        break;
-                    }
-                }
-            }
-            
-            // Bloquer le joueur
-            for (let col = 0; col < COLS; col++) {
-                for (let row = ROWS - 1; row >= 0; row--) {
-                    if (!gameState.board[row][col]) {
-                        gameState.board[row][col] = 'red';
-                        if (checkWin(row, col)) {
-                            gameState.board[row][col] = null;
-                            return col;
-                        }
-                        gameState.board[row][col] = null;
-                        break;
-                    }
-                }
-            }
-            
-            // Sinon, jouer au hasard dans les colonnes valides
+        function aiPlay() {
             const validCols = [];
-            for (let col = 0; col < COLS; col++) {
-                if (!gameState.board[0][col]) validCols.push(col);
-            }
-            return validCols[Math.floor(Math.random() * validCols.length)];
+            for (let c = 0; c < COLS; c++) if (!gameState.board[0][c]) validCols.push(c);
+            const col = validCols[Math.floor(Math.random() * validCols.length)];
+            handleColumnClick(col);
         }
 
-        function checkWin(row, col) {
-            const player = gameState.board[row][col];
-            const directions = [ {r:0,c:1}, {r:1,c:0}, {r:1,c:1}, {r:1,c:-1} ];
-            for (const dir of directions) {
+        function checkWin(r, c) {
+            const p = gameState.board[r][c];
+            const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+            for (let [dr, dc] of dirs) {
                 let count = 1;
                 for (let i = 1; i < 4; i++) {
-                    const r = row + dir.r * i;
-                    const c = col + dir.c * i;
-                    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && gameState.board[r][c] === player) count++;
-                    else break;
+                    let nr = r + dr*i, nc = c + dc*i;
+                    if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && gameState.board[nr][nc] === p) count++; else break;
                 }
                 for (let i = 1; i < 4; i++) {
-                    const r = row - dir.r * i;
-                    const c = col - dir.c * i;
-                    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && gameState.board[r][c] === player) count++;
-                    else break;
+                    let nr = r - dr*i, nc = c - dc*i;
+                    if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && gameState.board[nr][nc] === p) count++; else break;
                 }
                 if (count >= 4) return true;
             }
             return false;
         }
 
-        function resetGame() {
-            if (gameMode === 'local') {
-                // En mode local, le joueur peut toujours rejouer
-                const player1Name = gameState.players[0].name;
-                const player2Name = gameState.players[1].name;
-                
-                gameState = getInitialGameState(player1Name);
-                gameState.players.push({ name: player2Name, color: 'yellow' });
-                
-                // Swap colors for fair play
-                const temp = gameState.players[0].color;
-                gameState.players[0].color = gameState.players[1].color;
-                gameState.players[1].color = temp;
-                
-                render();
-            } else {
-                // En mode remote, seulement le créateur peut reset
-                if (myName !== gameState.players[0].name) return;
-                
-                const originalPlayers = [...gameState.players];
-                const creatorName = originalPlayers[0].name;
-
-                gameState = getInitialGameState(creatorName);
-                
-                // Keep both players, but swap their colors for the next round
-                if (originalPlayers.length > 1) {
-                    const secondPlayer = originalPlayers[1];
-                    gameState.players.push(secondPlayer);
-                    
-                    // Swap colors
-                    const p1_old_color = originalPlayers[0].color;
-                    gameState.players[0].color = originalPlayers[1].color;
-                    gameState.players[1].color = p1_old_color;
-                }
-                
-                syncPush().then(render);
-            }
-        }
-        playAgainButton.addEventListener('click', resetGame);
-
-        // =================================================================
-        // UI RENDERING
-        // =================================================================
-        
         function render() {
-            if (!myName || !gameState.players || gameState.players.length === 0) return; 
-
-            // Mettre à jour myColor basé sur les données du serveur
-            const me = gameState.players.find(p => p.name === myName);
-            if (me) {
-                myColor = me.color;
-            }
-
-            // --- Render board ---
-            boardDiv.innerHTML = '';
-            for (let col = 0; col < COLS; col++) {
-                const columnEl = document.createElement('div');
-                columnEl.classList.add('column');
-                columnEl.dataset.col = col;
-                columnEl.addEventListener('click', () => handleColumnClick(col));
-                for (let row = 0; row < ROWS; row++) {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            for (let c = 0; c < COLS; c++) {
+                const colEl = document.createElement('div');
+                colEl.className = 'column';
+                colEl.onclick = () => handleColumnClick(c);
+                for (let r = 0; r < ROWS; r++) {
                     const cellEl = document.createElement('div');
-                    cellEl.classList.add('cell');
-                    if (gameState.board[row][col]) {
-                        cellEl.classList.add(gameState.board[row][col]);
-                    }
-                    columnEl.appendChild(cellEl);
+                    cellEl.className = 'cell' + (gameState.board[r][c] ? ' ' + gameState.board[r][c] : '');
+                    colEl.appendChild(cellEl);
                 }
-                boardDiv.appendChild(columnEl);
+                boardEl.appendChild(colEl);
             }
 
-            // --- Render player info ---
-            const opponent = gameState.players.find(p => p.name !== myName);
-            const playerLabel = gameMode === 'local' && localOpponent === 'player' ? '' : '(Toi)';
+            const p1 = gameState.players[0];
+            const p2 = gameState.players[1] || { name: 'En attente...', color: 'slate-400' };
             
-            let player1Name = gameState.players[0]?.name || '?';
-            let player1Color = gameState.players[0]?.color || 'red';
-            let player2Name = gameState.players[1]?.name || '...';
-            let player2Color = gameState.players[1]?.color || 'yellow';
+            document.getElementById('players-display').innerHTML = `
+                <span class="font-bold ${gameState.currentPlayer === 'red' ? 'text-red-600 underline' : ''}">${p1.name} (Rouge)</span>
+                <span class="text-slate-300">vs</span>
+                <span class="font-bold ${gameState.currentPlayer === 'yellow' ? 'text-amber-500 underline' : ''}">${p2.name} (Jaune)</span>
+            `;
             
-            playersDisplayEl.innerHTML = `
-                <div class="flex items-center gap-2 p-2 rounded-lg ${player1Color === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
-                    <div class="w-6 h-6 rounded-full" style="background-color: ${player1Color};"></div>
-                    <span class="font-bold text-sm uppercase">${player1Name} ${player1Name === myName && gameMode === 'remote' ? '(Toi)' : ''}</span>
-                </div>
-                <div class="flex items-center gap-2 p-2 rounded-lg ${player2Color === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
-                    <div class="w-6 h-6 rounded-full" style="background-color: ${player2Color};"></div>
-                    <span class="font-bold text-sm uppercase">${player2Name} ${player2Name === myName && gameMode === 'remote' ? '(Toi)' : ''}</span>
-                </div>`;
-            
-            if (gameState.players.length < 2) {
-                 playerTurnEl.textContent = "En attente...";
-                 playerTurnEl.style.color = '#64748b';
-            } else {
-                 const currentPlayerName = gameState.players.find(p => p.color === gameState.currentPlayer)?.name;
-                 if (gameMode === 'local' && localOpponent === 'ai') {
-                     playerTurnEl.textContent = (gameState.currentPlayer === myColor) ? "C'est ton tour !" : `Tour de ${currentPlayerName}`;
-                 } else if (gameMode === 'local' && localOpponent === 'player') {
-                     playerTurnEl.textContent = `C'est à ${currentPlayerName} de jouer`;
-                 } else {
-                     playerTurnEl.textContent = (currentPlayerName === myName) ? "C'est ton tour !" : `Tour de ${currentPlayerName}`;
-                 }
-                 playerTurnEl.style.color = gameState.currentPlayer;
-            }
-            
-            // --- Render win/draw message ---
+            document.getElementById('player-turn').innerText = gameState.currentPlayer === 'red' ? 'Rouge' : 'Jaune';
+            document.getElementById('player-turn').style.color = gameState.currentPlayer === 'red' ? '#ef4444' : '#f59e0b';
+
             if (gameState.gameOver) {
-                winMessageEl.classList.remove('hidden');
-                winMessageEl.classList.add('flex');
-                if (gameState.isDraw) {
-                    winMessageText.innerText = "Match Nul!";
-                } else {
-                    const winnerName = gameState.players.find(p => p.color === gameState.winner)?.name;
-                    if (gameMode === 'local' && localOpponent === 'ai') {
-                        winMessageText.innerText = (gameState.winner === myColor) ? "Tu as gagné !" : `${winnerName} a gagné !`;
-                    } else if (gameMode === 'local' && localOpponent === 'player') {
-                        winMessageText.innerText = `${winnerName} a gagné !`;
-                    } else {
-                        winMessageText.innerText = (winnerName === myName) ? "Tu as gagné !" : `${winnerName} a gagné !`;
-                    }
-                }
-                // Only show "Rejouer" to the original creator (or always in local mode)
-                if (gameMode === 'local') {
-                    playAgainButton.classList.remove('hidden');
-                } else {
-                    playAgainButton.classList.toggle('hidden', myName !== gameState.players[0]?.name);
-                }
+                document.getElementById('win-message').classList.remove('hidden');
+                document.getElementById('win-message').classList.add('flex');
+                document.querySelector('#win-message p').innerText = "Victoire : " + (gameState.winner === 'red' ? p1.name : p2.name);
             } else {
-                winMessageEl.classList.add('hidden');
-                winMessageEl.classList.remove('flex');
+                document.getElementById('win-message').classList.add('hidden');
             }
         }
-        
-        function copyRoomLink() { 
-            const link = window.location.href;
-            console.log('Copying link:', link);
-            navigator.clipboard.writeText(link).then(() => {
-                alert("✅ Lien copié !\n" + link);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                alert("Lien :\n" + link + "\n\nCopie manuelle si besoin.");
-            });
-        }
 
+        document.getElementById('play-again').onclick = () => {
+            if (gameMode === 'remote' && myName !== gameState.players[0].name) return alert("Seul l'hôte peut relancer !");
+            gameState = getInitialGameState(gameState.players[0].name);
+            if (gameMode === 'remote') {
+                gameState.players.push({ name: 'Joueur 2', color: 'yellow' }); // Réinitialise mais garde la structure
+                syncPush();
+            }
+            render();
+        };
+
+        function copyRoomLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert("Lien copié ! Envoie-le à ton ami.");
+        }
     </script>
 </body>
 </html>
