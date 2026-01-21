@@ -10,22 +10,28 @@
             background-color: #0369a1; /* sky-700 */
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 1rem;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 1.5rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border: 6px solid #075985; /* sky-800 */
+            border: 8px solid #075985; /* sky-800 */
+            width: 100%;
+            max-width: 600px;
         }
         .cell {
             background-color: #f8fafc; /* slate-50 */
             border-radius: 50%;
             aspect-ratio: 1 / 1;
             transition: background-color 0.2s;
+            min-width: 60px;
         }
         .column {
             cursor: pointer;
             border-radius: 0.5rem;
             transition: background-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
         .column:hover {
             background-color: rgba(255,255,255,0.2);
@@ -46,6 +52,18 @@
         <div class="bg-white p-6 rounded-[2.5rem] shadow-2xl">
             <h2 class="text-3xl font-black mb-6 text-sky-600 uppercase italic tracking-tighter text-center">Puissance 4 <span class="text-slate-200">Live</span></h2>
             
+            <div id="mode-selector" class="space-y-4 mb-6">
+                <p class="text-center text-sm font-bold text-slate-600">Choisir un mode :</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="local-mode-btn" onclick="selectMode('local')" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
+                        Local
+                    </button>
+                    <button id="remote-mode-btn" onclick="selectMode('remote')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
+                        En ligne
+                    </button>
+                </div>
+            </div>
+
             <div class="space-y-6">
                 <div class="bg-sky-50 p-6 rounded-3xl border-2 border-sky-100">
                     <label class="text-[10px] font-black uppercase text-sky-600 mb-2 block font-bold">Ton nom :</label>
@@ -54,20 +72,28 @@
                 
                 <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
             </div>
+
+            <div id="local-ai-info" class="hidden mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-200">
+                <p class="text-center text-xs font-bold text-blue-600">Vous jouerez contre l'IA</p>
+            </div>
         </div>
          <p id="join-info" class="text-center mt-4 text-slate-400 font-bold hidden">En attente d'un 2ème joueur... Partage le lien !</p>
     </div>
 
-    <div id="game" class="hidden max-w-md w-full">
+    <div id="game" class="hidden max-w-2xl w-full">
         <div class="bg-white p-6 rounded-[2.5rem] shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <a href="index.html" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl font-bold text-xs uppercase transition">← Accueil</a>
+                <button onclick="copyRoomLink()" id="copy-link-btn" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-600 px-3 py-2 rounded-xl font-bold text-[10px] uppercase border transition hidden">COPIER LIEN</button>
+            </div>
+
             <div id="game-info" class="flex justify-between items-center mb-4 p-4 bg-slate-50 rounded-2xl border">
-                <div id="players-display" class="flex gap-4 items-center"></div>
-                <button onclick="copyRoomLink()" class="bg-yellow-50 text-yellow-600 px-3 py-2 rounded-xl font-bold text-[10px] uppercase border">LIEN</button>
+                <div id="players-display" class="flex gap-4 items-center flex-wrap"></div>
             </div>
 
             <p class="font-bold text-center mb-2">Tour de: <span id="player-turn" class="font-black text-xl"></span></p>
 
-            <div id="board-container" class="relative">
+            <div id="board-container" class="relative flex justify-center">
                 <div id="board"></div>
                 <div id="win-message" class="absolute inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center flex-col gap-4 rounded-[1rem]">
                      <p class="text-white text-3xl font-black uppercase tracking-widest"></p>
@@ -75,9 +101,6 @@
                 </div>
             </div>
         </div>
-        <footer class="text-center mt-4">
-             <a href="index.html" class="text-slate-400 text-xs font-bold hover:underline">Retour à l'accueil</a>
-        </footer>
     </div>
 
     <script>
@@ -96,11 +119,13 @@
         const winMessageEl = document.getElementById('win-message');
         const winMessageText = winMessageEl.querySelector('p');
         const playAgainButton = document.getElementById('play-again');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
 
         // --- Game State ---
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '';
         let myColor = '';
+        let gameMode = 'remote'; // 'remote' ou 'local'
         let gameState = {};
         let syncInterval;
 
@@ -115,37 +140,57 @@
             }
         };
 
+        function selectMode(mode) {
+            gameMode = mode;
+            document.getElementById('local-mode-btn').classList.toggle('bg-blue-700', mode === 'local');
+            document.getElementById('remote-mode-btn').classList.toggle('bg-purple-700', mode === 'remote');
+            document.getElementById('local-ai-info').classList.toggle('hidden', mode !== 'local');
+        }
+
         async function startAction() {
             const name = myNameIn.value.trim();
             if (!name) return alert("Indique ton nom !");
             myName = name;
 
-            if (!roomId) {
-                // CREATE a new room
-                roomId = Math.random().toString(36).substring(2, 8);
-                window.history.pushState({}, '', `?room=${roomId}`);
+            if (gameMode === 'local') {
+                // MODE LOCAL: Jouer contre l'IA
                 myColor = 'red';
                 gameState = getInitialGameState(myName);
-                joinInfo.classList.remove('hidden');
+                gameState.players.push({ name: 'IA', color: 'yellow' });
+                setupDiv.classList.add('hidden');
+                gameDiv.classList.remove('hidden');
+                copyLinkBtn.classList.add('hidden');
+                render();
             } else {
-                // JOIN an existing room
-                await syncPull(true);
-                if (gameState.players.length === 1 && gameState.players[0].name !== myName) {
-                    myColor = 'yellow';
-                    gameState.players.push({ name: myName, color: 'yellow' });
+                // MODE REMOTE: Jeu en ligne
+                if (!roomId) {
+                    // CREATE a new room
+                    roomId = Math.random().toString(36).substring(2, 8);
+                    window.history.pushState({}, '', `?room=${roomId}`);
+                    myColor = 'red';
+                    gameState = getInitialGameState(myName);
+                    joinInfo.classList.remove('hidden');
                 } else {
-                    const existingPlayer = gameState.players.find(p => p.name === myName);
-                    if (!existingPlayer) return alert("La partie est pleine ou une erreur est survenue.");
-                    myColor = existingPlayer.color;
+                    // JOIN an existing room
+                    await syncPull(true);
+                    if (gameState.players.length === 1 && gameState.players[0].name !== myName) {
+                        myColor = 'yellow';
+                        gameState.players.push({ name: myName, color: 'yellow' });
+                    } else {
+                        const existingPlayer = gameState.players.find(p => p.name === myName);
+                        if (!existingPlayer) return alert("La partie est pleine ou une erreur est survenue.");
+                        myColor = existingPlayer.color;
+                    }
                 }
-            }
-            
-            setupDiv.classList.add('hidden');
-            gameDiv.classList.remove('hidden');
+                
+                setupDiv.classList.add('hidden');
+                gameDiv.classList.remove('hidden');
+                copyLinkBtn.classList.remove('hidden');
 
-            await syncPush();
-            syncInterval = setInterval(syncPull, 2000);
-            render();
+                await syncPush();
+                syncInterval = setInterval(syncPull, 2000);
+                render();
+            }
         }
 
         function getInitialGameState(creatorName) {
@@ -194,7 +239,13 @@
         // =================================================================
         
         function handleColumnClick(col) {
-            if (gameState.gameOver || gameState.currentPlayer !== myColor || gameState.players.length < 2) return;
+            if (gameState.gameOver) return;
+            
+            // En mode local, vérifier que c'est le tour du joueur (pas l'IA)
+            // En mode remote, vérifier que c'est le tour du joueur
+            if (gameState.currentPlayer !== myColor) {
+                if (gameMode === 'remote' || gameState.players.length < 2) return;
+            }
 
             for (let row = ROWS - 1; row >= 0; row--) {
                 if (!gameState.board[row][col]) {
@@ -208,11 +259,86 @@
                         gameState.isDraw = true;
                     } else {
                         gameState.currentPlayer = gameState.currentPlayer === 'red' ? 'yellow' : 'red';
+                        
+                        // En mode local, faire jouer l'IA
+                        if (gameMode === 'local' && gameState.currentPlayer === 'yellow' && !gameState.gameOver) {
+                            setTimeout(() => aiPlay(), 500);
+                        }
                     }
-                    syncPush().then(render);
+                    
+                    if (gameMode === 'remote') {
+                        syncPush().then(render);
+                    } else {
+                        render();
+                    }
                     return;
                 }
             }
+        }
+
+        function aiPlay() {
+            if (gameState.gameOver) return;
+            
+            // Stratégie simple : chercher à gagner, bloquer, ou jouer au hasard
+            const col = findBestMove();
+            
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (!gameState.board[row][col]) {
+                    gameState.board[row][col] = 'yellow';
+                    
+                    if (checkWin(row, col)) {
+                        gameState.gameOver = true;
+                        gameState.winner = 'yellow';
+                    } else if (gameState.board.flat().every(cell => cell)) {
+                        gameState.gameOver = true;
+                        gameState.isDraw = true;
+                    } else {
+                        gameState.currentPlayer = 'red';
+                    }
+                    
+                    render();
+                    return;
+                }
+            }
+        }
+
+        function findBestMove() {
+            // Chercher à gagner
+            for (let col = 0; col < COLS; col++) {
+                for (let row = ROWS - 1; row >= 0; row--) {
+                    if (!gameState.board[row][col]) {
+                        gameState.board[row][col] = 'yellow';
+                        if (checkWin(row, col)) {
+                            gameState.board[row][col] = null;
+                            return col;
+                        }
+                        gameState.board[row][col] = null;
+                        break;
+                    }
+                }
+            }
+            
+            // Bloquer le joueur
+            for (let col = 0; col < COLS; col++) {
+                for (let row = ROWS - 1; row >= 0; row--) {
+                    if (!gameState.board[row][col]) {
+                        gameState.board[row][col] = 'red';
+                        if (checkWin(row, col)) {
+                            gameState.board[row][col] = null;
+                            return col;
+                        }
+                        gameState.board[row][col] = null;
+                        break;
+                    }
+                }
+            }
+            
+            // Sinon, jouer au hasard dans les colonnes valides
+            const validCols = [];
+            for (let col = 0; col < COLS; col++) {
+                if (!gameState.board[0][col]) validCols.push(col);
+            }
+            return validCols[Math.floor(Math.random() * validCols.length)];
         }
 
         function checkWin(row, col) {
@@ -238,26 +364,33 @@
         }
 
         function resetGame() {
-            // Only the original creator can reset
-            if (myName !== gameState.players[0].name) return;
-            
-            const originalPlayers = [...gameState.players];
-            const creatorName = originalPlayers[0].name;
-
-            gameState = getInitialGameState(creatorName);
-            
-            // Keep both players, but swap their colors for the next round
-            if (originalPlayers.length > 1) {
-                const secondPlayer = originalPlayers[1];
-                gameState.players.push(secondPlayer);
+            if (gameMode === 'local') {
+                // En mode local, le joueur peut toujours rejouer
+                gameState = getInitialGameState(myName);
+                gameState.players.push({ name: 'IA', color: 'yellow' });
+                render();
+            } else {
+                // En mode remote, seulement le créateur peut reset
+                if (myName !== gameState.players[0].name) return;
                 
-                // Swap colors
-                const p1_old_color = originalPlayers[0].color;
-                gameState.players[0].color = originalPlayers[1].color;
-                gameState.players[1].color = p1_old_color;
+                const originalPlayers = [...gameState.players];
+                const creatorName = originalPlayers[0].name;
+
+                gameState = getInitialGameState(creatorName);
+                
+                // Keep both players, but swap their colors for the next round
+                if (originalPlayers.length > 1) {
+                    const secondPlayer = originalPlayers[1];
+                    gameState.players.push(secondPlayer);
+                    
+                    // Swap colors
+                    const p1_old_color = originalPlayers[0].color;
+                    gameState.players[0].color = originalPlayers[1].color;
+                    gameState.players[1].color = p1_old_color;
+                }
+                
+                syncPush().then(render);
             }
-            
-            syncPush().then(render);
         }
         playAgainButton.addEventListener('click', resetGame);
 
@@ -270,10 +403,6 @@
 
             const me = gameState.players.find(p => p.name === myName);
             if (me) myColor = me.color;
-            else { // If I'm not in the player list, maybe I'm a spectator or there's an issue.
-                console.log("You are not a player in this game.");
-                // Potentially show a spectator view or an error. For now, we'll just not render the interactive parts.
-            }
 
             // --- Render board ---
             boardDiv.innerHTML = '';
@@ -297,7 +426,7 @@
             const opponent = gameState.players.find(p => p.name !== myName);
             playersDisplayEl.innerHTML = `
                 <div class="flex items-center gap-2 p-2 rounded-lg ${myColor === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
-                    <div class="w-6 h-6 rounded-full ${myColor}" style="background-color: ${myColor};"></div>
+                    <div class="w-6 h-6 rounded-full" style="background-color: ${myColor};"></div>
                     <span class="font-bold text-sm uppercase">${myName} (Toi)</span>
                 </div>
                 <div class="flex items-center gap-2 p-2 rounded-lg ${opponent && opponent.color === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
@@ -310,7 +439,11 @@
                  playerTurnEl.style.color = '#64748b';
             } else {
                  const currentPlayerName = gameState.players.find(p => p.color === gameState.currentPlayer)?.name;
-                 playerTurnEl.textContent = (currentPlayerName === myName) ? "C'est ton tour !" : `Tour de ${currentPlayerName}`;
+                 if (gameMode === 'local') {
+                     playerTurnEl.textContent = (gameState.currentPlayer === myColor) ? "C'est ton tour !" : `Tour de ${currentPlayerName}`;
+                 } else {
+                     playerTurnEl.textContent = (currentPlayerName === myName) ? "C'est ton tour !" : `Tour de ${currentPlayerName}`;
+                 }
                  playerTurnEl.style.color = gameState.currentPlayer;
             }
             
@@ -322,10 +455,18 @@
                     winMessageText.innerText = "Match Nul!";
                 } else {
                     const winnerName = gameState.players.find(p => p.color === gameState.winner)?.name;
-                    winMessageText.innerText = (winnerName === myName) ? "Tu as gagné !" : `${winnerName} a gagné !`;
+                    if (gameMode === 'local') {
+                        winMessageText.innerText = (gameState.winner === myColor) ? "Tu as gagné !" : `${winnerName} a gagné !`;
+                    } else {
+                        winMessageText.innerText = (winnerName === myName) ? "Tu as gagné !" : `${winnerName} a gagné !`;
+                    }
                 }
-                // Only show "Rejouer" to the original creator
-                playAgainButton.classList.toggle('hidden', myName !== gameState.players[0]?.name);
+                // Only show "Rejouer" to the original creator (or always in local mode)
+                if (gameMode === 'local') {
+                    playAgainButton.classList.remove('hidden');
+                } else {
+                    playAgainButton.classList.toggle('hidden', myName !== gameState.players[0]?.name);
+                }
             } else {
                 winMessageEl.classList.add('hidden');
                 winMessageEl.classList.remove('flex');
