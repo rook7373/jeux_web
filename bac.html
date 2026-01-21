@@ -8,17 +8,11 @@
     <style> 
         .word-refused { text-decoration: line-through; color: #ef4444 !important; opacity: 0.5; border-color: #fecaca !important; background-color: #fef2f2 !important; } 
         .word-duplicate { color: #f59e0b; border-color: #fde68a !important; background-color: #fffbeb !important; }
-        
-        .cat-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.4rem; 
-        }
+        .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
         @media (min-width: 768px) { .cat-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
-
         input, select { border-radius: 1rem; -webkit-appearance: none; font-size: 16px !important; } 
-        .cat-chip { transition: all 0.2s; border: 1px solid #e2e8f0; text-align: center; padding: 0.6rem 0.2rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; border-radius: 0.75rem; background: white; color: #64748b; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .cat-chip { transition: all 0.2s; border: 1px solid #e2e8f0; text-align: center; padding: 0.6rem 0.2rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; border-radius: 0.75rem; background: white; color: #64748b; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .cat-chip.active { background-color: #eab308; color: white; border-color: #ca8a04; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .animate-pulse-fast { animation: pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
@@ -31,12 +25,10 @@
         <div class="space-y-6">
             <div id="creator-fields" class="space-y-4">
                 <div class="flex justify-between items-center px-1">
-                    <p class="text-[10px] font-black uppercase text-slate-400">Thèmes (80 dispos - 6 par ligne)</p>
+                    <p class="text-[10px] font-black uppercase text-slate-400">Thèmes (80 dispos)</p>
                     <button onclick="pickRandom6()" class="text-[10px] font-black bg-indigo-600 text-white px-4 py-2 rounded-full uppercase shadow-lg active:scale-95 transition">🎲 Aléatoire (6)</button>
                 </div>
-                
                 <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-[400px] overflow-y-auto"></div>
-                
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-slate-50 p-4 rounded-3xl border text-center">
                         <label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Chrono (sec)</label>
@@ -51,7 +43,7 @@
 
             <div class="bg-yellow-50 p-6 rounded-3xl border-2 border-yellow-100">
                 <label class="text-[10px] font-black uppercase text-yellow-600 mb-2 block font-bold">Identité du joueur :</label>
-                <input type="text" id="my-name-in" onkeyup="if(event.key === 'Enter') startAction()" placeholder="Ton nom..." class="w-full bg-white border-2 border-yellow-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
+                <input type="text" id="my-name-in" placeholder="Ton nom..." class="w-full bg-white border-2 border-yellow-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
             </div>
             
             <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
@@ -100,33 +92,19 @@
         let timerInterval = null, lastStatus = 'setup', isInputRendered = false;
         const API = 'api.php';
 
-        const categoriesList = [
-            "Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", 
-            "Film", "Série TV", "Chanson", "Gros mot", "Phrase de beauf", "Lieu coquin", "Dans ma chambre", "Mème", 
-            "Pokémon", "Jeu Vidéo", "Harry Potter", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", 
-            "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", 
-            "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", 
-            "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan",
-            "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "Slogan",
-            "Expression", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation",
-            "Façon de mourir", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal",
-            "Objet rouge", "Chaud", "Froid", "Lourd", "Léger", "Dans une voiture", "Dans une école", "Dans la forêt",
-            "Cadeau pourri", "Excuse d'absence"
-        ];
+        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Gros mot", "Phrase de beauf", "Lieu coquin", "Dans ma chambre", "Mème", "Pokémon", "Jeu Vidéo", "Harry Potter", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "Slogan", "Expression", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Façon de mourir", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal", "Objet rouge", "Chaud", "Froid", "Lourd", "Léger", "Dans une voiture", "Dans une école", "Dans la forêt", "Cadeau pourri", "Excuse d'absence"];
 
         window.onload = async () => {
             renderCatList();
             if (roomId) {
                 document.getElementById('creator-fields').classList.add('hidden');
-                document.getElementById('setup-title').innerText = "Rejoindre";
+                document.getElementById('setup-title').innerText = "Rejoindre la partie";
                 await syncPull();
             }
         };
 
         function renderCatList() {
-            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `
-                <button id="cat-${c}" onclick="toggleCat('${c}')" class="cat-chip font-black uppercase bg-white">${c}</button>
-            `).join('');
+            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `<button id="cat-${c}" onclick="toggleCat('${c}')" class="cat-chip font-black uppercase bg-white">${c}</button>`).join('');
         }
 
         function toggleCat(c) {
@@ -165,22 +143,30 @@
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
             await syncPush();
-            setInterval(syncPull, 2000);
+            setInterval(syncPull, 1500); // On réduit un peu l'intervalle pour plus de réactivité
             refreshUI();
         }
 
         async function syncPush() {
             if(!roomId) return;
             const data = { players, status, currentLetter, usedLetters, selectedCats, refusedWords, maxTime, maxRounds, currentRoundCount, timeLeft };
-            return fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(data) });
+            return fetch(`${API}?action=sync&roomId=${roomId}`, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data) 
+            });
         }
 
         async function syncPull() {
             const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
             const data = await r.json();
             if (data) {
-                // VERROUILLAGE : Si le serveur dit validation, on force l'état local
-                if (data.status === 'validation') status = 'validation';
+                // PRIORITÉ AU STATUS 'VALIDATION'
+                if (data.status === 'validation' && status !== 'validation') {
+                    status = 'validation';
+                } else if (myName !== players[0].name && status !== 'validation') {
+                    status = data.status;
+                }
 
                 data.players.forEach((p, i) => {
                     if (players[i]) {
@@ -189,8 +175,6 @@
                     } else { players[i] = p; }
                 });
 
-                if (myName !== players[0].name && data.status !== 'validation') status = data.status;
-
                 currentLetter = data.currentLetter; 
                 usedLetters = data.usedLetters;
                 selectedCats = data.selectedCats; 
@@ -198,7 +182,8 @@
                 maxTime = data.maxTime; 
                 maxRounds = data.maxRounds; 
                 currentRoundCount = data.currentRoundCount; 
-                timeLeft = data.timeLeft;
+                if (myName !== players[0].name) timeLeft = data.timeLeft;
+                
                 refreshUI();
             }
         }
@@ -211,17 +196,22 @@
             document.getElementById('timer-display').classList.toggle('hidden', maxTime === 0 || status !== 'playing');
             
             if (status !== lastStatus) {
-                if (status === 'playing') renderInputsOnce();
+                if (status === 'playing') { isInputRendered = false; renderInputsOnce(); }
                 if (status === 'validation') renderValidation();
                 if (status === 'setup') isInputRendered = false; 
                 lastStatus = status;
             }
-            if (status === 'validation') renderValidation();
+            
+            if (status === 'validation') {
+                renderValidation();
+                // Désactiver les inputs pour empêcher de tricher
+                selectedCats.forEach(c => { if(document.getElementById(`in-${c}`)) document.getElementById(`in-${c}`).disabled = true; });
+            }
 
             document.getElementById('play-area').classList.toggle('hidden', status !== 'playing');
             document.getElementById('val-area').classList.toggle('hidden', status !== 'validation');
             
-            const isCreator = myName === players[0].name;
+            const isCreator = players[0] && myName === players[0].name;
             document.getElementById('btn-confirm-round').classList.toggle('hidden', !isCreator || status !== 'validation');
             document.getElementById('wait-msg').classList.toggle('hidden', isCreator || status !== 'validation');
             document.getElementById('btn-next').classList.toggle('hidden', (maxRounds > 0 && currentRoundCount >= maxRounds) || status !== 'setup' || !isCreator);
@@ -235,9 +225,9 @@
             div.innerHTML = selectedCats.map(c => `
                 <div>
                     <label class="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">${c}</label>
-                    <input type="text" id="in-${c}" value="" 
+                    <input type="text" id="in-${c}" value="${(players.find(p=>p.name===myName).currentInputs[c] || '')}" 
                         oninput="updateMyWord('${c}',this.value)" 
-                        autocomplete="off" autocorrect="off" spellcheck="false"
+                        autocomplete="off" placeholder="..."
                         class="w-full border-2 border-slate-100 p-5 rounded-2xl outline-none focus:border-yellow-400 font-black text-xl shadow-sm">
                 </div>
             `).join('');
@@ -276,13 +266,13 @@
             if(refusedWords.includes(id)) refusedWords = refusedWords.filter(x=>x!==id); 
             else refusedWords.push(id); 
             renderValidation();
-            await syncPush();    
+            await syncPush();     
         }
 
         async function triggerStop() { 
             status = 'validation'; 
-            await syncPush(); 
             refreshUI();
+            await syncPush(); 
         }
 
         function startLetter() {
@@ -295,15 +285,18 @@
             players.forEach(p=>p.currentInputs={});
             if(maxTime > 0) { timeLeft = maxTime; startTimer(); }
             syncPush();
+            refreshUI();
         }
 
         function startTimer() {
             clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                if (myName === players[0].name && status === 'playing') {
+                const isCreator = players[0] && myName === players[0].name;
+                if (isCreator && status === 'playing') {
                     timeLeft--;
                     if (timeLeft <= 0) { timeLeft = 0; status = 'validation'; }
                     syncPush();
+                    refreshUI();
                 }
             }, 1000);
         }
@@ -324,12 +317,6 @@
         }
 
         async function confirmRound() {
-            const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
-            const data = await r.json();
-            if (data) {
-                refusedWords = data.refusedWords || [];
-                data.players.forEach((p, i) => { if (players[i] && p.name !== myName) players[i].currentInputs = p.currentInputs; });
-            }
             players.forEach((p, pi) => {
                 let mancheTotal = 0;
                 selectedCats.forEach(cat => {
@@ -344,16 +331,13 @@
             });
             status = 'setup'; currentLetter = ''; 
             await syncPush(); 
+            refreshUI();
         }
 
         function copyRoomLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
+        
         async function saveAndExit() {
-            const h = await (await fetch('api.php?action=stats')).json();
-            let res = { game: "Petit Bac", results: players.map(p => ({name:p.name, score: p.rounds.reduce((a,b)=>a+b,0)})) };
-            res.winner = [...res.results].sort((a,b)=>b.score-a.score)[0].name;
-            res.date = new Date().toLocaleDateString();
-            h.push(res);
-            await fetch('api.php?action=stats', {method:'POST', body: JSON.stringify(h)});
+            if(!confirm("Voulez-vous vraiment quitter et enregistrer les scores ?")) return;
             location.href='index.html';
         }
     </script>
