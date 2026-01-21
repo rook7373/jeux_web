@@ -148,6 +148,10 @@
 
         window.onload = async () => {
             if (roomId) {
+                // Si on a un room ID, c'est du remote, on cache les choix
+                gameMode = 'remote';
+                document.getElementById('mode-selector').classList.add('hidden');
+                document.getElementById('local-options').classList.add('hidden');
                 document.getElementById('main-btn').innerText = "Rejoindre la partie";
                 await syncPull(true); // Initial pull to see if room exists
             }
@@ -532,14 +536,20 @@
             // --- Render player info ---
             const opponent = gameState.players.find(p => p.name !== myName);
             const playerLabel = gameMode === 'local' && localOpponent === 'player' ? '' : '(Toi)';
+            
+            let player1Name = gameState.players[0]?.name || '?';
+            let player1Color = gameState.players[0]?.color || 'red';
+            let player2Name = gameState.players[1]?.name || '...';
+            let player2Color = gameState.players[1]?.color || 'yellow';
+            
             playersDisplayEl.innerHTML = `
-                <div class="flex items-center gap-2 p-2 rounded-lg ${myColor === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
-                    <div class="w-6 h-6 rounded-full" style="background-color: ${myColor};"></div>
-                    <span class="font-bold text-sm uppercase">${myName} ${playerLabel}</span>
+                <div class="flex items-center gap-2 p-2 rounded-lg ${player1Color === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
+                    <div class="w-6 h-6 rounded-full" style="background-color: ${player1Color};"></div>
+                    <span class="font-bold text-sm uppercase">${player1Name} ${player1Name === myName && gameMode === 'remote' ? '(Toi)' : ''}</span>
                 </div>
-                <div class="flex items-center gap-2 p-2 rounded-lg ${opponent && opponent.color === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
-                    <div class="w-6 h-6 rounded-full" style="background-color: ${opponent?.color};"></div>
-                    <span class="font-bold text-sm uppercase">${opponent?.name || '...'}</span>
+                <div class="flex items-center gap-2 p-2 rounded-lg ${player2Color === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
+                    <div class="w-6 h-6 rounded-full" style="background-color: ${player2Color};"></div>
+                    <span class="font-bold text-sm uppercase">${player2Name} ${player2Name === myName && gameMode === 'remote' ? '(Toi)' : ''}</span>
                 </div>`;
             
             if (gameState.players.length < 2) {
