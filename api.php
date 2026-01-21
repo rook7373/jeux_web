@@ -10,10 +10,18 @@ $roomId = $_GET['roomId'] ?? '';
 if ($action === 'sync' && $roomId) {
     $file = "rooms/room_$roomId.json";
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        file_put_contents($file, file_get_contents('php://input'));
-        echo json_encode(["status" => "saved"]);
+        $data = file_get_contents('php://input');
+        file_put_contents($file, $data);
+        // Immédiatement relire pour vérifier
+        $saved = file_get_contents($file);
+        echo json_encode(["status" => "saved", "size" => strlen($saved)]);
     } else {
-        echo file_exists($file) ? file_get_contents($file) : json_encode(null);
+        if (file_exists($file)) {
+            $content = file_get_contents($file);
+            echo $content;
+        } else {
+            echo json_encode(null);
+        }
     }
     exit;
 }

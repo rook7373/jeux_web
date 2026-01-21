@@ -265,7 +265,7 @@
 
                     await syncPush();
                     // Récupérer les données sauvegardées
-                    await new Promise(resolve => setTimeout(resolve, 500)); // Attendre un peu
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1s
                     await syncPull();
                     
                     syncInterval = setInterval(syncPull, 2000);
