@@ -162,7 +162,6 @@
                 document.getElementById('mode-selector').classList.add('hidden');
                 document.getElementById('local-options').classList.add('hidden');
                 document.getElementById('main-btn').innerText = "Rejoindre la partie";
-                await syncPull(true); // Initial pull to see if room exists
             }
         };
 
@@ -244,14 +243,18 @@
                     render();
                 } else {
                     // JOIN an existing room
-                    await syncPull(true);
-                    if (gameState.players.length === 1 && gameState.players[0].name !== myName) {
+                    await syncPull();
+                    if (gameState.players && gameState.players.length === 1 && gameState.players[0].name !== myName) {
                         myColor = 'yellow';
                         gameState.players.push({ name: myName, color: 'yellow' });
                     } else {
-                        const existingPlayer = gameState.players.find(p => p.name === myName);
-                        if (!existingPlayer) return alert("La partie est pleine ou une erreur est survenue.");
-                        myColor = existingPlayer.color;
+                        const existingPlayer = gameState.players && gameState.players.find(p => p.name === myName);
+                        if (!existingPlayer) {
+                            // Premier joueur à rejoindre - on reçoit les données du créateur
+                            myColor = gameState.players ? 'yellow' : 'red';
+                        } else {
+                            myColor = existingPlayer.color;
+                        }
                     }
                     
                     setupDiv.classList.add('hidden');
@@ -296,37 +299,24 @@
             }
         }
 
-        async function syncPull(isInitial = false) {
+        async function syncPull() {
             if (!roomId) return;
             try {
                 const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
                 const data = await r.json();
-                console.log('syncPull:', roomId, 'got data:', data, 'isInitial:', isInitial);
+                console.log('syncPull:', roomId, 'got data:', data);
                 
-                if (data && JSON.stringify(data) !== JSON.stringify(gameState)) {
-                    console.log('State updated from server');
+                if (data) {
+                    // On a des données du serveur, on les fusionne
                     gameState = data;
-                    // Mettre à jour myColor si nécessaire
                     const me = gameState.players.find(p => p.name === myName);
                     if (me) myColor = me.color;
-                    
-                    if (!isInitial) render();
-                } else if (!data && isInitial) {
-                    // Room doesn't exist yet on server, but that's OK if we have a roomId
-                    // The room was just created locally, server will get it on next push
-                    if (roomId) {
-                        console.log('Room not on server yet (normal when joining early)');
-                        // Don't reset roomId! Keep waiting for the creator to sync their data
-                    } else {
-                        console.log('No room and no roomId - error');
-                        window.history.pushState({}, '', window.location.pathname);
-                        document.getElementById('main-btn').innerText = "Démarrer";
-                    }
-                } else if (data) {
-                    console.log('State unchanged from server');
+                    render();
+                } else {
+                    console.log('No data from server yet, waiting...');
                 }
             } catch (e) {
-                console.error("Sync error:", e);
+                console.error("Sync pull error:", e);
             }
         }
 
