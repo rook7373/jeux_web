@@ -224,6 +224,14 @@
                     myColor = 'red';
                     gameState = getInitialGameState(myName);
                     joinInfo.classList.remove('hidden');
+                    
+                    setupDiv.classList.add('hidden');
+                    gameDiv.classList.remove('hidden');
+                    copyLinkBtn.classList.remove('hidden');
+                    
+                    await syncPush();
+                    syncInterval = setInterval(syncPull, 2000);
+                    render();
                 } else {
                     // JOIN an existing room
                     await syncPull(true);
@@ -235,15 +243,15 @@
                         if (!existingPlayer) return alert("La partie est pleine ou une erreur est survenue.");
                         myColor = existingPlayer.color;
                     }
-                }
-                
-                setupDiv.classList.add('hidden');
-                gameDiv.classList.remove('hidden');
-                copyLinkBtn.classList.remove('hidden');
+                    
+                    setupDiv.classList.add('hidden');
+                    gameDiv.classList.remove('hidden');
+                    copyLinkBtn.classList.remove('hidden');
 
-                await syncPush();
-                syncInterval = setInterval(syncPull, 2000);
-                render();
+                    await syncPush();
+                    syncInterval = setInterval(syncPull, 2000);
+                    render();
+                }
             }
         }
 
