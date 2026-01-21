@@ -55,10 +55,10 @@
             <div id="mode-selector" class="space-y-4 mb-6">
                 <p class="text-center text-sm font-bold text-slate-600">Choisir un mode :</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="local-mode-btn" onclick="selectMode('local')" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
+                    <button id="local-mode-btn" onclick="selectGameMode('local')" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
                         Local
                     </button>
-                    <button id="remote-mode-btn" onclick="selectMode('remote')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
+                    <button id="remote-mode-btn" onclick="selectGameMode('remote')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
                         En ligne
                     </button>
                 </div>
@@ -67,14 +67,27 @@
             <div class="space-y-6">
                 <div class="bg-sky-50 p-6 rounded-3xl border-2 border-sky-100">
                     <label class="text-[10px] font-black uppercase text-sky-600 mb-2 block font-bold">Ton nom :</label>
-                    <input type="text" id="my-name-in" onkeyup="if(event.key === 'Enter') startAction()" placeholder="Entre ton nom..." class="w-full bg-white border-2 border-sky-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
+                    <input type="text" id="my-name-in" onkeyup="if(event.key === 'Enter') focusNextInput()" placeholder="Entre ton nom..." class="w-full bg-white border-2 border-sky-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
+                </div>
+
+                <div id="local-options" class="hidden space-y-4">
+                    <p class="text-center text-sm font-bold text-slate-600">Contre qui jouer ?</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="vs-ai-btn" onclick="selectLocalOpponent('ai')" class="bg-green-500 hover:bg-green-600 text-white py-3 rounded-2xl font-black uppercase text-xs transition">
+                            vs IA
+                        </button>
+                        <button id="vs-player-btn" onclick="selectLocalOpponent('player')" class="bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-2xl font-black uppercase text-xs transition">
+                            vs Joueur
+                        </button>
+                    </div>
+
+                    <div id="second-player-input" class="hidden bg-sky-50 p-6 rounded-3xl border-2 border-sky-100">
+                        <label class="text-[10px] font-black uppercase text-sky-600 mb-2 block font-bold">Nom du 2ème joueur :</label>
+                        <input type="text" id="player2-name-in" onkeyup="if(event.key === 'Enter') startAction()" placeholder="Entre le nom..." class="w-full bg-white border-2 border-sky-200 p-4 rounded-2xl outline-none font-black text-xl shadow-sm">
+                    </div>
                 </div>
                 
                 <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
-            </div>
-
-            <div id="local-ai-info" class="hidden mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                <p class="text-center text-xs font-bold text-blue-600">Vous jouerez contre l'IA</p>
             </div>
         </div>
          <p id="join-info" class="text-center mt-4 text-slate-400 font-bold hidden">En attente d'un 2ème joueur... Partage le lien !</p>
@@ -140,23 +153,51 @@
             }
         };
 
-        function selectMode(mode) {
+        function selectGameMode(mode) {
             gameMode = mode;
             document.getElementById('local-mode-btn').classList.toggle('bg-blue-700', mode === 'local');
             document.getElementById('remote-mode-btn').classList.toggle('bg-purple-700', mode === 'remote');
-            document.getElementById('local-ai-info').classList.toggle('hidden', mode !== 'local');
+            document.getElementById('local-options').classList.toggle('hidden', mode !== 'local');
+        }
+
+        function selectLocalOpponent(opponent) {
+            localOpponent = opponent;
+            document.getElementById('vs-ai-btn').classList.toggle('bg-green-700', opponent === 'ai');
+            document.getElementById('vs-player-btn').classList.toggle('bg-orange-700', opponent === 'player');
+            document.getElementById('second-player-input').classList.toggle('hidden', opponent !== 'player');
+        }
+
+        function focusNextInput() {
+            if (gameMode === 'local' && localOpponent === 'player') {
+                document.getElementById('player2-name-in').focus();
+            } else if (event.key === 'Enter') {
+                startAction();
+            }
         }
 
         async function startAction() {
-            const name = myNameIn.value.trim();
+            const name = document.getElementById('my-name-in').value.trim();
             if (!name) return alert("Indique ton nom !");
             myName = name;
 
             if (gameMode === 'local') {
-                // MODE LOCAL: Jouer contre l'IA
-                myColor = 'red';
-                gameState = getInitialGameState(myName);
-                gameState.players.push({ name: 'IA', color: 'yellow' });
+                if (!localOpponent) return alert("Choisis contre qui jouer !");
+                
+                if (localOpponent === 'ai') {
+                    // MODE LOCAL vs IA
+                    myColor = 'red';
+                    gameState = getInitialGameState(myName);
+                    gameState.players.push({ name: 'IA', color: 'yellow' });
+                } else {
+                    // MODE LOCAL vs JOUEUR
+                    const player2Name = document.getElementById('player2-name-in').value.trim();
+                    if (!player2Name) return alert("Indique le nom du 2ème joueur !");
+                    
+                    myColor = 'red';
+                    gameState = getInitialGameState(myName);
+                    gameState.players.push({ name: player2Name, color: 'yellow' });
+                }
+                
                 setupDiv.classList.add('hidden');
                 gameDiv.classList.remove('hidden');
                 copyLinkBtn.classList.add('hidden');
@@ -241,10 +282,19 @@
         function handleColumnClick(col) {
             if (gameState.gameOver) return;
             
-            // En mode local, vérifier que c'est le tour du joueur (pas l'IA)
-            // En mode remote, vérifier que c'est le tour du joueur
-            if (gameState.currentPlayer !== myColor) {
-                if (gameMode === 'remote' || gameState.players.length < 2) return;
+            // En mode local vs joueur : laisser jouer qui peut jouer
+            // En mode local vs IA : vérifier que c'est le tour du joueur (pas l'IA)
+            // En mode remote : vérifier que c'est le tour du joueur
+            
+            if (gameMode === 'local' && localOpponent === 'ai') {
+                // Vs IA : seulement le joueur humain peut jouer
+                if (gameState.currentPlayer !== myColor) return;
+            } else if (gameMode === 'local' && localOpponent === 'player') {
+                // Vs joueur : les deux peuvent jouer sur cet apareil
+                // Pas de vérification ici
+            } else {
+                // Mode remote
+                if (gameState.currentPlayer !== myColor || gameState.players.length < 2) return;
             }
 
             for (let row = ROWS - 1; row >= 0; row--) {
@@ -260,8 +310,8 @@
                     } else {
                         gameState.currentPlayer = gameState.currentPlayer === 'red' ? 'yellow' : 'red';
                         
-                        // En mode local, faire jouer l'IA
-                        if (gameMode === 'local' && gameState.currentPlayer === 'yellow' && !gameState.gameOver) {
+                        // En mode local vs IA, faire jouer l'IA
+                        if (gameMode === 'local' && localOpponent === 'ai' && gameState.currentPlayer === 'yellow' && !gameState.gameOver) {
                             setTimeout(() => aiPlay(), 500);
                         }
                     }
@@ -366,8 +416,17 @@
         function resetGame() {
             if (gameMode === 'local') {
                 // En mode local, le joueur peut toujours rejouer
-                gameState = getInitialGameState(myName);
-                gameState.players.push({ name: 'IA', color: 'yellow' });
+                const player1Name = gameState.players[0].name;
+                const player2Name = gameState.players[1].name;
+                
+                gameState = getInitialGameState(player1Name);
+                gameState.players.push({ name: player2Name, color: 'yellow' });
+                
+                // Swap colors for fair play
+                const temp = gameState.players[0].color;
+                gameState.players[0].color = gameState.players[1].color;
+                gameState.players[1].color = temp;
+                
                 render();
             } else {
                 // En mode remote, seulement le créateur peut reset
@@ -424,10 +483,11 @@
 
             // --- Render player info ---
             const opponent = gameState.players.find(p => p.name !== myName);
+            const playerLabel = gameMode === 'local' && localOpponent === 'player' ? '' : '(Toi)';
             playersDisplayEl.innerHTML = `
                 <div class="flex items-center gap-2 p-2 rounded-lg ${myColor === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
                     <div class="w-6 h-6 rounded-full" style="background-color: ${myColor};"></div>
-                    <span class="font-bold text-sm uppercase">${myName} (Toi)</span>
+                    <span class="font-bold text-sm uppercase">${myName} ${playerLabel}</span>
                 </div>
                 <div class="flex items-center gap-2 p-2 rounded-lg ${opponent && opponent.color === gameState.currentPlayer ? 'bg-yellow-200' : ''}">
                     <div class="w-6 h-6 rounded-full" style="background-color: ${opponent?.color};"></div>
@@ -439,8 +499,10 @@
                  playerTurnEl.style.color = '#64748b';
             } else {
                  const currentPlayerName = gameState.players.find(p => p.color === gameState.currentPlayer)?.name;
-                 if (gameMode === 'local') {
+                 if (gameMode === 'local' && localOpponent === 'ai') {
                      playerTurnEl.textContent = (gameState.currentPlayer === myColor) ? "C'est ton tour !" : `Tour de ${currentPlayerName}`;
+                 } else if (gameMode === 'local' && localOpponent === 'player') {
+                     playerTurnEl.textContent = `C'est à ${currentPlayerName} de jouer`;
                  } else {
                      playerTurnEl.textContent = (currentPlayerName === myName) ? "C'est ton tour !" : `Tour de ${currentPlayerName}`;
                  }
@@ -455,8 +517,10 @@
                     winMessageText.innerText = "Match Nul!";
                 } else {
                     const winnerName = gameState.players.find(p => p.color === gameState.winner)?.name;
-                    if (gameMode === 'local') {
+                    if (gameMode === 'local' && localOpponent === 'ai') {
                         winMessageText.innerText = (gameState.winner === myColor) ? "Tu as gagné !" : `${winnerName} a gagné !`;
+                    } else if (gameMode === 'local' && localOpponent === 'player') {
+                        winMessageText.innerText = `${winnerName} a gagné !`;
                     } else {
                         winMessageText.innerText = (winnerName === myName) ? "Tu as gagné !" : `${winnerName} a gagné !`;
                     }
