@@ -58,7 +58,7 @@
                     <button id="local-mode-btn" onclick="selectGameMode('local')" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
                         Local
                     </button>
-                    <button id="remote-mode-btn" onclick="selectGameMode('remote')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition">
+                    <button id="remote-mode-btn" onclick="selectGameMode('remote')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-2xl font-black uppercase text-sm transition opacity-60">
                         En ligne
                     </button>
                 </div>
@@ -155,9 +155,18 @@
 
         function selectGameMode(mode) {
             gameMode = mode;
-            document.getElementById('local-mode-btn').classList.toggle('bg-blue-700', mode === 'local');
-            document.getElementById('remote-mode-btn').classList.toggle('bg-purple-700', mode === 'remote');
-            document.getElementById('local-options').classList.toggle('hidden', mode !== 'local');
+            const localBtn = document.getElementById('local-mode-btn');
+            const remoteBtn = document.getElementById('remote-mode-btn');
+            
+            if (mode === 'local') {
+                localBtn.classList.remove('opacity-60');
+                remoteBtn.classList.add('opacity-60');
+                document.getElementById('local-options').classList.remove('hidden');
+            } else {
+                remoteBtn.classList.remove('opacity-60');
+                localBtn.classList.add('opacity-60');
+                document.getElementById('local-options').classList.add('hidden');
+            }
         }
 
         function selectLocalOpponent(opponent) {
