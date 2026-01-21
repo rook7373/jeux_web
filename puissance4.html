@@ -247,12 +247,14 @@
                     if (gameState.players && gameState.players.length === 1 && gameState.players[0].name !== myName) {
                         myColor = 'yellow';
                         gameState.players.push({ name: myName, color: 'yellow' });
+                    } else if (!gameState.players || gameState.players.length === 0) {
+                        // Room n'existe pas encore, on crée avec nous en jaune
+                        myColor = 'yellow';
+                        gameState = getInitialGameState('?');
+                        gameState.players = [{ name: '?', color: 'red' }, { name: myName, color: 'yellow' }];
                     } else {
                         const existingPlayer = gameState.players && gameState.players.find(p => p.name === myName);
-                        if (!existingPlayer) {
-                            // Premier joueur à rejoindre - on reçoit les données du créateur
-                            myColor = gameState.players ? 'yellow' : 'red';
-                        } else {
+                        if (existingPlayer) {
                             myColor = existingPlayer.color;
                         }
                     }
@@ -262,6 +264,10 @@
                     copyLinkBtn.classList.remove('hidden');
 
                     await syncPush();
+                    // Récupérer les données sauvegardées
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Attendre un peu
+                    await syncPull();
+                    
                     syncInterval = setInterval(syncPull, 2000);
                     render();
                 }
