@@ -13,7 +13,6 @@
         @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
         .cat-chip { transition: all 0.2s; border: 1px solid #e2e8f0; text-align: center; padding: 0.6rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; border-radius: 0.75rem; background: white; cursor: pointer; }
         .cat-chip.active { background-color: #eab308; color: white; border-color: #ca8a04; }
-        input { border-radius: 1rem !important; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900">
@@ -48,14 +47,13 @@
 
         <div id="play-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-xl mb-6 border-4 border-yellow-400">
             <div id="bac-inputs" class="space-y-4"></div>
-            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-2xl shadow-lg active:scale-95 transition">STOP !</button>
+            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-2xl shadow-lg">STOP !</button>
         </div>
 
-        <div id="val-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-green-500 mb-6 text-center">
-            <h3 class="font-black text-green-700 mb-6 uppercase italic">Correction en cours...</h3>
-            <div id="val-list" class="space-y-6 text-left"></div>
+        <div id="val-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-green-500 mb-6">
+            <h3 class="text-center font-black text-green-700 mb-6 uppercase">Validation</h3>
+            <div id="val-list" class="space-y-6"></div>
             <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-8 bg-black text-white py-5 rounded-2xl font-black uppercase">Valider la manche</button>
-            <p id="wait-msg" class="hidden mt-4 text-slate-400 font-bold italic animate-pulse">En attente du chef de partie...</p>
         </div>
 
         <div class="bg-white rounded-[2.5rem] shadow-xl overflow-hidden border">
@@ -77,13 +75,30 @@
 
         const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Jeu Vidéo", "Pokémon", "Sport", "Plat cuisiné"];
 
+        window.onload = async () => {
+            renderCatList();
+            if (roomId) {
+                // Si c'est le joueur 2, on cache la config car le maître a déjà choisi
+                document.getElementById('creator-fields').classList.add('hidden');
+                // On récupère les thèmes du maître tout de suite
+                await syncPull();
+            }
+        };
+
         function renderCatList() {
             document.getElementById('cat-list').innerHTML = categoriesList.map(c => `<div id="cat-${c}" onclick="toggleCat('${c}')" class="cat-chip">${c}</div>`).join('');
         }
+
         function toggleCat(c) {
             if(selectedCats.includes(c)) selectedCats = selectedCats.filter(x=>x!==c);
             else selectedCats.push(c);
-            document.querySelectorAll('.cat-chip').forEach(el => el.classList.toggle('active', selectedCats.includes(el.innerText)));
+            updateCatUI();
+        }
+
+        function updateCatUI() {
+            document.querySelectorAll('.cat-chip').forEach(el => {
+                el.classList.toggle('active', selectedCats.includes(el.innerText));
+            });
         }
 
         async function startAction() {
@@ -106,7 +121,7 @@
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
             await syncPush();
-            setInterval(syncPull, 1000); // Sync toutes les secondes
+            setInterval(syncPull, 1000); 
             refreshUI();
         }
 
@@ -122,15 +137,11 @@
             const data = await r.json();
             if (!data) return;
 
-            // REGLE D'OR : Si le serveur est en 'validation', personne ne peut revenir en 'playing'
-            if (data.status === 'validation') {
-                status = 'validation';
-                clearInterval(timerInterval);
-            } else if (players[0] && myName !== players[0].name) {
-                status = data.status;
-            }
+            // Bloquer le statut si quelqu'un a fait STOP
+            if (data.status === 'validation') status = 'validation';
+            else if (players[0] && myName !== players[0].name) status = data.status;
 
-            // Mise à jour des joueurs (sans écraser mes propres inputs)
+            // Mise à jour des joueurs sans écraser mes propres entrées
             data.players.forEach(pSrv => {
                 let pLoc = players.find(pl => pl.name === pSrv.name);
                 if (pLoc) {
@@ -139,9 +150,10 @@
                 } else { players.push(pSrv); }
             });
 
+            // Mise à jour des réglages pour le Joueur 2
             currentLetter = data.currentLetter;
             selectedCats = data.selectedCats;
-            refusedWords = data.refusedWords || [];
+            usedLetters = data.usedLetters || [];
             maxTime = data.maxTime;
             maxRounds = data.maxRounds;
             currentRoundCount = data.currentRoundCount;
@@ -155,7 +167,7 @@
             document.getElementById('cur-letter').innerText = currentLetter || '?';
             document.getElementById('round-indicator').innerText = `${currentRoundCount}/${maxRounds}`;
             document.getElementById('timer-display').innerText = timeLeft + "s";
-            document.getElementById('timer-display').classList.toggle('hidden', status !== 'playing' || maxTime <= 0);
+            document.getElementById('timer-display').classList.toggle('hidden', status !== 'playing');
             
             document.getElementById('play-area').classList.toggle('hidden', status !== 'playing');
             document.getElementById('val-area').classList.toggle('hidden', status !== 'validation');
@@ -164,7 +176,6 @@
             if (status === 'validation') renderValidation();
 
             document.getElementById('btn-confirm-round').classList.toggle('hidden', !isCreator || status !== 'validation');
-            document.getElementById('wait-msg').classList.toggle('hidden', isCreator || status !== 'validation');
             document.getElementById('btn-next').classList.toggle('hidden', !isCreator || status !== 'setup' || (maxRounds > 0 && currentRoundCount >= maxRounds));
             
             renderTable();
@@ -175,8 +186,8 @@
             const div = document.getElementById('bac-inputs');
             div.innerHTML = selectedCats.map(c => `
                 <div>
-                    <label class="text-[10px] font-black uppercase text-slate-400 ml-1">${c}</label>
-                    <input type="text" id="in-${c}" oninput="updateWord('${c}', this.value)" autocomplete="off" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none">
+                    <label class="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">${c}</label>
+                    <input type="text" oninput="updateWord('${c}', this.value)" autocomplete="off" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none">
                 </div>
             `).join('');
             isInputRendered = true;
@@ -192,20 +203,16 @@
             const list = document.getElementById('val-list');
             let h = "";
             selectedCats.forEach(cat => {
-                h += `<div class="bg-slate-50 p-4 rounded-2xl border"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">${cat}</p><div class="space-y-2">`;
+                h += `<div class="bg-slate-50 p-4 rounded-2xl border"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">${cat}</p>`;
                 players.forEach((p, pi) => {
                     const id = `${pi}-${cat}`;
                     const word = (p.currentInputs[cat] || '').trim();
                     const isRefused = refusedWords.includes(id);
-                    const isDup = word && players.some((o, oi) => oi !== pi && (o.currentInputs[cat] || '').trim().toLowerCase() === word.toLowerCase());
-                    let pts = isRefused ? 0 : (isDup ? 5 : 10); if(!word) pts = 0;
-                    
-                    h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-3 rounded-xl border-2 transition ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : 'bg-white border-white')}">
+                    h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between p-3 mb-2 rounded-xl border ${isRefused ? 'word-refused' : 'bg-white'}">
                         <span class="font-bold">${p.name}: ${word || '-'}</span>
-                        <span class="text-xs font-black">${pts} pts</span>
                     </button>`;
                 });
-                h += `</div></div>`;
+                h += `</div>`;
             });
             list.innerHTML = h;
         }
@@ -220,18 +227,26 @@
         async function triggerStop() {
             status = 'validation';
             clearInterval(timerInterval);
-            await syncPush(); // Envoi immédiat du STOP au serveur
+            await syncPush(); 
             refreshUI();
         }
 
         function startLetter() {
             const alpha = "ABCDEFGHIJKLMNOPRSTUV";
-            currentLetter = alpha[Math.floor(Math.random()*alpha.length)];
+            // Filtrer l'alphabet pour enlever les lettres déjà utilisées
+            const available = alpha.split('').filter(l => !usedLetters.includes(l));
+            
+            if (available.length === 0) return alert("Plus de lettres disponibles !");
+
+            currentLetter = available[Math.floor(Math.random() * available.length)];
+            usedLetters.push(currentLetter);
+            
             status = 'playing';
             currentRoundCount++;
             refusedWords = [];
             players.forEach(p => p.currentInputs = {});
             isInputRendered = false;
+            
             if (maxTime > 0) { timeLeft = maxTime; startTimer(); }
             syncPush();
             refreshUI();
@@ -240,7 +255,6 @@
         function startTimer() {
             clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                // Seul le créateur gère le temps, mais s'il voit que le serveur est passé en validation, il s'arrête
                 if (status === 'playing' && players[0] && players[0].name === myName) {
                     timeLeft--;
                     if (timeLeft <= 0) { timeLeft = 0; status = 'validation'; }
@@ -254,11 +268,9 @@
             document.getElementById('t-head').innerHTML = h;
             let b = ""; const rCount = players[0]?.rounds.length || 0;
             for(let r=0; r<rCount; r++) {
-                b += `<tr class="border-t"><td class="p-3 text-slate-300 font-bold italic">M${r+1}</td>${players.map(p => `<td class="p-3 border-l font-black text-slate-600">${p.rounds[r] || 0}</td>`).join('')}</tr>`;
+                b += `<tr class="border-t"><td class="p-3 text-slate-300 font-bold italic">M${r+1}</td>${players.map(p => `<td class="p-3 border-l font-black">${p.rounds[r] || 0}</td>`).join('')}</tr>`;
             }
             document.getElementById('t-body').innerHTML = b;
-            let f = `<tr class="bg-slate-900 text-white"><td class="p-4 font-black">TOTAL</td>${players.map(p => `<td class="p-4 border-l font-black text-yellow-500 text-xl">${p.rounds.reduce((a,b)=>a+b,0)}</td>`).join('')}</tr>`;
-            document.getElementById('t-foot').innerHTML = f;
         }
 
         async function confirmRound() {
@@ -279,7 +291,6 @@
         }
 
         function copyRoomLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
-        window.onload = renderCatList;
     </script>
 </body>
 </html>
