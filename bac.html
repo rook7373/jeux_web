@@ -6,63 +6,78 @@
     <title>Petit Bac LIVE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style> 
+        /* Styles pour la validation */
         .word-refused { text-decoration: line-through; color: #ef4444 !important; opacity: 0.5; border-color: #fecaca !important; background-color: #fef2f2 !important; } 
-        .word-duplicate { color: #f59e0b; border-color: #fde68a !important; background-color: #fffbeb !important; }
+        .word-duplicate { color: #d97706 !important; border-color: #fcd34d !important; background-color: #fffbeb !important; }
+        
         .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
         @media (min-width: 768px) { .cat-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
+        
         .cat-chip { transition: all 0.2s; border: 1px solid #e2e8f0; text-align: center; padding: 0.6rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; border-radius: 0.75rem; background: white; cursor: pointer; }
         .cat-chip.active { background-color: #eab308; color: white; border-color: #ca8a04; }
+        input { border-radius: 1rem !important; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900">
 
-    <div id="setup" class="max-w-2xl mx-auto mt-10 bg-white p-8 rounded-[2.5rem] shadow-2xl">
-        <h2 class="text-3xl font-black mb-6 text-yellow-500 uppercase text-center italic">Petit Bac <span class="text-slate-200">Live</span></h2>
+    <div id="setup" class="max-w-2xl mx-auto mt-10 bg-white p-8 rounded-[2.5rem] shadow-2xl border-4 border-white">
+        <h2 class="text-3xl font-black mb-6 text-yellow-500 uppercase text-center italic tracking-tighter">Petit Bac <span class="text-slate-200">Live</span></h2>
         
         <div id="creator-fields" class="space-y-4 mb-6">
+            <p class="text-[10px] font-black uppercase text-slate-400 ml-1">Configuration de la partie</p>
             <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-48 overflow-y-auto"></div>
             <div class="grid grid-cols-2 gap-4">
-                <input type="number" id="max-time-in" value="120" placeholder="Temps (s)" class="p-3 border rounded-xl text-center font-bold">
-                <input type="number" id="max-rounds-in" value="5" placeholder="Manches" class="p-3 border rounded-xl text-center font-bold">
+                <div class="bg-slate-50 p-3 rounded-2xl border">
+                    <label class="text-[10px] font-black uppercase text-slate-400 block text-center mb-1">Chrono (s)</label>
+                    <input type="number" id="max-time-in" value="120" class="w-full bg-transparent text-center font-black text-xl outline-none">
+                </div>
+                <div class="bg-slate-50 p-3 rounded-2xl border">
+                    <label class="text-[10px] font-black uppercase text-slate-400 block text-center mb-1">Manches</label>
+                    <input type="number" id="max-rounds-in" value="5" class="w-full bg-transparent text-center font-black text-xl outline-none">
+                </div>
             </div>
         </div>
 
         <div class="bg-yellow-50 p-6 rounded-3xl border-2 border-yellow-100 mb-6">
-            <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full p-4 rounded-2xl border-2 border-yellow-200 outline-none font-black text-xl text-center">
+            <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full p-4 rounded-2xl border-2 border-yellow-200 outline-none font-black text-xl text-center shadow-sm">
         </div>
         
-        <button onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl">Jouer</button>
+        <button onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Rejoindre / Créer</button>
     </div>
 
     <div id="game" class="hidden max-w-5xl mx-auto">
         <div class="bg-white p-4 rounded-3xl shadow-lg mb-4 flex justify-between items-center border-t-8 border-yellow-500">
             <div class="flex items-center gap-4">
-                <div id="round-indicator" class="font-black text-slate-400">0/0</div>
-                <div id="cur-letter" class="bg-yellow-500 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl">?</div>
+                <div id="round-indicator" class="font-black text-slate-400 text-xs uppercase tracking-widest">0/0</div>
+                <div id="cur-letter" class="bg-yellow-500 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl shadow-md">?</div>
                 <div id="timer-display" class="font-mono font-black text-red-500 text-2xl hidden">0s</div>
             </div>
-            <button onclick="copyRoomLink()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black border border-indigo-100">COPIER LE LIEN</button>
+            <div class="flex gap-2">
+                <button onclick="copyRoomLink()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black border border-indigo-100 uppercase">Lien</button>
+                <button onclick="location.href='index.html'" class="bg-slate-100 text-slate-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase">Quitter</button>
+            </div>
         </div>
 
         <div id="play-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-xl mb-6 border-4 border-yellow-400">
             <div id="bac-inputs" class="space-y-4"></div>
-            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-2xl shadow-lg">STOP !</button>
+            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-2xl shadow-lg active:scale-95 transition">STOP !</button>
         </div>
 
-        <div id="val-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-green-500 mb-6">
-            <h3 class="text-center font-black text-green-700 mb-6 uppercase">Validation</h3>
-            <div id="val-list" class="space-y-6"></div>
-            <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-8 bg-black text-white py-5 rounded-2xl font-black uppercase">Valider la manche</button>
+        <div id="val-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-green-500 mb-6 text-center">
+            <h3 class="font-black text-green-700 mb-6 uppercase italic tracking-widest">Correction collective</h3>
+            <div id="val-list" class="space-y-6 text-left"></div>
+            <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-8 bg-black text-white py-5 rounded-2xl font-black uppercase shadow-xl">Valider les scores</button>
+            <p id="wait-msg" class="hidden mt-4 text-slate-400 font-bold italic animate-pulse uppercase text-xs">Le maître valide les points...</p>
         </div>
 
         <div class="bg-white rounded-[2.5rem] shadow-xl overflow-hidden border">
-            <table class="w-full">
+            <table class="w-full border-collapse">
                 <thead id="t-head" class="bg-slate-50 text-[10px] uppercase text-slate-400"></thead>
-                <tbody id="t-body" class="text-center font-black"></tbody>
+                <tbody id="t-body" class="text-center font-black text-lg"></tbody>
                 <tfoot id="t-foot" class="bg-slate-900 text-white"></tfoot>
             </table>
-            <button id="btn-next" onclick="startLetter()" class="hidden w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest">Nouvelle Lettre</button>
+            <button id="btn-next" onclick="startLetter()" class="hidden w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest shadow-inner">Manche Suivante</button>
         </div>
     </div>
 
@@ -73,14 +88,12 @@
         let timerInterval = null, isInputRendered = false;
         const API = 'api.php';
 
-        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Jeu Vidéo", "Pokémon", "Sport", "Plat cuisiné"];
+        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Jeu Vidéo", "Pokémon", "Sport", "Plat cuisiné", "Gros mot", "Lieu coquin", "Marque de voiture"];
 
         window.onload = async () => {
             renderCatList();
             if (roomId) {
-                // Si c'est le joueur 2, on cache la config car le maître a déjà choisi
                 document.getElementById('creator-fields').classList.add('hidden');
-                // On récupère les thèmes du maître tout de suite
                 await syncPull();
             }
         };
@@ -96,17 +109,15 @@
         }
 
         function updateCatUI() {
-            document.querySelectorAll('.cat-chip').forEach(el => {
-                el.classList.toggle('active', selectedCats.includes(el.innerText));
-            });
+            document.querySelectorAll('.cat-chip').forEach(el => el.classList.toggle('active', selectedCats.includes(el.innerText)));
         }
 
         async function startAction() {
             myName = document.getElementById('my-name-in').value.trim();
-            if(!myName) return alert("Pseudo requis");
+            if(!myName) return alert("Indique ton pseudo");
 
             if (!roomId) {
-                if(selectedCats.length === 0) return alert("Choisis des thèmes");
+                if(selectedCats.length === 0) return alert("Choisis au moins un thème");
                 roomId = Math.random().toString(36).substring(2, 8);
                 maxTime = parseInt(document.getElementById('max-time-in').value) || 120;
                 maxRounds = parseInt(document.getElementById('max-rounds-in').value) || 5;
@@ -128,7 +139,11 @@
         async function syncPush() {
             if(!roomId) return;
             const data = { players, status, currentLetter, usedLetters, selectedCats, refusedWords, maxTime, maxRounds, currentRoundCount, timeLeft };
-            await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(data) });
+            await fetch(`${API}?action=sync&roomId=${roomId}`, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data) 
+            });
         }
 
         async function syncPull() {
@@ -137,11 +152,11 @@
             const data = await r.json();
             if (!data) return;
 
-            // Bloquer le statut si quelqu'un a fait STOP
+            // Sync Statut (Priorité Validation)
             if (data.status === 'validation') status = 'validation';
             else if (players[0] && myName !== players[0].name) status = data.status;
 
-            // Mise à jour des joueurs sans écraser mes propres entrées
+            // Sync Joueurs
             data.players.forEach(pSrv => {
                 let pLoc = players.find(pl => pl.name === pSrv.name);
                 if (pLoc) {
@@ -150,10 +165,11 @@
                 } else { players.push(pSrv); }
             });
 
-            // Mise à jour des réglages pour le Joueur 2
+            // Sync Données Globales
             currentLetter = data.currentLetter;
             selectedCats = data.selectedCats;
             usedLetters = data.usedLetters || [];
+            refusedWords = data.refusedWords || [];
             maxTime = data.maxTime;
             maxRounds = data.maxRounds;
             currentRoundCount = data.currentRoundCount;
@@ -167,7 +183,7 @@
             document.getElementById('cur-letter').innerText = currentLetter || '?';
             document.getElementById('round-indicator').innerText = `${currentRoundCount}/${maxRounds}`;
             document.getElementById('timer-display').innerText = timeLeft + "s";
-            document.getElementById('timer-display').classList.toggle('hidden', status !== 'playing');
+            document.getElementById('timer-display').classList.toggle('hidden', status !== 'playing' || maxTime <= 0);
             
             document.getElementById('play-area').classList.toggle('hidden', status !== 'playing');
             document.getElementById('val-area').classList.toggle('hidden', status !== 'validation');
@@ -176,6 +192,7 @@
             if (status === 'validation') renderValidation();
 
             document.getElementById('btn-confirm-round').classList.toggle('hidden', !isCreator || status !== 'validation');
+            document.getElementById('wait-msg').classList.toggle('hidden', isCreator || status !== 'validation');
             document.getElementById('btn-next').classList.toggle('hidden', !isCreator || status !== 'setup' || (maxRounds > 0 && currentRoundCount >= maxRounds));
             
             renderTable();
@@ -187,7 +204,7 @@
             div.innerHTML = selectedCats.map(c => `
                 <div>
                     <label class="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">${c}</label>
-                    <input type="text" oninput="updateWord('${c}', this.value)" autocomplete="off" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none">
+                    <input type="text" oninput="updateWord('${c}', this.value)" autocomplete="off" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none shadow-sm">
                 </div>
             `).join('');
             isInputRendered = true;
@@ -203,18 +220,29 @@
             const list = document.getElementById('val-list');
             let h = "";
             selectedCats.forEach(cat => {
-                h += `<div class="bg-slate-50 p-4 rounded-2xl border"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">${cat}</p>`;
+                h += `<div class="bg-slate-50 p-4 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-3 ml-1 tracking-tighter">${cat}</p><div class="space-y-2">`;
                 players.forEach((p, pi) => {
                     const id = `${pi}-${cat}`;
                     const word = (p.currentInputs[cat] || '').trim();
                     const isRefused = refusedWords.includes(id);
-                    h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between p-3 mb-2 rounded-xl border ${isRefused ? 'word-refused' : 'bg-white'}">
-                        <span class="font-bold">${p.name}: ${word || '-'}</span>
+                    
+                    // Logique doublons : on compare avec tous les autres joueurs
+                    const isDup = word && players.some((other, oi) => 
+                        oi !== pi && (other.currentInputs[cat] || '').trim().toLowerCase() === word.toLowerCase()
+                    );
+                    
+                    let pts = isRefused ? 0 : (isDup ? 5 : 10);
+                    if (!word) pts = 0;
+
+                    h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : 'bg-white border-white shadow-sm')}">
+                        <span class="font-bold text-sm uppercase">${p.name}: ${word || '-'}</span>
+                        <span class="text-[10px] font-black">${pts} PTS</span>
                     </button>`;
                 });
-                h += `</div>`;
+                h += `</div></div>`;
             });
-            list.innerHTML = h;
+            // Pour éviter de rafraîchir le DOM si rien n'a changé (évite le scintillement)
+            if (list.innerHTML !== h) list.innerHTML = h;
         }
 
         function toggleRefuse(id) {
@@ -233,10 +261,8 @@
 
         function startLetter() {
             const alpha = "ABCDEFGHIJKLMNOPRSTUV";
-            // Filtrer l'alphabet pour enlever les lettres déjà utilisées
             const available = alpha.split('').filter(l => !usedLetters.includes(l));
-            
-            if (available.length === 0) return alert("Plus de lettres disponibles !");
+            if (available.length === 0) return alert("Toutes les lettres ont été jouées !");
 
             currentLetter = available[Math.floor(Math.random() * available.length)];
             usedLetters.push(currentLetter);
@@ -264,13 +290,18 @@
         }
 
         function renderTable() {
-            let h = `<tr><th class="p-3 text-[10px] text-slate-400">Joueurs</th>${players.map(p => `<th class="p-3 border-l text-indigo-600 font-black uppercase">${p.name}</th>`).join('')}</tr>`;
+            let h = `<tr><th class="p-4 text-[10px] text-slate-400">Joueurs</th>${players.map(p => `<th class="p-4 border-l text-indigo-600 font-black uppercase tracking-widest text-sm">${p.name}</th>`).join('')}</tr>`;
             document.getElementById('t-head').innerHTML = h;
-            let b = ""; const rCount = players[0]?.rounds.length || 0;
+            
+            let b = ""; 
+            const rCount = players[0]?.rounds.length || 0;
             for(let r=0; r<rCount; r++) {
-                b += `<tr class="border-t"><td class="p-3 text-slate-300 font-bold italic">M${r+1}</td>${players.map(p => `<td class="p-3 border-l font-black">${p.rounds[r] || 0}</td>`).join('')}</tr>`;
+                b += `<tr class="border-t"><td class="p-4 text-slate-300 font-bold italic text-sm">Manche ${r+1}</td>${players.map(p => `<td class="p-4 border-l font-black text-slate-600">${p.rounds[r] || 0}</td>`).join('')}</tr>`;
             }
             document.getElementById('t-body').innerHTML = b;
+            
+            let f = `<tr class="bg-slate-900 text-white"><td class="p-5 font-black uppercase text-xs tracking-widest">Score Total</td>${players.map(p => `<td class="p-5 border-l font-black text-yellow-500 text-2xl">${p.rounds.reduce((a,b)=>a+b,0)}</td>`).join('')}</tr>`;
+            document.getElementById('t-foot').innerHTML = f;
         }
 
         async function confirmRound() {
@@ -278,7 +309,8 @@
                 let score = 0;
                 selectedCats.forEach(cat => {
                     const word = (p.currentInputs[cat] || '').trim().toLowerCase();
-                    if (word && !refusedWords.includes(`${pi}-${cat}`)) {
+                    const isRefused = refusedWords.includes(`${pi}-${cat}`);
+                    if (word && !isRefused) {
                         const isDup = players.some((other, oi) => oi !== pi && (other.currentInputs[cat] || '').trim().toLowerCase() === word);
                         score += isDup ? 5 : 10;
                     }
@@ -290,7 +322,10 @@
             refreshUI();
         }
 
-        function copyRoomLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
+        function copyRoomLink() { 
+            navigator.clipboard.writeText(window.location.href); 
+            alert("Lien de la partie copié !"); 
+        }
     </script>
 </body>
 </html>
