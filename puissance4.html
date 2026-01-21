@@ -251,7 +251,15 @@
 
         async function syncPush() {
             if (!roomId) return;
-            return fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) });
+            try {
+                const response = await fetch(`${API}?action=sync&roomId=${roomId}`, { 
+                    method: 'POST', 
+                    body: JSON.stringify(gameState) 
+                });
+                return response;
+            } catch (e) {
+                console.error("Sync push error:", e);
+            }
         }
 
         async function syncPull(isInitial = false) {
@@ -261,6 +269,10 @@
                 const data = await r.json();
                 if (data && JSON.stringify(data) !== JSON.stringify(gameState)) {
                     gameState = data;
+                    // Mettre à jour myColor si nécessaire
+                    const me = gameState.players.find(p => p.name === myName);
+                    if (me) myColor = me.color;
+                    
                     if (!isInitial) render();
                 } else if (!data && isInitial) {
                     // This case is for when you visit a room URL that doesn't exist yet.
@@ -268,7 +280,6 @@
                     roomId = null; 
                     window.history.pushState({}, '', window.location.pathname);
                     document.getElementById('main-btn').innerText = "Démarrer";
-
                 }
             } catch (e) {
                 console.error("Sync error:", e);
@@ -280,7 +291,12 @@
         // =================================================================
         
         function handleColumnClick(col) {
-            if (gameState.gameOver) return;
+            console.log('Click col:', col, 'myColor:', myColor, 'currentPlayer:', gameState.currentPlayer, 'gameOver:', gameState.gameOver);
+            
+            if (gameState.gameOver) {
+                console.log('Game is over');
+                return;
+            }
             
             // En mode local vs joueur : laisser jouer qui peut jouer
             // En mode local vs IA : vérifier que c'est le tour du joueur (pas l'IA)
@@ -288,28 +304,42 @@
             
             if (gameMode === 'local' && localOpponent === 'ai') {
                 // Vs IA : seulement le joueur humain peut jouer
-                if (gameState.currentPlayer !== myColor) return;
+                if (gameState.currentPlayer !== myColor) {
+                    console.log('Not your turn (AI mode)');
+                    return;
+                }
             } else if (gameMode === 'local' && localOpponent === 'player') {
                 // Vs joueur : les deux peuvent jouer sur cet apareil
                 // Pas de vérification ici
             } else {
                 // Mode remote
-                if (gameState.players.length < 2) return; // Attendre que les 2 joueurs soient présents
-                if (gameState.currentPlayer !== myColor) return; // Vérifier que c'est ton tour
+                if (gameState.players.length < 2) {
+                    console.log('Not enough players:', gameState.players.length);
+                    return;
+                }
+                if (gameState.currentPlayer !== myColor) {
+                    console.log('Not your turn (remote mode)');
+                    return;
+                }
             }
 
+            // Chercher la première case vide dans cette colonne
             for (let row = ROWS - 1; row >= 0; row--) {
                 if (!gameState.board[row][col]) {
+                    console.log('Playing at row:', row, 'col:', col);
                     gameState.board[row][col] = gameState.currentPlayer;
                     
                     if (checkWin(row, col)) {
                         gameState.gameOver = true;
                         gameState.winner = gameState.currentPlayer;
+                        console.log('Winner:', gameState.winner);
                     } else if (gameState.board.flat().every(cell => cell)) {
                         gameState.gameOver = true;
                         gameState.isDraw = true;
+                        console.log('Draw');
                     } else {
                         gameState.currentPlayer = gameState.currentPlayer === 'red' ? 'yellow' : 'red';
+                        console.log('Next player:', gameState.currentPlayer);
                         
                         // En mode local vs IA, faire jouer l'IA
                         if (gameMode === 'local' && localOpponent === 'ai' && gameState.currentPlayer === 'yellow' && !gameState.gameOver) {
@@ -318,13 +348,18 @@
                     }
                     
                     if (gameMode === 'remote') {
-                        syncPush().then(render);
+                        console.log('Syncing push...');
+                        syncPush().then(() => {
+                            console.log('Push done, calling render');
+                            render();
+                        });
                     } else {
                         render();
                     }
                     return;
                 }
             }
+            console.log('Column full');
         }
 
         function aiPlay() {
