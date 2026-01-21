@@ -142,6 +142,7 @@
 
         // --- Game State ---
         let roomId = new URLSearchParams(window.location.search).get('room');
+        console.log('Page loaded - roomId from URL:', roomId);
         let myName = '';
         let myColor = '';
         let gameMode = 'remote'; // 'remote' ou 'local'
@@ -153,9 +154,11 @@
         // =================================================================
 
         window.onload = async () => {
+            console.log('window.onload - roomId:', roomId);
             if (roomId) {
                 // Si on a un room ID, c'est du remote, on cache les choix
                 gameMode = 'remote';
+                console.log('Room detected! Setting gameMode to remote');
                 document.getElementById('mode-selector').classList.add('hidden');
                 document.getElementById('local-options').classList.add('hidden');
                 document.getElementById('main-btn').innerText = "Rejoindre la partie";
@@ -198,6 +201,7 @@
             const name = document.getElementById('my-name-in').value.trim();
             if (!name) return alert("Indique ton nom !");
             myName = name;
+            console.log('startAction called - myName:', myName, 'gameMode:', gameMode, 'roomId:', roomId);
 
             if (gameMode === 'local') {
                 if (!localOpponent) return alert("Choisis contre qui jouer !");
