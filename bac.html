@@ -3,31 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Petit Bac LIVE - ScoreMaster</title>
+    <title>Petit Bac LIVE - Dynamic Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style> 
+        /* Styles pour la validation et les doublons */
         .word-refused { text-decoration: line-through; color: #ef4444 !important; opacity: 0.5; border-color: #fecaca !important; background-color: #fef2f2 !important; } 
         .word-duplicate { color: #d97706 !important; border-color: #fcd34d !important; background-color: #fffbeb !important; }
+        
         .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
         @media (min-width: 768px) { .cat-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
+
         input { border-radius: 1rem !important; }
         .cat-chip { transition: all 0.2s; border: 1px solid #e2e8f0; text-align: center; padding: 0.7rem 0.2rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; border-radius: 0.75rem; background: white; color: #64748b; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; }
-        .cat-chip.active { background-color: #eab308; color: white; border-color: #ca8a04; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .cat-chip.active { background-color: #eab308; color: white; border-color: #ca8a04; shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900">
 
-    <div id="setup" class="max-w-7xl mx-auto mt-2 bg-white p-6 rounded-[2.5rem] shadow-2xl">
+    <div id="setup" class="max-w-7xl mx-auto mt-2 bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-white">
         <h2 id="setup-title" class="text-3xl font-black mb-6 text-yellow-500 uppercase italic tracking-tighter text-center">Petit Bac <span class="text-slate-200">Live</span></h2>
         
         <div class="space-y-6">
             <div id="creator-fields" class="space-y-4">
                 <div class="flex justify-between items-center px-1">
-                    <p class="text-[10px] font-black uppercase text-slate-400">Thèmes (clique pour choisir)</p>
-                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-indigo-600 text-white px-4 py-2 rounded-full uppercase shadow-lg">🎲 Aléatoire (6)</button>
+                    <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Thèmes pour la 1ère manche</p>
+                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-indigo-600 text-white px-4 py-2 rounded-full uppercase shadow-lg active:scale-95 transition">🎲 Aléatoire (6)</button>
                 </div>
-                <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-[400px] overflow-y-auto"></div>
+                <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-[300px] overflow-y-auto"></div>
+                
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-slate-50 p-4 rounded-3xl border text-center">
                         <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Chrono (s)</label>
@@ -38,14 +42,14 @@
                         <input type="number" id="max-rounds-in" value="5" class="w-full bg-transparent outline-none font-black text-2xl text-center">
                     </div>
                 </div>
+                <p class="text-center text-[9px] font-bold text-indigo-500 uppercase italic">Note : Les catégories changeront automatiquement à chaque manche !</p>
             </div>
 
-            <div class="bg-yellow-50 p-6 rounded-3xl border-2 border-yellow-100">
-                <label class="text-[10px] font-black uppercase text-yellow-600 mb-2 block font-bold text-center">Ton Pseudo :</label>
-                <input type="text" id="my-name-in" placeholder="Ex: Jean-Michel..." class="w-full bg-white border-2 border-yellow-200 p-4 rounded-2xl outline-none font-black text-xl text-center shadow-sm">
+            <div class="bg-yellow-50 p-6 rounded-3xl border-2 border-yellow-100 shadow-inner">
+                <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full bg-white border-2 border-yellow-200 p-4 rounded-2xl outline-none font-black text-xl text-center shadow-sm focus:border-yellow-500 transition-all">
             </div>
             
-            <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Commencer la partie</button>
+            <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Lancer la partie</button>
         </div>
     </div>
 
@@ -56,20 +60,19 @@
                 <div id="cur-letter" class="bg-yellow-500 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl shadow-lg">?</div>
                 <div id="timer-display" class="hidden font-mono font-black text-red-500 text-2xl">0s</div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="copyRoomLink()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black border border-indigo-100">COPIER LE LIEN</button>
-            </div>
+            <button onclick="copyRoomLink()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black border border-indigo-100 uppercase tracking-widest">Lien</button>
         </div>
 
         <div id="play-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl mb-6 border-4 border-yellow-400">
             <div id="bac-inputs" class="space-y-4"></div>
-            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-2xl shadow-xl">STOP !</button>
+            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-2xl shadow-xl active:scale-95 transition">STOP !</button>
         </div>
 
         <div id="val-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-green-500 mb-6">
-            <h3 class="text-center font-black text-green-700 mb-6 uppercase tracking-widest italic">Correction collective</h3>
+            <h3 class="text-center font-black text-green-700 mb-6 uppercase tracking-widest italic">Correction en direct</h3>
             <div id="val-list" class="space-y-6"></div>
             <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-8 bg-black text-white py-5 rounded-2xl font-black uppercase shadow-xl">Valider les scores</button>
+            <p id="wait-msg" class="hidden mt-4 text-center text-slate-400 font-bold italic animate-pulse text-xs uppercase">Le Maître valide la manche...</p>
         </div>
 
         <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border">
@@ -78,7 +81,7 @@
                 <tbody id="t-body" class="text-center font-black"></tbody>
                 <tfoot id="t-foot" class="bg-slate-900 text-white"></tfoot>
             </table>
-            <button id="btn-next" onclick="startLetter()" class="hidden w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest shadow-inner">Nouvelle Lettre</button>
+            <button id="btn-next" onclick="startLetter()" class="hidden w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest shadow-inner">Manche Suivante</button>
         </div>
     </div>
 
@@ -96,7 +99,6 @@
             if (roomId) {
                 document.getElementById('creator-fields').classList.add('hidden');
                 document.getElementById('setup-title').innerText = "Rejoindre";
-                // On active la sync uniquement pour le joueur 2 au début
                 setInterval(syncPull, 1000);
             }
         };
@@ -108,9 +110,8 @@
         }
 
         function toggleCat(c) {
-            const index = selectedCats.indexOf(c);
-            if(index > -1) {
-                selectedCats.splice(index, 1);
+            if(selectedCats.includes(c)) {
+                selectedCats = selectedCats.filter(x => x !== c);
                 document.getElementById(`cat-${c}`).classList.remove('active');
             } else {
                 selectedCats.push(c);
@@ -127,21 +128,16 @@
 
         async function startAction() {
             myName = document.getElementById('my-name-in').value.trim();
-            if(!myName) return alert("Indique ton pseudo !");
+            if(!myName) return alert("Pseudo obligatoire");
 
             if (!roomId) {
-                if(selectedCats.length === 0) return alert("Choisis des thèmes !");
+                if(selectedCats.length === 0) return alert("Choisis des thèmes pour commencer !");
                 maxTime = parseInt(document.getElementById('max-time-in').value) || 120;
                 maxRounds = parseInt(document.getElementById('max-rounds-in').value) || 5;
                 roomId = Math.random().toString(36).substring(2, 8);
                 window.history.pushState({}, '', `?room=${roomId}`);
                 players = [{ name: myName, rounds: [], currentInputs: {} }];
-                // Le créateur lance sa propre boucle de sync maintenant
                 setInterval(syncPull, 1000);
-            } else {
-                if (!players.find(p => p.name === myName)) {
-                    players.push({ name: myName, rounds: Array(currentRoundCount).fill(0), currentInputs: {} });
-                }
             }
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
@@ -176,9 +172,10 @@
                 } else { players.push(pSrv); }
             });
 
-            // CRITIQUE : Seul le joueur 2 synchronise les catégories depuis le serveur
-            if (players[0] && myName !== players[0].name) {
+            // Si les catégories ont changé sur le serveur, on force la ré-édition des inputs
+            if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
                 selectedCats = data.selectedCats;
+                isInputRendered = false; 
             }
 
             currentLetter = data.currentLetter;
@@ -206,6 +203,7 @@
             if (status === 'validation') renderValidation();
 
             document.getElementById('btn-confirm-round').classList.toggle('hidden', !isCreator || status !== 'validation');
+            document.getElementById('wait-msg').classList.toggle('hidden', isCreator || status !== 'validation');
             document.getElementById('btn-next').classList.toggle('hidden', !isCreator || status !== 'setup' || (maxRounds > 0 && currentRoundCount >= maxRounds));
             
             renderTable();
@@ -216,8 +214,8 @@
             const div = document.getElementById('bac-inputs');
             div.innerHTML = selectedCats.map(c => `
                 <div>
-                    <label class="text-[10px] font-black uppercase text-slate-400 ml-1">${c}</label>
-                    <input type="text" oninput="updateWord('${c}', this.value)" autocomplete="off" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none">
+                    <label class="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-tighter">${c}</label>
+                    <input type="text" oninput="updateWord('${c}', this.value)" autocomplete="off" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none shadow-sm">
                 </div>
             `).join('');
             isInputRendered = true;
@@ -233,13 +231,14 @@
             const list = document.getElementById('val-list');
             let h = "";
             selectedCats.forEach(cat => {
-                h += `<div class="bg-slate-50 p-4 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-3 ml-1">${cat}</p><div class="space-y-2">`;
+                h += `<div class="bg-slate-50 p-4 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-3 ml-1 tracking-tighter">${cat}</p><div class="space-y-2">`;
                 players.forEach((p, pi) => {
                     const id = `${pi}-${cat}`;
                     const word = (p.currentInputs[cat] || '').trim();
                     const isRefused = refusedWords.includes(id);
                     const isDup = word && players.some((other, oi) => oi !== pi && (other.currentInputs[cat] || '').trim().toLowerCase() === word.toLowerCase());
                     let pts = isRefused ? 0 : (isDup ? 5 : 10); if (!word) pts = 0;
+
                     h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : 'bg-white border-white shadow-sm')}">
                         <span class="font-bold text-sm uppercase">${p.name}: ${word || '-'}</span>
                         <span class="text-[10px] font-black">${pts} PTS</span>
@@ -267,14 +266,19 @@
         function startLetter() {
             const alpha = "ABCDEFGHIJKLMNOPRSTUV";
             const available = alpha.split('').filter(l => !usedLetters.includes(l));
-            if (available.length === 0) return alert("Toutes les lettres ont été jouées !");
+            if (available.length === 0) return alert("Fin du jeu ! Plus de lettres.");
+
+            // LOGIQUE DYNAMIQUE : On change les catégories à CHAQUE round
+            selectedCats = [...categoriesList].sort(() => 0.5 - Math.random()).slice(0, 6);
+
             currentLetter = available[Math.floor(Math.random() * available.length)];
             usedLetters.push(currentLetter);
             status = 'playing';
             currentRoundCount++;
             refusedWords = [];
             players.forEach(p => p.currentInputs = {});
-            isInputRendered = false;
+            isInputRendered = false; // Important pour forcer l'affichage des nouveaux thèmes
+            
             if (maxTime > 0) { timeLeft = maxTime; startTimer(); }
             syncPush();
             refreshUI();
