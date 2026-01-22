@@ -3,19 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Petit Bac LIVE - Dynamic</title>
+    <title>Petit Bac LIVE - ScoreMaster</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style> 
+        /* Correction des couleurs de validation */
         .word-refused { text-decoration: line-through; color: #ef4444 !important; opacity: 0.5; border-color: #fecaca !important; background-color: #fef2f2 !important; } 
         .word-duplicate { color: #d97706 !important; border-color: #fcd34d !important; background-color: #fffbeb !important; }
         
-        .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+        /* Grille des catégories */
+        .cat-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 0.5rem; 
+        }
         @media (min-width: 768px) { .cat-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
 
-        .cat-chip { transition: all 0.2s; border: 1px solid #e2e8f0; text-align: center; padding: 0.7rem 0.2rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; border-radius: 0.75rem; background: white; color: #64748b; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; }
-        .cat-chip.active { background-color: #eab308; color: white; border-color: #ca8a04; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        input { border-radius: 1rem !important; }
+        /* Style des jetons thèmes */
+        .cat-chip { 
+            transition: all 0.2s; 
+            border: 2px solid #e2e8f0; 
+            text-align: center; 
+            padding: 0.8rem 0.2rem; 
+            font-size: 0.7rem; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            border-radius: 1rem; 
+            background: white; 
+            color: #64748b; 
+            cursor: pointer !important; 
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        .cat-chip.active { 
+            background-color: #fbbf24; 
+            color: white; 
+            border-color: #d97706; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+        }
+        input { border-radius: 1.25rem !important; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900">
@@ -25,28 +54,30 @@
         
         <div class="space-y-6">
             <div id="creator-fields" class="space-y-4">
-                <div class="flex justify-between items-center px-1">
-                    <p class="text-[10px] font-black uppercase text-slate-400">Choisis tes thèmes (ou 🎲)</p>
-                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-indigo-600 text-white px-4 py-2 rounded-full uppercase shadow-lg active:scale-95 transition">🎲 Aléatoire (6)</button>
+                <div class="flex justify-between items-center px-1 bg-slate-50 p-3 rounded-2xl border">
+                    <p class="text-[10px] font-black uppercase text-slate-400">Choisis tes thèmes (clique sur les cases)</p>
+                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-indigo-600 text-white px-5 py-2.5 rounded-full uppercase shadow-lg hover:bg-indigo-700 transition">🎲 Aléatoire (6)</button>
                 </div>
-                <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-[350px] overflow-y-auto"></div>
+                
+                <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-[400px] overflow-y-auto shadow-inner"></div>
+                
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-slate-50 p-4 rounded-3xl border text-center">
-                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Chrono (s)</label>
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Chrono (s)</label>
                         <input type="number" id="max-time-in" value="120" class="w-full bg-transparent outline-none font-black text-2xl text-center">
                     </div>
                     <div class="bg-slate-50 p-4 rounded-3xl border text-center">
-                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Manches</label>
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Manches</label>
                         <input type="number" id="max-rounds-in" value="5" class="w-full bg-transparent outline-none font-black text-2xl text-center">
                     </div>
                 </div>
             </div>
 
             <div class="bg-yellow-50 p-6 rounded-3xl border-2 border-yellow-100">
-                <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full bg-white border-2 border-yellow-200 p-4 rounded-2xl outline-none font-black text-xl text-center shadow-sm">
+                <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full bg-white border-2 border-yellow-200 p-4 rounded-2xl outline-none font-black text-xl text-center shadow-sm focus:border-yellow-400 transition-all">
             </div>
             
-            <button onclick="startAction()" class="w-full bg-black text-white py-5 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer</button>
+            <button id="main-btn" onclick="startAction()" class="w-full bg-black text-white py-6 rounded-2xl font-black uppercase text-xl shadow-xl active:scale-95 transition">Démarrer la partie</button>
         </div>
     </div>
 
@@ -57,7 +88,7 @@
                 <div id="cur-letter" class="bg-yellow-500 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl shadow-lg">?</div>
                 <div id="timer-display" class="hidden font-mono font-black text-red-500 text-2xl">0s</div>
             </div>
-            <button onclick="copyRoomLink()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black border border-indigo-100 uppercase">Lien</button>
+            <button onclick="copyRoomLink()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black border border-indigo-100 uppercase">Copier le Lien</button>
         </div>
 
         <div id="play-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl mb-6 border-4 border-yellow-400">
@@ -66,10 +97,9 @@
         </div>
 
         <div id="val-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-green-500 mb-6">
-            <h3 class="text-center font-black text-green-700 mb-6 uppercase italic tracking-widest">Correction</h3>
+            <h3 class="text-center font-black text-green-700 mb-6 uppercase tracking-widest italic">Correction collective</h3>
             <div id="val-list" class="space-y-6"></div>
-            <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-8 bg-black text-white py-5 rounded-2xl font-black uppercase shadow-xl">Valider la manche</button>
-            <p id="wait-msg" class="hidden mt-4 text-center text-slate-400 font-bold italic animate-pulse text-[10px] uppercase">Attente du Master...</p>
+            <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-8 bg-black text-white py-5 rounded-2xl font-black uppercase shadow-xl active:scale-95 transition">Valider la manche</button>
         </div>
 
         <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border">
@@ -78,7 +108,10 @@
                 <tbody id="t-body" class="text-center font-black"></tbody>
                 <tfoot id="t-foot" class="bg-slate-900 text-white"></tfoot>
             </table>
-            <button id="btn-next" onclick="startLetter()" class="hidden w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest shadow-inner">Nouvelle Lettre (+ Thèmes 🎲)</button>
+            <div id="creator-controls" class="hidden">
+                <button onclick="startLetter(false)" class="w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest shadow-inner hover:bg-yellow-600 transition">Nouvelle Lettre (Thèmes fixes)</button>
+                <button onclick="startLetter(true)" class="w-full bg-indigo-600 text-white py-4 font-black text-xs uppercase tracking-widest border-t border-indigo-500 hover:bg-indigo-700 transition">Nouvelle Lettre + Nouveaux Thèmes 🎲</button>
+            </div>
         </div>
     </div>
 
@@ -89,49 +122,51 @@
         let timerInterval = null, isInputRendered = false;
         const API = 'api.php';
 
-        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Gros mot", "Phrase de beauf", "Lieu coquin", "Dans ma chambre", "Mème", "Pokémon", "Jeu Vidéo", "Harry Potter", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "Slogan", "Expression", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Façon de mourir", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal", "Objet rouge", "Chaud", "Froid", "Lourd", "Léger", "Dans une voiture", "Dans une école", "Dans la forêt", "Cadeau pourri", "Excuse d'absence", "Marque de voiture"];
+        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Gros mot", "Phrase de beauf", "Lieu coquin", "Dans ma chambre", "Mème", "Pokémon", "Jeu Vidéo", "Harry Potter", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "Slogan", "Expression", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Façon de mourir", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal", "Objet rouge", "Chaud", "Froid", "Lourd", "Léger", "Dans une voiture", "Dans une école", "Dans la forêt", "Cadeau pourri", "Excuse d'absence"];
 
         window.onload = () => {
             renderCatList();
             if (roomId) {
                 document.getElementById('creator-fields').classList.add('hidden');
-                document.getElementById('setup-title').innerText = "Rejoindre";
+                document.getElementById('setup-title').innerText = "Rejoindre la partie";
                 setInterval(syncPull, 1000);
             }
         };
 
         function renderCatList() {
             document.getElementById('cat-list').innerHTML = categoriesList.map(c => `
-                <div id="cat-${c}" onclick="toggleCat('${c}')" class="cat-chip font-black">${c}</div>
+                <div id="cat-${c}" onclick="toggleCat('${c}')" class="cat-chip">${c}</div>
             `).join('');
         }
 
         function toggleCat(c) {
-            // Uniquement si on est au setup
-            if(status !== 'setup') return;
+            // Pas de blocage par status ici pour garantir le clic
             const idx = selectedCats.indexOf(c);
-            if(idx > -1) selectedCats.splice(idx, 1);
-            else selectedCats.push(c);
-            updateCatUI();
-        }
-
-        function updateCatUI() {
-            document.querySelectorAll('.cat-chip').forEach(el => {
-                el.classList.toggle('active', selectedCats.includes(el.innerText));
-            });
+            if(idx > -1) {
+                selectedCats.splice(idx, 1);
+                document.getElementById(`cat-${c}`).classList.remove('active');
+            } else {
+                selectedCats.push(c);
+                document.getElementById(`cat-${c}`).classList.add('active');
+            }
         }
 
         function pickRandom6() {
+            // Nettoyage visuel avant
+            document.querySelectorAll('.cat-chip').forEach(el => el.classList.remove('active'));
             selectedCats = [...categoriesList].sort(() => 0.5 - Math.random()).slice(0, 6);
-            updateCatUI();
+            selectedCats.forEach(c => {
+                const el = document.getElementById(`cat-${c}`);
+                if(el) el.classList.add('active');
+            });
         }
 
         async function startAction() {
             myName = document.getElementById('my-name-in').value.trim();
-            if(!myName) return alert("Pseudo requis");
+            if(!myName) return alert("Indique ton pseudo !");
 
             if (!roomId) {
-                if(selectedCats.length === 0) return alert("Choisis des thèmes");
+                if(selectedCats.length === 0) return alert("Choisis des thèmes !");
                 maxTime = parseInt(document.getElementById('max-time-in').value) || 120;
                 maxRounds = parseInt(document.getElementById('max-rounds-in').value) || 5;
                 roomId = Math.random().toString(36).substring(2, 8);
@@ -148,11 +183,7 @@
         async function syncPush() {
             if(!roomId) return;
             const data = { players, status, currentLetter, usedLetters, selectedCats, refusedWords, maxTime, maxRounds, currentRoundCount, timeLeft };
-            await fetch(`${API}?action=sync&roomId=${roomId}`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data) 
-            });
+            await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(data) });
         }
 
         async function syncPull() {
@@ -172,10 +203,12 @@
                 } else { players.push(pSrv); }
             });
 
-            // Sync des catégories pour les joueurs (on réinitialise l'input si elles changent)
-            if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
-                selectedCats = data.selectedCats;
-                isInputRendered = false; 
+            // Sync des thèmes pour tout le monde sauf le créateur au setup
+            if (players[0] && myName !== players[0].name) {
+                if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
+                    selectedCats = data.selectedCats;
+                    isInputRendered = false; // Force re-render si les thèmes changent
+                }
             }
 
             currentLetter = data.currentLetter;
@@ -203,8 +236,7 @@
             if (status === 'validation') renderValidation();
 
             document.getElementById('btn-confirm-round').classList.toggle('hidden', !isCreator || status !== 'validation');
-            document.getElementById('wait-msg').classList.toggle('hidden', isCreator || status !== 'validation');
-            document.getElementById('btn-next').classList.toggle('hidden', !isCreator || status !== 'setup' || (maxRounds > 0 && currentRoundCount >= maxRounds));
+            document.getElementById('creator-controls').classList.toggle('hidden', !isCreator || status !== 'setup' || (maxRounds > 0 && currentRoundCount >= maxRounds));
             
             renderTable();
         }
@@ -231,7 +263,7 @@
             const list = document.getElementById('val-list');
             let h = "";
             selectedCats.forEach(cat => {
-                h += `<div class="bg-slate-50 p-4 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-3 ml-1">${cat}</p><div class="space-y-2">`;
+                h += `<div class="bg-slate-50 p-4 rounded-3xl border"><p class="text-[10px] font-black uppercase text-slate-400 mb-3 ml-1">${cat}</p><div class="space-y-2">`;
                 players.forEach((p, pi) => {
                     const id = `${pi}-${cat}`;
                     const word = (p.currentInputs[cat] || '').trim();
@@ -245,7 +277,7 @@
                 });
                 h += `</div></div>`;
             });
-            if (list.innerHTML !== h) list.innerHTML = h;
+            list.innerHTML = h;
         }
 
         function toggleRefuse(id) {
@@ -262,13 +294,15 @@
             refreshUI();
         }
 
-        function startLetter() {
+        function startLetter(isRandomThemes) {
             const alpha = "ABCDEFGHIJKLMNOPRSTUV";
             const available = alpha.split('').filter(l => !usedLetters.includes(l));
-            if (available.length === 0) return alert("Fin du jeu !");
+            if (available.length === 0) return alert("Plus de lettres !");
 
-            // RANDOM AUTOMATIQUE : On change les catégories à chaque nouvelle manche
-            selectedCats = [...categoriesList].sort(() => 0.5 - Math.random()).slice(0, 6);
+            // Optionnel : Changement de thèmes 🎲
+            if (isRandomThemes) {
+                selectedCats = [...categoriesList].sort(() => 0.5 - Math.random()).slice(0, 6);
+            }
 
             currentLetter = available[Math.floor(Math.random() * available.length)];
             usedLetters.push(currentLetter);
@@ -276,7 +310,7 @@
             currentRoundCount++;
             refusedWords = [];
             players.forEach(p => p.currentInputs = {});
-            isInputRendered = false; // Force le refresh des inputs
+            isInputRendered = false; 
             
             if (maxTime > 0) { timeLeft = maxTime; startTimer(); }
             syncPush();
@@ -299,10 +333,10 @@
             document.getElementById('t-head').innerHTML = h;
             let b = ""; const rCount = players[0]?.rounds.length || 0;
             for(let r=0; r<rCount; r++) {
-                b += `<tr class="border-t"><td class="p-4 text-slate-300 font-bold italic text-sm">Manche ${r+1}</td>${players.map(p => `<td class="p-4 border-l font-black text-slate-600">${p.rounds[r] || 0}</td>`).join('')}</tr>`;
+                b += `<tr class="border-t"><td class="p-4 text-slate-300 font-bold italic text-sm">Manche ${r+1}</td>${players.map(p => `<td class="p-4 border-l font-black">${p.rounds[r] || 0}</td>`).join('')}</tr>`;
             }
             document.getElementById('t-body').innerHTML = b;
-            let f = `<tr class="bg-slate-900 text-white"><td class="p-5 font-black uppercase text-xs tracking-widest">Total</td>${players.map(p => `<td class="p-5 border-l font-black text-yellow-500 text-2xl">${p.rounds.reduce((a,b)=>a+b,0)}</td>`).join('')}</tr>`;
+            let f = `<tr class="bg-slate-900 text-white"><td class="p-5 font-black uppercase text-xs">Total</td>${players.map(p => `<td class="p-5 border-l font-black text-yellow-500 text-2xl">${p.rounds.reduce((a,b)=>a+b,0)}</td>`).join('')}</tr>`;
             document.getElementById('t-foot').innerHTML = f;
         }
 
