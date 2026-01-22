@@ -73,7 +73,7 @@
             players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '' 
         };
 
-        const kittenImages = Array.from({length: 18}, (_, i) => `https://placekitten.com/${200+i}/${200+i}`);
+        const kittenImages = Array.from({length: 18}, (_, i) => `https://loremflickr.com/200/200/kitten?lock=${i}`);
 
         window.onload = () => { if(roomId) { setMode('remote'); } else { setMode('local'); } };
 
