@@ -25,17 +25,18 @@ if (isset($_GET['action'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Puissance 4 Pro</title>
+    <title>Puissance 4 Pro - Arena</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; }
+        body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         
-        #board { background-color: #3b82f6; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.6rem; padding: 1.2rem; border-radius: 2.5rem; border: 8px solid #60a5fa; width: 100%; max-width: 500px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); }
-        .cell { background-color: #334155; border-radius: 50%; aspect-ratio: 1 / 1; position: relative; transition: all 0.4s; box-shadow: inset 0 4px 8px rgba(0,0,0,0.4); }
-        .column { cursor: pointer; display: flex; flex-direction: column; gap: 0.6rem; border-radius: 1.5rem; padding: 4px; z-index: 10; }
-        
-        /* Styles des jetons et de l'effet de dernier coup */
+        /* PLATEAU BLEU VIF */
+        #board { background-color: #2563eb; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.6rem; padding: 1.2rem; border-radius: 2.5rem; border: 8px solid #1e40af; width: 100%; max-width: 500px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); }
+        .cell { background-color: #0f172a; border-radius: 50%; aspect-ratio: 1 / 1; position: relative; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: inset 0 4px 8px rgba(0,0,0,0.5); }
+        .column { cursor: pointer; display: flex; flex-direction: column; gap: 0.6rem; border-radius: 1.5rem; padding: 4px; }
+
+        /* JETONS */
         .cell.red { background: #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.blue { background: #0ea5e9; box-shadow: 0 0 30px rgba(14, 165, 233, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.green { background: #22c55e; box-shadow: 0 0 30px rgba(34, 197, 94, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
@@ -47,9 +48,9 @@ if (isset($_GET['action'])) {
         .last-move::after { content: ''; position: absolute; inset: -4px; border: 4px solid white; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
 
-        /* SELECTION COULEUR ULTRA VISIBLE */
-        .color-dot { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 4px solid transparent; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .color-dot.active { border-color: white; transform: scale(1.3); box-shadow: 0 0 20px rgba(255,255,255,0.5); }
+        /* SELECTION COULEUR */
+        .color-dot { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 4px solid #f1f5f9; transition: 0.3s; }
+        .color-dot.active { border-color: #0f172a; transform: scale(1.3); box-shadow: 0 0 20px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center font-sans uppercase font-black">
@@ -58,21 +59,21 @@ if (isset($_GET['action'])) {
         <h2 id="setup-title" class="text-4xl font-black mb-8 text-blue-600 text-center italic tracking-tighter uppercase">P4 <span class="text-slate-200">Arena</span></h2>
         
         <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
-            <button type="button" onclick="setMode('local')" id="m-local" class="bg-blue-600 text-white py-4 rounded-2xl shadow-lg transition font-black">Local</button>
-            <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-100 text-slate-400 py-4 rounded-2xl transition font-black">En Ligne</button>
+            <button type="button" onclick="setMode('local')" id="m-local" class="bg-blue-600 text-white py-4 rounded-2xl shadow-lg transition">Local</button>
+            <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-200 text-slate-500 py-4 rounded-2xl transition">En Ligne</button>
         </div>
 
         <div id="local-options" class="space-y-4 mb-8">
-            <p class="text-center text-[10px] font-black text-slate-400">CHOIX DE L'ADVERSAIRE :</p>
+            <p class="text-center text-[10px] font-black text-slate-400">Choix de l'adversaire :</p>
             <div class="grid grid-cols-2 gap-3">
-                <button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all">🤖 IA</button>
-                <button type="button" onclick="setOpponent('human')" id="opp-human" class="bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black transition-all">👤 Humain</button>
+                <button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-blue-600 text-white py-4 rounded-2xl text-xs shadow-md transition-all">🤖 IA</button>
+                <button type="button" onclick="setOpponent('human')" id="opp-human" class="bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs transition-all">👤 Humain</button>
             </div>
         </div>
 
         <div class="space-y-6">
             <div class="text-center">
-                <p class="text-[10px] text-slate-400 mb-4 tracking-widest uppercase">COULEUR DE TES PIONS</p>
+                <p class="text-[10px] text-slate-400 mb-4 tracking-widest uppercase">Ta Couleur</p>
                 <div class="flex justify-center gap-4 flex-wrap">
                     <div onclick="setColor('red')" id="c-red" class="color-dot bg-red-500 active"></div>
                     <div onclick="setColor('blue')" id="c-blue" class="color-dot bg-blue-500"></div>
@@ -83,23 +84,23 @@ if (isset($_GET['action'])) {
                 </div>
             </div>
 
-            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-blue-400 font-black uppercase">
+            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-blue-400 uppercase font-black">
             
-            <button type="button" onclick="startAction()" class="w-full bg-black text-white py-6 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all font-black">Démarrer</button>
-            <button type="button" onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</button>
+            <button onclick="startAction()" class="w-full bg-black text-white py-6 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all">Démarrer</button>
+            <button onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest py-2">RETOUR HUB</button>
         </div>
     </div>
 
     <div id="game" class="hidden max-w-2xl w-full glass p-8 rounded-[4rem] border border-white/10 shadow-2xl">
         <div class="flex justify-between items-center mb-8">
-            <button onclick="window.location.href='index.html'" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black uppercase">MENU</button>
+            <button onclick="window.location.href='index.html'" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition">MENU</button>
             <div id="players-display" class="flex gap-8 text-[12px] tracking-widest items-center"></div>
-            <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg uppercase">LIEN</button>
+            <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px] shadow-lg">LIEN</button>
         </div>
         <div class="flex justify-center mb-10"><div id="board"></div></div>
         <div id="win-overlay" class="hidden text-center">
             <p id="win-text" class="text-5xl text-yellow-500 mb-8 italic tracking-tighter"></p>
-            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition uppercase">ENREGISTRER & QUITTER</button>
+            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition">ENREGISTRER & QUITTER</button>
         </div>
     </div>
 
@@ -123,18 +124,15 @@ if (isset($_GET['action'])) {
 
         function setMode(m) { 
             gameMode = m; 
-            document.getElementById('m-local').className = (m === 'local') ? "bg-blue-600 text-white py-4 rounded-2xl shadow-lg transition font-black" : "bg-slate-100 text-slate-400 py-4 rounded-2xl transition font-black";
-            document.getElementById('m-remote').className = (m === 'remote') ? "bg-purple-600 text-white py-4 rounded-2xl shadow-lg transition font-black" : "bg-slate-100 text-slate-400 py-4 rounded-2xl transition font-black";
+            document.getElementById('m-local').className = (m === 'local') ? "bg-blue-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
+            document.getElementById('m-remote').className = (m === 'remote') ? "bg-purple-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
             document.getElementById('local-options').classList.toggle('hidden', m !== 'local');
         }
 
         function setOpponent(opp) { 
             localOpponent = opp; 
-            const ai = document.getElementById('opp-ai');
-            const hu = document.getElementById('opp-human');
-            
-            ai.className = (opp === 'ai') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all" : "bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black transition-all";
-            hu.className = (opp === 'human') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all" : "bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black transition-all";
+            document.getElementById('opp-ai').className = (opp === 'ai') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md" : "bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black";
+            document.getElementById('opp-human').className = (opp === 'human') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md" : "bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black";
         }
 
         function setColor(c) { 
@@ -151,13 +149,9 @@ if (isset($_GET['action'])) {
                 if (!roomId) roomId = Math.random().toString(36).substring(2, 8);
                 window.history.pushState({}, '', `?room=${roomId}`);
                 await syncPull();
-                
-                // GESTION DOUBLON COULEUR
                 if (gameState.players.length === 1 && gameState.players[0].color === myColor) {
-                    const fallback = ['red', 'blue', 'green', 'purple', 'cyan', 'orange'].find(c => c !== gameState.players[0].color);
-                    myColor = fallback;
+                    myColor = ['red', 'blue', 'green', 'purple', 'cyan', 'orange'].find(c => c !== gameState.players[0].color);
                 }
-
                 if (!gameState.players.find(p => p.name === myName)) {
                     if (gameState.players.length < 2) {
                         gameState.players.push({ name: myName, color: myColor });
@@ -228,9 +222,9 @@ if (isset($_GET['action'])) {
             }
             const p1 = gameState.players[0] || { name: '...', color: 'slate' }, p2 = gameState.players[1] || { name: '...', color: 'slate' };
             document.getElementById('players-display').innerHTML = `
-                <span class="${gameState.currentPlayer === p1.color ? 'ring-2 ring-white/20 bg-white/5' : 'opacity-40'} px-4 py-2 rounded-2xl uppercase font-black" style="color:${p1.color}">${p1.name}</span>
+                <span class="${gameState.currentPlayer === p1.color ? 'ring-2 ring-white/20 bg-white/5' : 'opacity-40'} px-4 py-2 rounded-2xl" style="color:${p1.color}">${p1.name}</span>
                 <span class="text-slate-700 font-bold italic">VS</span>
-                <span class="${gameState.currentPlayer === p2.color ? 'ring-2 ring-white/20 bg-white/5' : 'opacity-40'} px-4 py-2 rounded-2xl uppercase font-black" style="color:${p2.color}">${p2.name}</span>
+                <span class="${gameState.currentPlayer === p2.color ? 'ring-2 ring-white/20 bg-white/5' : 'opacity-40'} px-4 py-2 rounded-2xl" style="color:${p2.color}">${p2.name}</span>
             `;
             if (gameState.gameOver) { document.getElementById('win-overlay').classList.remove('hidden'); document.getElementById('win-text').innerText = gameState.winner + " GAGNE !"; }
         }
