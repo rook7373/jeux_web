@@ -39,7 +39,7 @@
         <div id="setup" class="glass p-8 rounded-[3rem] max-w-md mx-auto shadow-2xl">
             <h2 class="text-xs text-center tracking-[0.3em] text-yellow-500/50 mb-6 uppercase">Ajouter les joueurs</h2>
             <div class="flex gap-2 mb-6">
-                <input type="text" id="p-input" placeholder="NOM..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-yellow-500 font-black uppercase">
+                <input type="text" id="p-input" onkeydown="if(event.key === 'Enter') addPlayer()" placeholder="NOM..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-yellow-500 font-black uppercase">
                 <button onclick="addPlayer()" class="bg-yellow-500 text-black px-6 rounded-2xl font-black hover:bg-yellow-400 transition-all text-xl">+</button>
             </div>
             <div id="chips" class="flex flex-wrap gap-2 mb-8"></div>

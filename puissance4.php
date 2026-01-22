@@ -62,7 +62,7 @@
                 </div>
             </div>
 
-            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-slate-100 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-blue-400 font-black uppercase">
+            <input type="text" id="my-name-in" onkeydown="if(event.key === 'Enter') addPlayer()" placeholder="TON PSEUDO..." class="w-full bg-slate-100 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-blue-400 font-black uppercase">
             
             <button onclick="startAction()" class="w-full bg-black text-white py-6 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all font-black">DÉMARRER</button>
             <button onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</button>
