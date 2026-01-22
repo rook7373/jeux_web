@@ -31,17 +31,18 @@ if (isset($_GET['action'])) {
         body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         
-        /* PLATEAU PLUS LUMINEUX */
         #board { background-color: #3b82f6; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.6rem; padding: 1.2rem; border-radius: 2.5rem; border: 8px solid #60a5fa; width: 100%; max-width: 500px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); }
         .cell { background-color: #334155; border-radius: 50%; aspect-ratio: 1 / 1; position: relative; transition: all 0.4s; box-shadow: inset 0 4px 8px rgba(0,0,0,0.4); }
         .column { cursor: pointer; display: flex; flex-direction: column; gap: 0.6rem; border-radius: 1.5rem; padding: 4px; z-index: 10; }
         
-        /* Couleurs Jetons */
+        /* Styles des jetons et de l'effet de dernier coup */
         .cell.red { background: #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
-        .cell.yellow { background: #facc15; box-shadow: 0 0 30px rgba(250, 204, 21, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.blue { background: #0ea5e9; box-shadow: 0 0 30px rgba(14, 165, 233, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.green { background: #22c55e; box-shadow: 0 0 30px rgba(34, 197, 94, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.purple { background: #a855f7; box-shadow: 0 0 30px rgba(168, 85, 247, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
+        .cell.cyan { background: #06b6d4; box-shadow: 0 0 30px rgba(6, 182, 212, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
+        .cell.orange { background: #f97316; box-shadow: 0 0 30px rgba(249, 115, 22, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
+        .cell.yellow { background: #facc15; box-shadow: 0 0 30px rgba(250, 204, 21, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
 
         .last-move::after { content: ''; position: absolute; inset: -4px; border: 4px solid white; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
@@ -72,11 +73,13 @@ if (isset($_GET['action'])) {
         <div class="space-y-6">
             <div class="text-center">
                 <p class="text-[10px] text-slate-400 mb-4 tracking-widest uppercase">COULEUR DE TES PIONS</p>
-                <div class="flex justify-center gap-4">
+                <div class="flex justify-center gap-4 flex-wrap">
                     <div onclick="setColor('red')" id="c-red" class="color-dot bg-red-500 active"></div>
                     <div onclick="setColor('blue')" id="c-blue" class="color-dot bg-blue-500"></div>
                     <div onclick="setColor('green')" id="c-green" class="color-dot bg-emerald-500"></div>
                     <div onclick="setColor('purple')" id="c-purple" class="color-dot bg-purple-500"></div>
+                    <div onclick="setColor('cyan')" id="c-cyan" class="color-dot bg-cyan-500"></div>
+                    <div onclick="setColor('orange')" id="c-orange" class="color-dot bg-orange-500"></div>
                 </div>
             </div>
 
@@ -127,8 +130,11 @@ if (isset($_GET['action'])) {
 
         function setOpponent(opp) { 
             localOpponent = opp; 
-            document.getElementById('opp-ai').className = (opp === 'ai') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all" : "bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black transition-all";
-            document.getElementById('opp-human').className = (opp === 'human') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all" : "bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black transition-all";
+            const ai = document.getElementById('opp-ai');
+            const hu = document.getElementById('opp-human');
+            
+            ai.className = (opp === 'ai') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all" : "bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black transition-all";
+            hu.className = (opp === 'human') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all" : "bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black transition-all";
         }
 
         function setColor(c) { 
@@ -148,7 +154,7 @@ if (isset($_GET['action'])) {
                 
                 // GESTION DOUBLON COULEUR
                 if (gameState.players.length === 1 && gameState.players[0].color === myColor) {
-                    const fallback = ['red', 'blue', 'green', 'purple'].find(c => c !== gameState.players[0].color);
+                    const fallback = ['red', 'blue', 'green', 'purple', 'cyan', 'orange'].find(c => c !== gameState.players[0].color);
                     myColor = fallback;
                 }
 
