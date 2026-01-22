@@ -2,82 +2,152 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skyjo - ScoreMaster</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Skyjo - Calepin de Score</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); min-height: 100vh; color: white; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        .score-input:focus { border-color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+    </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 font-sans">
-    <div id="setup" class="max-w-md mx-auto mt-12 bg-white p-8 rounded-3xl shadow-2xl">
-        <h2 class="text-3xl font-black mb-6 text-green-600 uppercase italic">Skyjo Setup</h2>
-        <input type="text" id="p-input" placeholder="Nom du joueur..." class="w-full border-2 p-4 rounded-2xl mb-4 outline-none focus:border-green-500">
-        <div id="chips" class="flex flex-wrap gap-2 mb-6"></div>
-        <button onclick="start()" class="w-full bg-black text-white py-4 rounded-2xl font-black uppercase">Lancer la partie</button>
-        <a href="index.html" class="block text-center mt-4 text-gray-400 font-bold">Retour</a>
-    </div>
+<body class="p-4 font-sans uppercase font-black">
 
-    <div id="game" class="hidden max-w-4xl mx-auto">
-        <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow">
-            <h2 class="text-2xl font-black text-green-600 italic uppercase">Skyjo</h2>
-            <button onclick="saveAndExit()" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold text-sm">FINIR & SAUVER</button>
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-black italic tracking-tighter text-yellow-500">
+                SKYJO <span class="text-white">SCORE</span>
+            </h1>
+        </header>
+
+        <div id="setup" class="glass p-8 rounded-[3rem] max-w-md mx-auto shadow-2xl border-t-2 border-yellow-500/20">
+            <h2 class="text-xs text-center tracking-[0.3em] text-yellow-500/50 mb-6">Ajouter les joueurs</h2>
+            
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="p-input" placeholder="NOM..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-yellow-500 font-black uppercase">
+                <button onclick="addPlayer()" class="bg-yellow-500 text-black px-6 rounded-2xl font-black hover:bg-yellow-400 transition-all text-xl">+</button>
+            </div>
+
+            <div id="chips" class="flex flex-wrap gap-2 mb-8"></div>
+
+            <button onclick="start()" class="w-full bg-white text-black py-5 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">
+                Lancer la partie
+            </button>
+            
+            <button onclick="window.location.href='index.html'" class="w-full mt-4 text-[10px] text-white/20 tracking-widest hover:text-white transition-all">
+                RETOUR HUB
+            </button>
         </div>
-        <div class="overflow-x-auto bg-white rounded-3xl shadow-xl">
-            <table class="w-full border-collapse">
-                <thead id="t-head" class="bg-gray-50"></thead>
-                <tbody id="t-body"></tbody>
-                <tfoot id="t-foot" class="bg-gray-900 text-white"></tfoot>
-            </table>
+
+        <div id="game" class="hidden space-y-6">
+            <div class="flex justify-between items-center glass p-4 rounded-3xl border border-white/10">
+                <button onclick="location.reload()" class="text-[10px] bg-white/10 px-4 py-2 rounded-xl hover:bg-red-500 transition-all">Annuler</button>
+                <div class="text-xs tracking-widest text-yellow-500">Partie en cours</div>
+                <button onclick="window.location.href='index.html'" class="text-[10px] bg-green-600 px-4 py-2 rounded-xl shadow-lg">Quitter</button>
+            </div>
+
+            <div class="glass rounded-[3rem] shadow-2xl overflow-hidden border border-white/10">
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead id="t-head" class="bg-white/5 text-[10px] text-slate-400"></thead>
+                        <tbody id="t-body" class="text-center font-black"></tbody>
+                        <tfoot id="t-foot" class="bg-yellow-500 text-black"></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <button onclick="addRound()" class="w-full bg-white text-black py-6 rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-all">
+                + TOUR SUIVANT
+            </button>
         </div>
-        <button onclick="addRound()" class="w-full mt-4 bg-green-500 text-white py-5 rounded-2xl font-black text-xl shadow-lg">+ TOUR SUIVANT</button>
     </div>
 
     <script>
         let players = [];
+
         function addPlayer() {
-            const v = document.getElementById('p-input').value.trim();
-            if(v) { players.push({name:v, rounds:[]}); document.getElementById('p-input').value=""; renderChips(); }
+            const input = document.getElementById('p-input');
+            const name = input.value.trim().toUpperCase();
+            if(name) {
+                players.push({ name: name, rounds: [] });
+                input.value = "";
+                renderChips();
+            }
         }
+
         document.getElementById('p-input').onkeyup = (e) => e.key === 'Enter' && addPlayer();
+
         function renderChips() {
-            document.getElementById('chips').innerHTML = players.map(p => `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold text-xs uppercase">${p.name}</span>`).join('');
+            document.getElementById('chips').innerHTML = players.map((p, i) => `
+                <div class="flex items-center bg-white/10 px-4 py-2 rounded-xl gap-3 border border-white/5">
+                    <span class="text-xs font-black">${p.name}</span>
+                    <button onclick="removePlayer(${i})" class="text-red-500 text-xs hover:scale-125 transition-all">✕</button>
+                </div>
+            `).join('');
         }
+
+        function removePlayer(i) {
+            players.splice(i, 1);
+            renderChips();
+        }
+
         function start() {
-            if(players.length === 0) return;
+            if(players.length === 0) return alert("Ajoute au moins un joueur !");
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
-            let h = `<tr><th class="p-4 text-xs text-gray-400">TOUR</th>`;
-            players.forEach(p => h += `<th class="p-4 border-l text-center font-black text-green-600">${p.name}</th>`);
+            
+            let h = `<tr><th class="p-5 text-left w-20 tracking-widest">TOUR</th>`;
+            players.forEach(p => h += `<th class="p-5 border-l border-white/5 text-xl italic">${p.name}</th>`);
             document.getElementById('t-head').innerHTML = h + `</tr>`;
+            
             addRound();
         }
+
         function addRound() {
             players.forEach(p => p.rounds.push(0));
             renderTable();
+            // Scroll automatique vers le bas
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
+
         function renderTable() {
             let b = "";
-            for(let r=0; r < players[0].rounds.length; r++) {
-                b += `<tr><td class="p-4 border-b text-center font-bold text-gray-300 italic">${r+1}</td>`;
+            const roundCount = players[0].rounds.length;
+            
+            for(let r=0; r < roundCount; r++) {
+                b += `<tr class="border-t border-white/5">
+                        <td class="p-5 text-white/20 italic text-sm">#${r+1}</td>`;
                 players.forEach((p, pi) => {
-                    b += `<td class="p-2 border-b border-l"><input type="number" value="${p.rounds[r]}" onchange="players[${pi}].rounds[${r}]=parseInt(this.value)||0;renderTable();" class="w-full text-center text-3xl font-black outline-none bg-transparent"></td>`;
+                    b += `<td class="p-2 border-l border-white/5">
+                            <input type="number" 
+                                   value="${p.rounds[r]}" 
+                                   onchange="updateScore(${pi}, ${r}, this.value)" 
+                                   class="score-input w-full text-center text-4xl font-black outline-none bg-transparent py-4 transition-all rounded-2xl"
+                                   onclick="this.select()">
+                          </td>`;
                 });
                 b += `</tr>`;
             }
             document.getElementById('t-body').innerHTML = b;
-            let f = `<tr class="bg-gray-900 text-white"><td class="p-4 font-black">TOTAL</td>`;
+            updateFooter();
+        }
+
+        function updateScore(pIdx, rIdx, val) {
+            players[pIdx].rounds[rIdx] = parseInt(val) || 0;
+            updateFooter();
+        }
+
+        function updateFooter() {
+            let f = `<tr><td class="p-6 font-black tracking-widest text-xs">TOTAL</td>`;
             players.forEach(p => {
                 const tot = p.rounds.reduce((a,b)=>a+b,0);
-                f += `<td class="p-4 border-l text-center font-black text-2xl ${tot>=100?'bg-red-600 animate-pulse':''}">${tot}</td>`;
-                if(tot >= 100) setTimeout(() => alert(p.name + " a perdu !"), 200);
+                const isGameOver = tot >= 100;
+                f += `<td class="p-6 border-l border-black/10 text-center font-black text-4xl ${isGameOver ? 'bg-red-600 text-white animate-pulse' : ''}">
+                        ${tot}
+                      </td>`;
             });
             document.getElementById('t-foot').innerHTML = f + "</tr>";
-        }
-        async function saveAndExit() {
-            let res = { game: "Skyjo", results: players.map(p => ({name:p.name, score: p.rounds.reduce((a,b)=>a+b,0)})) };
-            res.winner = [...res.results].sort((a,b)=>a.score-b.score)[0].name;
-            const h = await (await fetch('api.php?action=stats')).json();
-            h.push(res);
-            await fetch('api.php?action=stats', {method:'POST', body: JSON.stringify(h)});
-            location.href='index.html';
         }
     </script>
 </body>
