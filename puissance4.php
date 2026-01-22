@@ -1,42 +1,20 @@
-<?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST");
-header("Access-Control-Allow-Headers: Content-Type");
-
-if (isset($_GET['action'])) {
-    header('Content-Type: application/json');
-    if (!is_dir('rooms')) { mkdir('rooms', 0777, true); }
-    $roomId = preg_replace('/[^a-zA-Z0-9]/', '', $_GET['roomId'] ?? '');
-    $file = "rooms/p4_$roomId.json";
-
-    if ($_GET['action'] === 'sync' && $roomId) {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            file_put_contents($file, file_get_contents('php://input'));
-            echo json_encode(["status" => "saved"]);
-        } else {
-            echo file_exists($file) ? file_get_contents($file) : json_encode(null);
-        }
-        exit;
-    }
-}
-?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Puissance 4 Pro - Arena</title>
+    <title>Puissance 4 Arena - Live</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         
-        /* PLATEAU BLEU VIF */
+        /* Plateau Bleu Vif pour visibilité */
         #board { background-color: #2563eb; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.6rem; padding: 1.2rem; border-radius: 2.5rem; border: 8px solid #1e40af; width: 100%; max-width: 500px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); }
         .cell { background-color: #0f172a; border-radius: 50%; aspect-ratio: 1 / 1; position: relative; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: inset 0 4px 8px rgba(0,0,0,0.5); }
         .column { cursor: pointer; display: flex; flex-direction: column; gap: 0.6rem; border-radius: 1.5rem; padding: 4px; }
 
-        /* JETONS */
+        /* Couleurs Jetons */
         .cell.red { background: #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.blue { background: #0ea5e9; box-shadow: 0 0 30px rgba(14, 165, 233, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.green { background: #22c55e; box-shadow: 0 0 30px rgba(34, 197, 94, 0.7), inset 0 -4px 6px rgba(0,0,0,0.3); }
@@ -48,32 +26,32 @@ if (isset($_GET['action'])) {
         .last-move::after { content: ''; position: absolute; inset: -4px; border: 4px solid white; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
 
-        /* SELECTION COULEUR */
+        /* Selection Couleur Ultra Visible */
         .color-dot { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 4px solid #f1f5f9; transition: 0.3s; }
-        .color-dot.active { border-color: #0f172a; transform: scale(1.3); box-shadow: 0 0 20px rgba(0,0,0,0.2); }
+        .color-dot.active { border-color: #000000; transform: scale(1.3); box-shadow: 0 0 20px rgba(255,255,255,0.4); }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center font-sans uppercase font-black">
 
     <div id="setup" class="max-w-md w-full bg-white p-10 rounded-[3.5rem] shadow-2xl text-slate-900 z-50">
-        <h2 id="setup-title" class="text-4xl font-black mb-8 text-blue-600 text-center italic tracking-tighter uppercase">P4 <span class="text-slate-200">Arena</span></h2>
+        <h2 id="setup-title" class="text-4xl font-black mb-8 text-blue-600 text-center italic tracking-tighter uppercase">P4 ARENA</h2>
         
         <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
-            <button type="button" onclick="setMode('local')" id="m-local" class="bg-blue-600 text-white py-4 rounded-2xl shadow-lg transition">Local</button>
-            <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-200 text-slate-500 py-4 rounded-2xl transition">En Ligne</button>
+            <button type="button" onclick="setMode('local')" id="m-local" class="bg-blue-600 text-white py-4 rounded-2xl shadow-lg transition font-black">LOCAL</button>
+            <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-200 text-slate-500 py-4 rounded-2xl transition font-black">EN LIGNE</button>
         </div>
 
         <div id="local-options" class="space-y-4 mb-8">
-            <p class="text-center text-[10px] font-black text-slate-400">Choix de l'adversaire :</p>
+            <p class="text-center text-[10px] font-black text-slate-400">CHOIX DE L'ADVERSAIRE :</p>
             <div class="grid grid-cols-2 gap-3">
-                <button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-blue-600 text-white py-4 rounded-2xl text-xs shadow-md transition-all">🤖 IA</button>
-                <button type="button" onclick="setOpponent('human')" id="opp-human" class="bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs transition-all">👤 Humain</button>
+                <button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md">🤖 IA</button>
+                <button type="button" onclick="setOpponent('human')" id="opp-human" class="bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black">👤 HUMAIN</button>
             </div>
         </div>
 
         <div class="space-y-6">
             <div class="text-center">
-                <p class="text-[10px] text-slate-400 mb-4 tracking-widest uppercase">Ta Couleur</p>
+                <p class="text-[10px] text-slate-400 mb-4 tracking-widest uppercase">COULEUR DES PIONS</p>
                 <div class="flex justify-center gap-4 flex-wrap">
                     <div onclick="setColor('red')" id="c-red" class="color-dot bg-red-500 active"></div>
                     <div onclick="setColor('blue')" id="c-blue" class="color-dot bg-blue-500"></div>
@@ -84,28 +62,29 @@ if (isset($_GET['action'])) {
                 </div>
             </div>
 
-            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-blue-400 uppercase font-black">
+            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-slate-100 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-blue-400 font-black uppercase">
             
-            <button onclick="startAction()" class="w-full bg-black text-white py-6 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all">Démarrer</button>
-            <button onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest py-2">RETOUR HUB</button>
+            <button onclick="startAction()" class="w-full bg-black text-white py-6 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all font-black">DÉMARRER</button>
+            <button onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</button>
         </div>
     </div>
 
     <div id="game" class="hidden max-w-2xl w-full glass p-8 rounded-[4rem] border border-white/10 shadow-2xl">
         <div class="flex justify-between items-center mb-8">
-            <button onclick="window.location.href='index.html'" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition">MENU</button>
-            <div id="players-display" class="flex gap-8 text-[12px] tracking-widest items-center"></div>
-            <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px] shadow-lg">LIEN</button>
+            <button onclick="window.location.href='index.html'" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black">MENU</button>
+            <div id="players-display" class="flex gap-8 text-[12px] tracking-widest items-center font-black"></div>
+            <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg uppercase">LIEN</button>
         </div>
         <div class="flex justify-center mb-10"><div id="board"></div></div>
         <div id="win-overlay" class="hidden text-center">
             <p id="win-text" class="text-5xl text-yellow-500 mb-8 italic tracking-tighter"></p>
-            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition">ENREGISTRER & QUITTER</button>
+            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition uppercase">ENREGISTRER & QUITTER</button>
         </div>
     </div>
 
     <script>
-        const API = 'puissance4.php'; const STATS_API = 'api.php'; const ROWS = 6, COLS = 7;
+        const API = 'api_puissance4.php'; // On pointe vers le nouvel API
+        const ROWS = 6, COLS = 7;
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', myColor = 'red', gameMode = roomId ? 'remote' : 'local', localOpponent = 'ai';
         let gameState = { players: [], board: Array(6).fill(null).map(() => Array(7).fill(null)), currentPlayer: '', lastMove: null, gameOver: false, winner: '' };
@@ -169,9 +148,14 @@ if (isset($_GET['action'])) {
         }
 
         async function syncPush() { if(roomId) await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) }); }
+        
         async function syncPull() {
             if(!roomId) return;
-            try { const r = await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); const data = await r.json(); if (data) { gameState = data; render(); } } catch(e) {}
+            try { 
+                const r = await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); 
+                const data = await r.json(); 
+                if (data) { gameState = data; render(); } 
+            } catch(e) {}
         }
 
         function handleMove(col) {
@@ -230,9 +214,19 @@ if (isset($_GET['action'])) {
         }
 
         async function saveAndReset() {
-            const gameData = { game: "Puissance 4", date: new Date().toLocaleDateString('fr-FR'), results: gameState.players.map(p => ({ name: p.name, score: p.name === gameState.winner ? 1 : 0 })), winner: gameState.winner };
-            try { const r = await fetch(`${STATS_API}?action=stats`); let history = await r.json(); if (!Array.isArray(history)) history = []; history.push(gameData);
-                await fetch(`${STATS_API}?action=stats`, { method: 'POST', body: JSON.stringify(history) }); window.location.href = 'index.html';
+            const gameData = { 
+                game: "Puissance 4", 
+                date: new Date().toLocaleDateString('fr-FR'), 
+                results: gameState.players.map(p => ({ name: p.name, score: p.name === gameState.winner ? 1 : 0 })), 
+                winner: gameState.winner 
+            };
+            try { 
+                const r = await fetch(`${API}?action=stats`); 
+                let history = await r.json(); 
+                if (!Array.isArray(history)) history = []; 
+                history.push(gameData);
+                await fetch(`${API}?action=stats`, { method: 'POST', body: JSON.stringify(history) }); 
+                window.location.href = 'index.html';
             } catch (e) { window.location.href = 'index.html'; }
         }
         function copyLink() { navigator.clipboard.writeText(window.location.href); alert("LIEN COPIÉ !"); }
