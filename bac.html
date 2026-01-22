@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Petit Bac LIVE</title>
+    <title>Petit Bac LIVE - Emojis Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style> 
         .word-refused { text-decoration: line-through; color: #ef4444 !important; opacity: 0.5; border-color: #fecaca !important; background-color: #fef2f2 !important; } 
@@ -13,10 +13,17 @@
         @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
         .cat-chip { transition: all 0.2s; border: 2px solid #e2e8f0; text-align: center; padding: 0.8rem; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; border-radius: 1rem; background: white; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; }
         .cat-chip.active { background-color: #fbbf24; color: white; border-color: #d97706; }
-        input { border-radius: 1.25rem !important; }
+        
+        /* Animation des Emojis */
+        .emoji-bubble { animation: popOut 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popOut { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .floating-reactions { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 100px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .emoji-btn { font-size: 1.5rem; cursor: pointer; transition: transform 0.1s; }
+        .emoji-btn:active { transform: scale(1.4); }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900">
+<body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900 pb-24">
 
     <div id="setup" class="max-w-7xl mx-auto mt-2 bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-white">
         <h2 class="text-3xl font-black mb-6 text-yellow-500 uppercase italic text-center">Petit Bac <span class="text-slate-200">Live</span></h2>
@@ -28,11 +35,11 @@
                 </div>
                 <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-60 overflow-y-auto"></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="number" id="max-time-in" value="120" placeholder="Temps" class="p-4 border text-center font-black">
-                    <input type="number" id="max-rounds-in" value="5" placeholder="Manches" class="p-4 border text-center font-black">
+                    <input type="number" id="max-time-in" value="120" placeholder="Temps" class="p-4 border text-center font-black rounded-2xl">
+                    <input type="number" id="max-rounds-in" value="5" placeholder="Manches" class="p-4 border text-center font-black rounded-2xl">
                 </div>
             </div>
-            <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full p-5 rounded-2xl border-2 border-yellow-200 text-center font-black text-xl">
+            <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full p-5 rounded-2xl border-2 border-yellow-200 text-center font-black text-xl shadow-sm">
             <button onclick="startAction()" class="w-full bg-black text-white py-6 rounded-2xl font-black uppercase text-xl shadow-xl">Démarrer</button>
         </div>
     </div>
@@ -41,10 +48,19 @@
         <div class="bg-white p-4 rounded-3xl shadow-xl mb-4 flex justify-between items-center border-t-8 border-yellow-500">
             <div class="flex items-center gap-3">
                 <div id="round-indicator" class="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-full text-slate-400">0/0</div>
-                <div id="cur-letter" class="bg-yellow-500 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl">?</div>
+                <div id="cur-letter" class="bg-yellow-500 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl shadow-md">?</div>
                 <div id="timer-display" class="font-mono font-black text-red-500 text-2xl hidden">0s</div>
             </div>
             <button onclick="copyRoomLink()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black border uppercase">Lien</button>
+        </div>
+
+        <div id="reaction-bar" class="floating-reactions hidden">
+            <span class="emoji-btn" onclick="sendReaction('😂')">😂</span>
+            <span class="emoji-btn" onclick="sendReaction('😮')">😮</span>
+            <span class="emoji-btn" onclick="sendReaction('😡')">😡</span>
+            <span class="emoji-btn" onclick="sendReaction('🔥')">🔥</span>
+            <span class="emoji-btn" onclick="sendReaction('💩')">💩</span>
+            <span class="emoji-btn" onclick="sendReaction('👍')">👍</span>
         </div>
 
         <div id="play-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl mb-6 border-4 border-yellow-400">
@@ -59,13 +75,13 @@
         </div>
 
         <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border">
-            <table class="w-full">
+            <table class="w-full text-sm">
                 <thead id="t-head" class="bg-slate-50 text-[10px] uppercase text-slate-400"></thead>
                 <tbody id="t-body" class="text-center font-black"></tbody>
                 <tfoot id="t-foot" class="bg-slate-900 text-white"></tfoot>
             </table>
             <div id="creator-controls" class="hidden">
-                <button onclick="startLetter(false)" class="w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest">Manche Suivante</button>
+                <button onclick="startLetter(false)" class="w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest shadow-inner">Manche Suivante</button>
                 <button onclick="startLetter(true)" class="w-full bg-indigo-600 text-white py-4 font-black text-xs uppercase border-t border-indigo-400">🎲 Nouvelle Manche + Aléatoire</button>
             </div>
         </div>
@@ -108,16 +124,19 @@
             myName = document.getElementById('my-name-in').value.trim();
             if(!myName) return alert("Pseudo requis");
             if (!roomId) {
-                if(selectedCats.length === 0) return alert("Choisis des thèmes !");
-                maxTime = parseInt(document.getElementById('max-time-in').value) || 120;
-                maxRounds = parseInt(document.getElementById('max-rounds-in').value) || 5;
                 roomId = Math.random().toString(36).substring(2, 8);
                 window.history.pushState({}, '', `?room=${roomId}`);
-                players = [{ name: myName, rounds: [], currentInputs: {} }];
+                players = [{ name: myName, rounds: [], currentInputs: {}, reaction: '' }];
                 setInterval(syncPull, 1000);
+            } else {
+                await syncPull();
+                if (!players.find(p => p.name === myName)) {
+                    players.push({ name: myName, rounds: Array(currentRoundCount).fill(0), currentInputs: {}, reaction: '' });
+                }
             }
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
+            document.getElementById('reaction-bar').classList.remove('hidden');
             await syncPush();
         }
 
@@ -133,10 +152,8 @@
             const data = await r.json();
             if (!data) return;
 
-            // SYNC STATUS : Si le serveur est en 'validation', on force localement
             if (data.status === 'validation') {
-                status = 'validation';
-                clearInterval(timerInterval);
+                status = 'validation'; clearInterval(timerInterval);
             } else if (players[0] && myName !== players[0].name) {
                 status = data.status;
             }
@@ -145,25 +162,30 @@
                 let pLoc = players.find(pl => pl.name === pSrv.name);
                 if (pLoc) {
                     pLoc.rounds = pSrv.rounds;
+                    pLoc.reaction = pSrv.reaction; // Sync des emojis
                     if (pLoc.name !== myName) pLoc.currentInputs = pSrv.currentInputs;
                 } else { players.push(pSrv); }
             });
 
             if (players[0] && myName !== players[0].name) {
                 if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
-                    selectedCats = data.selectedCats;
-                    isInputRendered = false;
+                    selectedCats = data.selectedCats; isInputRendered = false;
                 }
             }
 
-            currentLetter = data.currentLetter;
-            usedLetters = data.usedLetters || [];
-            refusedWords = data.refusedWords || [];
-            maxTime = data.maxTime;
-            maxRounds = data.maxRounds;
-            currentRoundCount = data.currentRoundCount;
+            currentLetter = data.currentLetter; usedLetters = data.usedLetters || [];
+            refusedWords = data.refusedWords || []; maxTime = data.maxTime;
+            maxRounds = data.maxRounds; currentRoundCount = data.currentRoundCount;
             if (players[0] && myName !== players[0].name) timeLeft = data.timeLeft;
             refreshUI();
+        }
+
+        function sendReaction(emoji) {
+            const me = players.find(p => p.name === myName);
+            me.reaction = emoji;
+            syncPush();
+            refreshUI();
+            setTimeout(() => { me.reaction = ''; syncPush(); }, 3000);
         }
 
         function refreshUI() {
@@ -196,14 +218,17 @@
             const list = document.getElementById('val-list');
             let h = "";
             selectedCats.forEach(cat => {
-                h += `<div class="bg-slate-50 p-4 rounded-3xl border"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">${cat}</p><div class="space-y-2">`;
+                h += `<div class="bg-slate-50 p-4 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">${cat}</p><div class="space-y-2">`;
                 players.forEach((p, pi) => {
                     const id = `${pi}-${cat}`;
                     const word = (p.currentInputs[cat] || '').trim();
                     const isRefused = refusedWords.includes(id);
                     const isDup = word && players.some((o, oi) => oi !== pi && (o.currentInputs[cat] || '').trim().toLowerCase() === word.toLowerCase());
                     let pts = isRefused ? 0 : (isDup ? 5 : 10); if (!word) pts = 0;
-                    h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : 'bg-white border-white')}"><span class="font-bold text-sm uppercase">${p.name}: ${word || '-'}</span><span class="text-[10px] font-black">${pts} PTS</span></button>`;
+                    h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : 'bg-white border-white')}">
+                        <span class="font-bold text-sm uppercase">${p.name} ${p.reaction ? `<span class="emoji-bubble ml-2">${p.reaction}</span>` : ''}: ${word || '-'}</span>
+                        <span class="text-[10px] font-black">${pts} PTS</span>
+                    </button>`;
                 });
                 h += `</div></div>`;
             });
@@ -217,9 +242,7 @@
         }
 
         async function triggerStop() {
-            status = 'validation';
-            clearInterval(timerInterval);
-            await syncPush(); 
+            status = 'validation'; clearInterval(timerInterval); await syncPush();
         }
 
         function startLetter(isRandom) {
@@ -230,8 +253,7 @@
             currentLetter = available[Math.floor(Math.random() * available.length)];
             usedLetters.push(currentLetter);
             status = 'playing'; currentRoundCount++; refusedWords = [];
-            players.forEach(p => p.currentInputs = {});
-            isInputRendered = false;
+            players.forEach(p => p.currentInputs = {}); isInputRendered = false;
             if (maxTime > 0) { timeLeft = maxTime; startTimer(); }
             syncPush();
         }
@@ -240,18 +262,17 @@
             clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 if (status === 'playing' && players[0]?.name === myName) {
-                    timeLeft--;
-                    if (timeLeft <= 0) { timeLeft = 0; status = 'validation'; }
+                    timeLeft--; if (timeLeft <= 0) { timeLeft = 0; status = 'validation'; }
                     syncPush();
                 }
             }, 1000);
         }
 
         function renderTable() {
-            let h = `<tr><th class="p-4 text-[10px] text-slate-400">Joueurs</th>${players.map(p => `<th class="p-4 border-l text-indigo-600 font-black uppercase text-sm">${p.name}</th>`).join('')}</tr>`;
+            let h = `<tr><th class="p-4 text-[10px] text-slate-400">Joueurs</th>${players.map(p => `<th class="p-4 border-l text-indigo-600 font-black uppercase text-sm relative">${p.name} ${p.reaction ? `<div class="absolute -top-2 left-1/2 -translate-x-1/2 emoji-bubble text-xl">${p.reaction}</div>` : ''}</th>`).join('')}</tr>`;
             document.getElementById('t-head').innerHTML = h;
             let b = ""; const rCount = players[0]?.rounds.length || 0;
-            for(let r=0; r<rCount; r++) { b += `<tr class="border-t"><td>M${r+1}</td>${players.map(p => `<td class="p-4 border-l font-black text-slate-600">${p.rounds[r] || 0}</td>`).join('')}</tr>`; }
+            for(let r=0; r<rCount; r++) { b += `<tr class="border-t"><td class="text-xs text-slate-400 font-bold italic">M${r+1}</td>${players.map(p => `<td class="p-4 border-l font-black text-slate-600">${p.rounds[r] || 0}</td>`).join('')}</tr>`; }
             document.getElementById('t-body').innerHTML = b;
             document.getElementById('t-foot').innerHTML = `<tr class="bg-slate-900 text-white"><td class="p-5 font-black uppercase text-xs">Total</td>${players.map(p => `<td class="p-5 border-l font-black text-yellow-500 text-2xl">${p.rounds.reduce((a,b)=>a+b,0)}</td>`).join('')}</tr>`;
         }

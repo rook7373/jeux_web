@@ -16,13 +16,12 @@ if ($action === 'sync' && $roomId) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newData = json_decode(file_get_contents('php://input'), true);
         
-        // --- LOGIQUE DE VERROUILLAGE ---
         if (file_exists($file)) {
             $currentData = json_decode(file_get_contents($file), true);
-            // Si le serveur est déjà en validation, on interdit de repasser en 'playing'
+            // Verrouillage du statut 'validation'
             if (isset($currentData['status']) && $currentData['status'] === 'validation') {
                 if (isset($newData['status']) && $newData['status'] === 'playing') {
-                    $newData['status'] = 'validation'; // On force le maintien du STOP
+                    $newData['status'] = 'validation'; 
                 }
             }
         }
