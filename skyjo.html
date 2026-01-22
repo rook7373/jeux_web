@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Skyjo - Calepin de Score</title>
+    <title>Skyjo - Score Master</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); min-height: 100vh; color: white; overflow-x: hidden; }
@@ -11,21 +11,19 @@
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
         .score-input:focus { border-color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
         
-        /* Animation Popup */
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body class="p-4 font-sans uppercase font-black">
 
-    <div id="finish-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+    <div id="finish-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-xl items-center justify-center p-4">
         <div class="bg-white rounded-[3rem] p-10 max-w-sm w-full text-center text-slate-900 animate-pop shadow-2xl">
-            <div class="text-6xl mb-4">🏁</div>
-            <h2 class="text-3xl font-black mb-2 italic tracking-tighter">PARTIE TERMINÉE</h2>
-            <p id="winner-msg" class="text-xl text-green-600 mb-6 font-black uppercase tracking-tighter"></p>
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-3xl font-black mb-2 italic tracking-tighter uppercase">Terminé !</h2>
+            <p id="winner-msg" class="text-xl text-green-600 mb-6 font-black uppercase"></p>
             
-            <div id="final-scores-list" class="space-y-2 mb-8 text-left bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                </div>
+            <div id="final-scores-list" class="space-y-2 mb-8 text-left bg-slate-50 p-6 rounded-2xl border border-slate-200"></div>
             
             <button onclick="saveAndExit()" class="w-full bg-black text-white py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl">ENREGISTRER & QUITTER</button>
         </div>
@@ -38,30 +36,22 @@
             </h1>
         </header>
 
-        <div id="setup" class="glass p-8 rounded-[3rem] max-w-md mx-auto shadow-2xl border-t-2 border-yellow-500/20">
-            <h2 class="text-xs text-center tracking-[0.3em] text-yellow-500/50 mb-6">Ajouter les joueurs</h2>
-            
+        <div id="setup" class="glass p-8 rounded-[3rem] max-w-md mx-auto shadow-2xl">
+            <h2 class="text-xs text-center tracking-[0.3em] text-yellow-500/50 mb-6 uppercase">Ajouter les joueurs</h2>
             <div class="flex gap-2 mb-6">
                 <input type="text" id="p-input" placeholder="NOM..." class="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-yellow-500 font-black uppercase">
                 <button onclick="addPlayer()" class="bg-yellow-500 text-black px-6 rounded-2xl font-black hover:bg-yellow-400 transition-all text-xl">+</button>
             </div>
-
             <div id="chips" class="flex flex-wrap gap-2 mb-8"></div>
-
-            <button onclick="start()" class="w-full bg-white text-black py-5 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">
-                Lancer la partie
-            </button>
-            
-            <button onclick="window.location.href='index.html'" class="w-full mt-4 text-[10px] text-white/20 tracking-widest hover:text-white transition-all">
-                RETOUR HUB
-            </button>
+            <button onclick="start()" class="w-full bg-white text-black py-5 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all uppercase">Lancer la partie</button>
+            <button onclick="window.location.href='index.html'" class="w-full mt-4 text-[10px] text-white/20 tracking-widest uppercase">RETOUR HUB</button>
         </div>
 
         <div id="game" class="hidden space-y-6">
             <div class="flex justify-between items-center glass p-4 rounded-3xl border border-white/10">
-                <button onclick="location.reload()" class="text-[10px] bg-white/10 px-4 py-2 rounded-xl hover:bg-red-500 transition-all">Annuler</button>
-                <div class="text-xs tracking-widest text-yellow-500">Partie en cours</div>
-                <button onclick="window.location.href='index.html'" class="text-[10px] bg-green-600 px-4 py-2 rounded-xl shadow-lg">Quitter</button>
+                <button onclick="location.reload()" class="text-[10px] bg-white/10 px-4 py-2 rounded-xl">Annuler</button>
+                <div class="text-xs tracking-widest text-yellow-500 uppercase">Partie en cours</div>
+                <button onclick="window.location.href='index.html'" class="text-[10px] bg-green-600 px-4 py-2 rounded-xl">Quitter</button>
             </div>
 
             <div class="glass rounded-[3rem] shadow-2xl overflow-hidden border border-white/10">
@@ -74,15 +64,13 @@
                 </div>
             </div>
 
-            <button onclick="addRound()" class="w-full bg-white text-black py-6 rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-all">
-                + TOUR SUIVANT
-            </button>
+            <button onclick="addRound()" class="w-full bg-white text-black py-6 rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-all uppercase">+ TOUR SUIVANT</button>
         </div>
     </div>
 
     <script>
         let players = [];
-        const STATS_API = 'api.php';
+        const API = 'api.php'; // Utilise ton api.php pour stats.json
 
         function addPlayer() {
             const input = document.getElementById('p-input');
@@ -94,31 +82,24 @@
             }
         }
 
-        document.getElementById('p-input').onkeyup = (e) => e.key === 'Enter' && addPlayer();
-
         function renderChips() {
             document.getElementById('chips').innerHTML = players.map((p, i) => `
                 <div class="flex items-center bg-white/10 px-4 py-2 rounded-xl gap-3 border border-white/5">
                     <span class="text-xs font-black">${p.name}</span>
-                    <button onclick="removePlayer(${i})" class="text-red-500 text-xs hover:scale-125 transition-all">✕</button>
+                    <button onclick="removePlayer(${i})" class="text-red-500 text-xs">✕</button>
                 </div>
             `).join('');
         }
 
-        function removePlayer(i) {
-            players.splice(i, 1);
-            renderChips();
-        }
+        function removePlayer(i) { players.splice(i, 1); renderChips(); }
 
         function start() {
             if(players.length === 0) return alert("Ajoute au moins un joueur !");
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
-            
-            let h = `<tr><th class="p-5 text-left w-20 tracking-widest">TOUR</th>`;
+            let h = `<tr><th class="p-5 text-left w-20 tracking-widest uppercase">TOUR</th>`;
             players.forEach(p => h += `<th class="p-5 border-l border-white/5 text-xl italic">${p.name}</th>`);
             document.getElementById('t-head').innerHTML = h + `</tr>`;
-            
             addRound();
         }
 
@@ -131,16 +112,13 @@
         function renderTable() {
             let b = "";
             const roundCount = players[0].rounds.length;
-            
             for(let r=0; r < roundCount; r++) {
-                b += `<tr class="border-t border-white/5">
-                        <td class="p-5 text-white/20 italic text-sm">#${r+1}</td>`;
+                b += `<tr class="border-t border-white/5"><td class="p-5 text-white/20 italic text-sm">#${r+1}</td>`;
                 players.forEach((p, pi) => {
                     b += `<td class="p-2 border-l border-white/5">
-                            <input type="number" 
-                                   value="${p.rounds[r]}" 
+                            <input type="number" value="${p.rounds[r]}" 
                                    onchange="updateScore(${pi}, ${r}, this.value)" 
-                                   class="score-input w-full text-center text-4xl font-black outline-none bg-transparent py-4 transition-all rounded-2xl"
+                                   class="score-input w-full text-center text-4xl font-black outline-none bg-transparent py-4 rounded-2xl"
                                    onclick="this.select()">
                           </td>`;
                 });
@@ -157,76 +135,61 @@
         }
 
         function updateFooter() {
-            let f = `<tr><td class="p-6 font-black tracking-widest text-xs">TOTAL</td>`;
+            let f = `<tr><td class="p-6 font-black tracking-widest text-xs uppercase">TOTAL</td>`;
             players.forEach(p => {
                 const tot = p.rounds.reduce((a,b)=>a+b,0);
-                const isGameOver = tot >= 100;
-                f += `<td class="p-6 border-l border-black/10 text-center font-black text-4xl ${isGameOver ? 'bg-red-600 text-white animate-pulse' : ''}">
-                        ${tot}
-                      </td>`;
+                const isOver = tot >= 100;
+                f += `<td class="p-6 border-l border-black/10 text-center font-black text-4xl ${isOver ? 'bg-red-600 text-white animate-pulse' : ''}">${tot}</td>`;
             });
             document.getElementById('t-foot').innerHTML = f + "</tr>";
         }
 
         function checkGameOver() {
             const loser = players.find(p => p.rounds.reduce((a,b)=>a+b,0) >= 100);
-            
             if (loser) {
-                // Au Skyjo, le GAGNANT est celui qui a le MOINS de points
-                const results = players.map(p => ({
-                    name: p.name,
-                    score: p.rounds.reduce((a,b)=>a+b,0)
-                }));
-                
+                const results = players.map(p => ({ name: p.name, score: p.rounds.reduce((a,b)=>a+b,0) }));
                 const winner = results.reduce((prev, curr) => (curr.score < prev.score) ? curr : prev);
                 
                 document.getElementById('winner-msg').innerText = `${winner.name} GAGNE LA PARTIE !`;
                 document.getElementById('final-scores-list').innerHTML = results
                     .sort((a,b) => a.score - b.score)
                     .map(r => `
-                        <div class="flex justify-between font-black uppercase text-sm border-b border-slate-200 pb-2">
+                        <div class="flex justify-between font-black uppercase text-sm border-b pb-2 mb-2">
                             <span>${r.name}</span>
-                            <span class="${r.score >= 100 ? 'text-red-500' : 'text-slate-900'}">${r.score} PTS</span>
+                            <span class="${r.score >= 100 ? 'text-red-500' : ''}">${r.score} PTS</span>
                         </div>
                     `).join('');
                 
-                document.getElementById('finish-modal').classList.remove('hidden');
+                // Affichage du modal : on enlève 'hidden' et on ajoute 'flex'
+                const modal = document.getElementById('finish-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
             }
         }
 
         async function saveAndExit() {
-            const date = new Date().toLocaleDateString('fr-FR');
-            const results = players.map(p => ({
-                name: p.name,
-                score: p.rounds.reduce((a,b)=>a+b,0)
-            }));
+            const results = players.map(p => ({ name: p.name, score: p.rounds.reduce((a,b)=>a+b,0) }));
             const winnerName = results.reduce((prev, curr) => (curr.score < prev.score) ? curr : prev).name;
 
             const gameData = {
                 game: "Skyjo",
-                date: date,
+                date: new Date().toLocaleDateString('fr-FR'),
                 results: results,
                 winner: winnerName
             };
 
             try {
-                // Récupérer l'historique actuel
-                const resp = await fetch(`${STATS_API}?action=stats`);
+                const resp = await fetch(`${API}?action=stats`);
                 let history = await resp.json();
                 if (!Array.isArray(history)) history = [];
-                
-                // Ajouter la nouvelle partie
                 history.push(gameData);
                 
-                // Sauvegarder
-                await fetch(`${STATS_API}?action=stats`, {
+                await fetch(`${API}?action=stats`, {
                     method: 'POST',
                     body: JSON.stringify(history)
                 });
-                
                 window.location.href = 'index.html';
             } catch (e) {
-                console.error("Erreur de sauvegarde:", e);
                 window.location.href = 'index.html';
             }
         }
