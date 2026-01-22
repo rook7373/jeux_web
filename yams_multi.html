@@ -8,13 +8,14 @@
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; }
         
-        /* SCÈNE DU DÉ */
         .scene { width: 80px; height: 80px; margin: 12px; perspective: 1000px; position: relative; cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 2.5s cubic-bezier(0.15, 0.9, 0.25, 1); }
-        .face { position: absolute; width: 80px; height: 80px; background: var(--die-color, #ffffff); border: 1px solid rgba(0,0,0,0.2); border-radius: 16px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 8px; box-sizing: border-box; backface-visibility: hidden; }
+        
+        /* Transition plus longue et fluide pour le suspense */
+        .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 2.8s cubic-bezier(0.2, 0.9, 0.3, 1.05); }
+        
+        .face { position: absolute; width: 80px; height: 80px; background: var(--die-color, #ffffff); border: 1px solid rgba(0,0,0,0.2); border-radius: 16px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 8px; box-sizing: border-box; backface-visibility: hidden; box-shadow: inset 0 0 15px rgba(0,0,0,0.1); }
         .dot { background: var(--dot-color, #1a1a1a); border-radius: 50%; width: 14px; height: 14px; margin: auto; }
         
-        /* AXES DE ROTATION */
         .f1 { transform: rotateY(0deg) translateZ(40px); }
         .f2 { transform: rotateY(-90deg) translateZ(40px); }
         .f3 { transform: rotateX(-90deg) translateZ(40px); }
@@ -29,30 +30,23 @@
             box-shadow: 0 0 0 4px var(--player-accent), 0 0 40px var(--player-accent), inset 0 0 15px var(--player-accent);
             animation: pulse-neon 1.5s infinite;
         }
-        @keyframes pulse-neon {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.3); transform: scale(1.02); }
-        }
+        @keyframes pulse-neon { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
 
-        /* SCORES */
-        .potential-score { color: #4b5563; font-style: italic; opacity: 0.4; cursor: pointer; font-size: 1.4rem; transition: 0.2s; }
-        .potential-score:hover { color: white; opacity: 1; background: rgba(255,255,255,0.05); }
-        .locked-score { font-weight: 900; opacity: 1 !important; font-size: 2.2rem; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .potential-score { color: #4b5563; font-style: italic; opacity: 0.4; cursor: pointer; font-size: 1.4rem; }
+        .locked-score { font-weight: 900; font-size: 2.2rem; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .total-row { background: rgba(255,255,255,0.1); color: #fbbf24; }
-
-        /* MODAL */
-        .modal-blur { backdrop-filter: blur(15px); background: rgba(0,0,0,0.85); }
+        .modal-blur { backdrop-filter: blur(15px); background: rgba(0,0,0,0.85); position: fixed; inset: 0; z-index: 50; }
     </style>
 </head>
 <body class="p-4 font-sans uppercase font-black">
 
-    <div id="win-modal" class="fixed inset-0 z-50 hidden modal-blur flex items-center justify-center p-4">
-        <div class="bg-white rounded-[4rem] p-12 max-w-sm w-full text-center text-slate-900 shadow-2xl animate-pop">
+    <div id="win-modal" class="hidden modal-blur flex items-center justify-center p-4">
+        <div class="bg-white rounded-[4rem] p-12 max-w-sm w-full text-center text-slate-900 shadow-2xl">
             <div class="text-7xl mb-6">🏆</div>
-            <h2 class="text-4xl font-black mb-2 italic tracking-tighter">FIN DE MATCH</h2>
+            <h2 class="text-3xl font-black mb-2 italic">FIN DE MATCH</h2>
             <p id="winner-display" class="text-2xl text-green-600 mb-8 font-black uppercase">-</p>
             <div id="final-stats" class="space-y-3 mb-10 text-left bg-slate-50 p-6 rounded-3xl border"></div>
-            <button onclick="saveAndGoHome()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl hover:scale-105 active:scale-95 transition-all">ENREGISTRER LES STATS</button>
+            <button onclick="saveAndGoHome()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl hover:scale-105 transition-all">SAUVEGARDER & QUITTER</button>
         </div>
     </div>
 
@@ -63,8 +57,8 @@
             <p class="text-[10px] text-slate-400 mb-4 tracking-[0.2em]">CHOISIS TA COULEUR</p>
             <div id="color-picker" class="flex flex-wrap justify-center gap-3"></div>
         </div>
-        <button onclick="joinGame()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl tracking-widest hover:bg-slate-800 transition-all mb-4">REJOINDRE LA PARTIE</button>
-        <button onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] py-2">RETOUR AU HUB</button>
+        <button onclick="joinGame()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl tracking-widest hover:bg-slate-800 transition-all mb-4">REJOINDRE</button>
+        <button onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px]">RETOUR HUB</button>
     </div>
 
     <div id="game" class="hidden max-w-[98%] mx-auto grid lg:grid-cols-12 gap-8 mt-4">
@@ -104,8 +98,10 @@
         const STATS_API = 'api.php';
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', myColorIdx = 0, players = [], cIdx = 0, rolls = 0, dice = [1,1,1,1,1].map(v=>({v,held:false}));
-        let currentRots = [{x:0, y:0}, {x:0, y:0}, {x:0, y:0}, {x:0, y:0}, {x:0, y:0}];
         
+        // Stockage persistant des rotations pour éviter les blocages
+        let currentRots = [ {x:0, y:0}, {x:0, y:0}, {x:0, y:0}, {x:0, y:0}, {x:0, y:0} ];
+
         const colors = [
             {n:'Ivoire',b:'#fdf8e8',d:'#1a1a1a',a:'#fbbf24'}, {n:'Bleu',b:'#3b82f6',d:'#ffffff',a:'#60a5fa'},
             {n:'Rouge',b:'#ef4444',d:'#ffffff',a:'#f87171'}, {n:'Or',b:'#fbbf24',d:'#451a03',a:'#fbbf24'},
@@ -118,8 +114,8 @@
         const scoringCats = ["1","2","3","4","5","6","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"];
         const cats = ["1","2","3","4","5","6","BONUS (63+)","TOTAL SUP","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE","TOTAL GLOBAL"];
 
-        document.getElementById('color-picker').innerHTML = colors.map((c,i)=>`<div onclick="selCol(${i})" class="color-opt" style="background:${c.b}; width:42px; height:42px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:0.2s;"></div>`).join('');
-        function selCol(i){ myColorIdx=i; document.querySelectorAll('#color-picker div').forEach((o,idx)=>o.style.borderColor = idx===i ? 'black' : 'transparent'); }
+        document.getElementById('color-picker').innerHTML = colors.map((c,i)=>`<div onclick="selCol(${i})" class="color-opt" style="background:${c.b}"></div>`).join('');
+        function selCol(i){ myColorIdx=i; document.querySelectorAll('.color-opt').forEach((o,idx)=>o.style.borderColor = idx===i ? 'black' : 'transparent'); }
         selCol(0);
 
         async function joinGame() {
@@ -165,6 +161,40 @@
             } catch(e) {}
         }
 
+        function animateCubes(newDice) {
+            newDice.forEach((d, i) => {
+                if(!dice[i].held) {
+                    const cube = document.getElementById(`cube${i}`);
+                    
+                    // On force le redessin (reflow) pour le navigateur
+                    cube.style.transition = 'none';
+                    cube.offsetHeight; // force reflow
+                    cube.style.transition = 'transform 2.8s cubic-bezier(0.2, 0.9, 0.3, 1.05)';
+
+                    // Accumulation massive pour garantir le mouvement
+                    let spins = (Math.floor(Math.random() * 3) + 10) * 360; 
+                    currentRots[i].x += spins;
+                    currentRots[i].y += spins;
+                    
+                    let tx = Math.round(currentRots[i].x / 360) * 360;
+                    let ty = Math.round(currentRots[i].y / 360) * 360;
+
+                    // Positions cibles
+                    if(d.v===2) ty += 90; 
+                    if(d.v===3) tx += 90; 
+                    if(d.v===4) tx -= 90; 
+                    if(d.v===5) ty -= 90; 
+                    if(d.v===6) ty += 180;
+
+                    // Jitter naturel
+                    let jx = (Math.random() * 6 - 3), jy = (Math.random() * 6 - 3);
+                    
+                    currentRots[i].x = tx; currentRots[i].y = ty;
+                    cube.style.transform = `rotateX(${tx + jx}deg) rotateY(${ty + jy}deg)`;
+                }
+            });
+        }
+
         function refreshUI() {
             if(!players[cIdx]) return;
             const p = players[cIdx], isMyTurn = (p.name === myName);
@@ -183,11 +213,9 @@
         }
 
         function calculatePlayerTotal(p) {
-            let sumSup = 0;
-            ["1","2","3","4","5","6"].forEach(k => sumSup += (p.scores[k] || 0));
+            let sumSup = 0; ["1","2","3","4","5","6"].forEach(k => sumSup += (p.scores[k] || 0));
             const bonus = sumSup >= 63 ? 35 : 0;
-            let sumInf = 0;
-            ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sumInf += (p.scores[k] || 0));
+            let sumInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sumInf += (p.scores[k] || 0));
             return sumSup + bonus + sumInf;
         }
 
@@ -197,7 +225,7 @@
                 const winner = results.reduce((prev, curr) => (curr.score > prev.score) ? curr : prev);
                 document.getElementById('winner-display').innerText = `GAGNANT : ${winner.name}`;
                 document.getElementById('final-stats').innerHTML = results.map(r => `
-                    <div class="flex justify-between font-black uppercase text-sm border-b border-slate-200 pb-2">
+                    <div class="flex justify-between font-black uppercase text-sm border-b pb-2">
                         <span>${r.name}</span><span>${r.score} PTS</span>
                     </div>`).join('');
                 document.getElementById('win-modal').classList.remove('hidden');
@@ -216,23 +244,6 @@
                 await fetch(`${STATS_API}?action=stats`, { method: 'POST', body: JSON.stringify(history) });
                 window.location.href = 'index.html';
             } catch (e) { window.location.href = 'index.html'; }
-        }
-
-        function animateCubes(newDice) {
-            newDice.forEach((d, i) => {
-                if(!dice[i].held) {
-                    const cube = document.getElementById(`cube${i}`);
-                    let spins = (Math.floor(Math.random() * 3) + 8) * 360; // 8 tours min
-                    currentRots[i].x += spins;
-                    currentRots[i].y += spins;
-                    let tx = Math.round(currentRots[i].x / 360) * 360;
-                    let ty = Math.round(currentRots[i].y / 360) * 360;
-                    if(d.v===2) ty += 90; if(d.v===3) tx += 90; if(d.v===4) tx -= 90; if(d.v===5) ty -= 90; if(d.v===6) ty += 180;
-                    let jx = (Math.random() * 4 - 2), jy = (Math.random() * 4 - 2);
-                    currentRots[i].x = tx; currentRots[i].y = ty;
-                    cube.style.transform = `rotateX(${tx + jx}deg) rotateY(${ty + jy}deg)`;
-                }
-            });
         }
 
         function rollDice() {
