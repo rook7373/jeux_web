@@ -1,34 +1,51 @@
+<?php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST");
+header("Access-Control-Allow-Headers: Content-Type");
+
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    if (!is_dir('rooms')) { mkdir('rooms', 0777, true); }
+    $roomId = preg_replace('/[^a-zA-Z0-9]/', '', $_GET['roomId'] ?? '');
+    $file = "rooms/mem_$roomId.json";
+
+    if ($_GET['action'] === 'sync' && $roomId) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            file_put_contents($file, file_get_contents('php://input'));
+            echo json_encode(["status" => "saved"]);
+        } else {
+            echo file_exists($file) ? file_get_contents($file) : json_encode(null);
+        }
+        exit;
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Memory Arena - Kittens Edition</title>
+    <title>Memory Arena - Kittens</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; font-family: sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         
-        /* Grille de jeu */
         #grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; width: 100%; max-width: 600px; margin: auto; }
         
-        /* Style des cartes */
         .card { aspect-ratio: 1/1; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .card.flipped { transform: rotateY(180deg); }
-        .card.matched { opacity: 0.5; cursor: default; }
+        .card.matched { opacity: 0.4; cursor: default; }
 
         .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 1rem; border: 2px solid rgba(255,255,255,0.1); }
-        .card-front { background: #1e293b; display: flex; items-center; justify-center; font-size: 1.5rem; }
+        .card-front { background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
         .card-back { background: #3b82f6; transform: rotateY(180deg); background-size: cover; background-position: center; }
-        
-        /* Animation dernier coup */
-        .last-move { ring: 4px solid white; }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center font-sans uppercase font-black">
 
     <div id="setup" class="max-w-md w-full bg-white p-10 rounded-[3.5rem] shadow-2xl text-slate-900 z-50">
-        <h2 class="text-4xl font-black mb-8 text-blue-600 text-center italic tracking-tighter uppercase">Memory <span class="text-slate-200">Kittens</span></h2>
+        <h2 id="setup-title" class="text-4xl font-black mb-8 text-blue-600 text-center italic tracking-tighter uppercase">Memory <span class="text-slate-200">Kittens</span></h2>
         
         <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
             <button type="button" onclick="setMode('local')" id="m-local" class="bg-blue-600 text-white py-4 rounded-2xl shadow-lg font-black">Local</button>
@@ -36,7 +53,7 @@
         </div>
 
         <div id="local-options" class="space-y-4 mb-8">
-            <p class="text-center text-[10px] font-black text-slate-400">ADVERSAIRE :</p>
+            <p class="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Adversaire :</p>
             <div class="grid grid-cols-2 gap-3">
                 <button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md">🤖 IA</button>
                 <button type="button" onclick="setOpponent('human')" id="opp-human" class="bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black">👤 Humain</button>
@@ -66,16 +83,28 @@
     </div>
 
     <script>
-        const API = 'api.php'; const ROWS = 6, COLS = 6;
+        const API = 'memory.php'; 
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', gameMode = roomId ? 'remote' : 'local', localOpponent = 'ai';
         let gameState = { 
             players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '' 
         };
 
+        // Images de chatons fiables
         const kittenImages = Array.from({length: 18}, (_, i) => `https://loremflickr.com/200/200/kitten?lock=${i}`);
 
-        window.onload = () => { if(roomId) { setMode('remote'); } else { setMode('local'); } };
+        window.onload = () => {
+            if(roomId) {
+                // Masquer les options si on rejoint une partie
+                document.getElementById('mode-selector').classList.add('hidden');
+                document.getElementById('local-options').classList.add('hidden');
+                document.getElementById('setup-title').innerHTML = "REJOINDRE <span class='text-slate-200'>ARENA</span>";
+                setMode('remote');
+            } else {
+                setMode('local');
+                setOpponent('ai');
+            }
+        };
 
         function setMode(m) {
             gameMode = m;
@@ -159,10 +188,12 @@
 
         function aiMove() {
             let available = gameState.board.map((_, i) => i).filter(i => !gameState.matched.includes(i));
+            if(available.length === 0) return;
             let move1 = available[Math.floor(Math.random() * available.length)];
             handleFlip(move1);
             setTimeout(() => {
                 let available2 = available.filter(i => i !== move1);
+                if(available2.length === 0) return;
                 let move2 = available2[Math.floor(Math.random() * available2.length)];
                 handleFlip(move2);
             }, 1000);
