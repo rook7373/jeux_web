@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yam's Arena LIVE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; touch-action: manipulation; color: white; }
+        .scene { width: 60px; height: 60px; margin: 10px; perspective: 1000px; transition: all 0.3s ease-out; position: relative; }
+        .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 1.2s cubic-bezier(0.15, 0.85, 0.35, 1.15); }
+        .face { position: absolute; width: 60px; height: 60px; background: var(--die-color, #ffffff); border: 1px solid rgba(0,0,0,0.2); border-radius: 12px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 6px; box-sizing: border-box; backface-visibility: hidden; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+        .dot { background: var(--dot-color, #1a1a1a); border-radius: 50%; width: 10px; height: 10px; margin: auto; }
+        .f1 { transform: rotateY(0deg) translateZ(30px); }
+        .f2 { transform: rotateY(90deg) translateZ(30px); }
+        .f3 { transform: rotateX(90deg) translateZ(30px); }
+        .f4 { transform: rotateX(-90deg) translateZ(30px); }
+        .f5 { transform: rotateY(-90deg) translateZ(30px); }
+        .f6 { transform: rotateY(180deg) translateZ(30px); }
+        .scene.held { margin-top: -15px; filter: drop-shadow(0 0 15px var(--player-accent)); }
+        .scene.held .face { border: 3px solid var(--player-accent); }
+        .potential-score { color: #64748b; font-style: italic; opacity: 0.6; cursor: pointer; }
+        .locked-score { font-weight: 900; opacity: 1 !important; font-style: normal !important; }
+        .color-opt { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
+        .color-opt.selected { transform: scale(1.3); border-color: #000; }
+    </style>
+</head>
+<body class="p-4">
+
+    <div id="setup" class="max-w-md mx-auto mt-10 bg-white p-8 rounded-[2.5rem] text-slate-900 shadow-2xl uppercase font-black">
+        <h2 class="text-3xl mb-6 text-green-900 text-center italic tracking-tighter">Yam's <span class="text-slate-300">Arena</span></h2>
+        <div class="bg-slate-50 p-6 rounded-3xl border mb-6 text-center">
+            <input type="text" id="my-name-in" placeholder="TON NOM..." class="w-full bg-white font-black p-4 rounded-2xl border text-center mb-4 outline-none focus:border-green-500 uppercase">
+            <div id="color-picker" class="flex justify-center gap-2 mb-4"></div>
+        </div>
+        <button id="main-btn" onclick="joinGame()" class="w-full bg-black text-white py-5 rounded-2xl tracking-widest text-lg shadow-xl active:scale-95 transition">Rejoindre / Créer</button>
+    </div>
+
+    <div id="game" class="hidden max-w-7xl mx-auto grid lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-black/40 backdrop-blur-xl p-6 rounded-[3rem] border border-white/10 flex flex-col items-center">
+            <div class="mb-6 px-6 py-2 rounded-full bg-black/30 text-[10px] tracking-[0.3em] uppercase border border-white/5">
+                Au tour de : <span id="active-player-name" class="text-white font-black">-</span>
+            </div>
+            <div id="dice-row" class="flex justify-center flex-wrap gap-2 mb-10 h-24">
+                <div id="d0" onclick="toggleHold(0)" class="scene"><div class="cube" id="cube0"></div></div>
+                <div id="d1" onclick="toggleHold(1)" class="scene"><div class="cube" id="cube1"></div></div>
+                <div id="d2" onclick="toggleHold(2)" class="scene"><div class="cube" id="cube2"></div></div>
+                <div id="d3" onclick="toggleHold(3)" class="scene"><div class="cube" id="cube3"></div></div>
+                <div id="d4" onclick="toggleHold(4)" class="scene"><div class="cube" id="cube4"></div></div>
+            </div>
+            <div class="text-center w-full max-w-xs">
+                <p id="roll-count" class="text-[10px] font-black text-slate-500 mb-4 uppercase">Lancers : 0 / 3</p>
+                <button id="roll-btn" onclick="rollDice()" class="bg-white text-slate-900 w-full py-5 rounded-full font-black text-2xl uppercase shadow-2xl active:scale-95 transition-all">Lancer</button>
+            </div>
+            <button onclick="copyLink()" class="mt-8 text-[9px] text-white/30 uppercase tracking-[0.2em] hover:text-white transition">Copier le lien d'invitation</button>
+        </div>
+
+        <div class="lg:col-span-5 bg-white/5 backdrop-blur-lg rounded-[2.5rem] p-6 border border-white/10 shadow-2xl h-fit">
+            <table class="w-full">
+                <thead><tr id="table-head" class="text-[9px] text-slate-500 border-b border-white/5 uppercase"><th class="text-left pb-3">Contrat</th></tr></thead>
+                <tbody id="table-body" class="text-xs font-black"></tbody>
+                <tfoot>
+                    <tr class="border-t-4 border-white/10">
+                        <td class="py-4 text-[10px] font-black text-yellow-500 uppercase tracking-widest">Score Total</td>
+                        <td id="total-val" class="text-center text-xl font-black text-yellow-500">0</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION API ---
+        const API = 'api_yams.php';
+        
+        let roomId = new URLSearchParams(window.location.search).get('room');
+        let myName = '', myColorIdx = 0;
+        let players = [], cIdx = 0, rolls = 0, dice = [1,1,1,1,1].map(v=>({v,held:false}));
+        
+        const colors=[{n:'Ivoire',b:'#fdf8e8',d:'#1a1a1a',a:'#fbbf24'},{n:'Bleu',b:'#3b82f6',d:'#ffffff',a:'#2563eb'},{n:'Rouge',b:'#ef4444',d:'#ffffff',a:'#dc2626'},{n:'Or',b:'#fbbf24',d:'#451a03',a:'#d97706'},{n:'Vert',b:'#10b981',d:'#ffffff',a:'#059669'},{n:'Violet',b:'#8b5cf6',d:'#ffffff',a:'#7c3aed'}];
+        const facesHTML=['','<div class="face f1"><div class="dot" style="grid-area:2/2"></div></div>','<div class="face f2"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f3"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f4"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f5"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f6"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/1"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/3"></div><div class="dot" style="grid-area:3/3"></div></div>'];
+        const cats=["1","2","3","4","5","6","Brelan","Carré","Full","Pte Suite","Gde Suite","Yams","Chance"];
+
+        document.getElementById('color-picker').innerHTML = colors.map((c,i)=>`<div onclick="myColorIdx=${i};updateColorUI()" class="color-opt" style="background:${c.b}"></div>`).join('');
+        
+        function updateColorUI() {
+            document.querySelectorAll('.color-opt').forEach((el,i)=>el.classList.toggle('selected', i===myColorIdx));
+        }
+        updateColorUI();
+
+        async function joinGame() {
+            myName = document.getElementById('my-name-in').value.trim();
+            if(!myName) return alert("Indique ton nom !");
+            
+            if(!roomId) {
+                roomId = Math.random().toString(36).substring(2, 8);
+                window.history.pushState({}, '', `?room=${roomId}`);
+            }
+
+            await syncPull();
+            if(!players.find(p => p.name === myName)) {
+                players.push({ name: myName, color: colors[myColorIdx], scores: {} });
+            }
+
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+            for(let i=0;i<5;i++) document.getElementById(`cube${i}`).innerHTML=facesHTML.slice(1).join('');
+            
+            await syncPush();
+            setInterval(syncPull, 2000);
+            renderTableStructure();
+        }
+
+        async function syncPush() {
+            const data = { players, cIdx, rolls, dice, roomId };
+            await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(data) });
+        }
+
+        async function syncPull() {
+            if(!roomId) return;
+            const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
+            const data = await r.json();
+            if(data) {
+                if(data.rolls !== rolls && data.rolls !== 0) animateCubes(data.dice);
+                players = data.players;
+                cIdx = data.cIdx;
+                rolls = data.rolls;
+                dice = data.dice;
+                if(document.getElementById('table-head').children.length <= 1) renderTableStructure();
+                refreshUI();
+            }
+        }
+
+        function refreshUI() {
+            if(!players[cIdx]) return;
+            const p = players[cIdx];
+            document.getElementById('active-player-name').innerText = p.name;
+            document.getElementById('active-player-name').style.color = p.color.b;
+            document.documentElement.style.setProperty('--die-color', p.color.b);
+            document.documentElement.style.setProperty('--dot-color', p.color.d);
+            document.documentElement.style.setProperty('--player-accent', p.color.a);
+            document.getElementById('roll-btn').style.backgroundColor = p.color.b;
+            document.getElementById('roll-btn').style.color = p.color.d;
+            document.getElementById('roll-count').innerText = `Lancers : ${rolls} / 3`;
+            dice.forEach((d,i) => document.getElementById(`d${i}`).classList.toggle('held', d.held));
+            renderScores();
+            document.getElementById('roll-btn').disabled = (p.name !== myName || rolls >= 3);
+            document.getElementById('roll-btn').style.opacity = (p.name !== myName || rolls >= 3) ? "0.3" : "1";
+        }
+
+        function renderTableStructure() {
+            const h = document.getElementById('table-head');
+            h.innerHTML = '<th class="text-left pb-3">Contrat</th>';
+            players.forEach(p => h.innerHTML += `<th class="px-2 text-center" style="color:${p.color.b}">${p.name}</th>`);
+            document.getElementById('table-body').innerHTML = cats.map(c => `
+                <tr class="border-b border-white/5">
+                    <td class="py-3 font-bold text-slate-500 uppercase text-[9px] tracking-widest">${c}</td>
+                    ${players.map((p,pi) => `<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black potential-score">-</td>`).join('')}
+                </tr>
+            `).join('');
+        }
+
+        function renderScores() {
+            cats.forEach(c => {
+                players.forEach((p, pi) => {
+                    const cell = document.getElementById(`s-${pi}-${c}`);
+                    if(!cell) return;
+                    if(p.scores[c] !== undefined) {
+                        cell.innerText = p.scores[c];
+                        cell.className = "text-center font-black locked-score";
+                        cell.style.color = p.color.b;
+                    } else if (pi === cIdx && p.name === myName && rolls > 0) {
+                        cell.innerText = calculatePotential(c);
+                        cell.className = "text-center font-black potential-score";
+                    } else {
+                        cell.innerText = "-";
+                        cell.className = "text-center font-black potential-score";
+                    }
+                });
+            });
+            let t = 0; const me = players.find(p => p.name === myName);
+            if(me) Object.values(me.scores).forEach(v => t += v);
+            document.getElementById('total-val').innerText = t;
+        }
+
+        function animateCubes(newDice) {
+            newDice.forEach((d, i) => {
+                if(!dice[i].held) {
+                    const cube = document.getElementById(`cube${i}`);
+                    let xDeg = 1800, yDeg = 1800;
+                    if(d.v===2) yDeg -= 90; if(d.v===3) xDeg -= 90; if(d.v===4) xDeg += 90; if(d.v===5) yDeg += 90; if(d.v===6) yDeg += 180;
+                    cube.style.transform = `rotateX(${xDeg + (Math.random()*4-2)}deg) rotateY(${yDeg + (Math.random()*4-2)}deg)`;
+                }
+            });
+        }
+
+        function rollDice() {
+            if(rolls >= 3 || players[cIdx].name !== myName) return;
+            rolls++;
+            dice.forEach(d => { if(!d.held) d.v = Math.floor(Math.random()*6)+1; });
+            animateCubes(dice);
+            syncPush();
+        }
+
+        function toggleHold(i) {
+            if(rolls === 0 || players[cIdx].name !== myName) return;
+            dice[i].held = !dice[i].held;
+            syncPush();
+        }
+
+        function calculatePotential(c) {
+            const vals = dice.map(d=>d.v);
+            const counts = {}; vals.forEach(v=>counts[v]=(counts[v]||0)+1);
+            const sum = vals.reduce((a,b)=>a+b,0);
+            if(!isNaN(c)) return (counts[c] || 0) * parseInt(c);
+            if(c=="Brelan") return Object.values(counts).some(v => v >= 3) ? sum : 0;
+            if(c=="Carré") return Object.values(counts).some(v => v >= 4) ? sum : 0;
+            if(c=="Full") return Object.values(counts).includes(3) && Object.values(counts).includes(2) ? 25 : 0;
+            if(c=="Pte Suite") return isSuite(vals, 4) ? 30 : 0;
+            if(c=="Gde Suite") return isSuite(vals, 5) ? 40 : 0;
+            if(c=="Yams") return Object.values(counts).includes(5) ? 50 : 0;
+            return sum;
+        }
+
+        function isSuite(a,l){const s=[...new Set(a)].sort();let c=1,m=1;for(let i=0;i<s.length-1;i++){s[i+1]==s[i]+1?c++:c=1;m=Math.max(m,c)}return m>=l}
+
+        async function lock(c, pi) {
+            if(pi !== cIdx || players[pi].name !== myName || rolls === 0 || players[pi].scores[c] !== undefined) return;
+            players[pi].scores[c] = calculatePotential(c);
+            rolls = 0; dice.forEach(d => { d.held = false; d.v = 1; });
+            cIdx = (cIdx + 1) % players.length;
+            for(let i=0; i<5; i++) document.getElementById(`cube${i}`).style.transform = `rotateX(0deg) rotateY(0deg)`;
+            await syncPush();
+        }
+
+        function copyLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
+    </script>
+</body>
+</html>
