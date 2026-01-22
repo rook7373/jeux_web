@@ -3,109 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Palmarès & Records - ScoreMaster</title>
+    <title>Palmarès & Records - Comme à la maison</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .animate-pop { animation: pop 0.3s ease-out; }
-        @keyframes pop { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); min-height: 100vh; color: white; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans p-4">
+<body class="p-4 sm:p-8 font-sans uppercase font-black">
 
-    <div class="max-w-5xl mx-auto">
-        <div class="flex justify-between items-center mb-10 mt-6">
-            <h1 class="text-4xl font-black text-gray-800 tracking-tighter uppercase italic">🏆 Palmarès <span class="text-blue-600">Global</span></h1>
-            <a href="index.html" class="bg-white text-gray-600 px-6 py-3 rounded-2xl shadow-sm font-bold border hover:bg-gray-50 transition">Retour au Hub</a>
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-12 mt-6">
+            <h1 class="text-4xl sm:text-6xl font-black text-yellow-500 tracking-tighter italic">
+                🏆 PALMARÈS <span class="text-white">GLOBAL</span>
+            </h1>
+            <a href="index.html" class="glass text-white px-6 py-3 rounded-2xl font-bold border border-white/10 hover:bg-white/10 transition-all text-xs tracking-widest">
+                RETOUR AU HUB
+            </a>
         </div>
 
-        <div id="stats-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div id="stats-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             </div>
 
-        <div class="mt-12 bg-white rounded-[2.5rem] p-8 shadow-xl border">
-            <h2 class="text-2xl font-black text-gray-700 mb-6 uppercase italic">Historique des parties</h2>
+        <div class="mt-16 glass rounded-[3.5rem] p-8 shadow-2xl border border-white/10">
+            <h2 class="text-2xl font-black text-yellow-500 mb-8 italic tracking-tighter">Historique des parties</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="text-xs font-black text-gray-400 uppercase tracking-widest border-b">
+                        <tr class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] border-b border-white/5">
                             <th class="p-4">Date</th>
                             <th class="p-4">Jeu</th>
                             <th class="p-4">Gagnant</th>
-                            <th class="p-4">Score</th>
+                            <th class="p-4 text-center">Score</th>
                         </tr>
                     </thead>
-                    <tbody id="history-table">
+                    <tbody id="history-table" class="text-sm font-bold">
                         </tbody>
                 </table>
             </div>
         </div>
+
+        <footer class="mt-20 text-center text-[10px] text-slate-600 tracking-widest pb-10">
+            CLOUD GAMING SYSTEM • STATS ENGINE • 2026
+        </footer>
     </div>
 
     <script>
         async function loadAllStats() {
             try {
+                // Appel à ton API de statistiques
                 const response = await fetch('api.php?action=stats');
+                if (!response.ok) throw new Error("Erreur de lecture");
+                
                 const history = await response.json();
-                if (!history || history.length === 0) {
-                    document.getElementById('stats-grid').innerHTML = "<p class='text-gray-400 font-bold'>Aucune donnée enregistrée pour le moment.</p>";
-                    return;
-                }
-
                 const statsGrid = document.getElementById('stats-grid');
                 const historyTable = document.getElementById('history-table');
 
-                // 1. Gérer l'Historique (10 dernières parties)
-                const lastGames = [...history].reverse().slice(0, 10);
-                historyTable.innerHTML = lastGames.map(game => `
-                    <tr class="border-b hover:bg-slate-50 transition">
-                        <td class="p-4 text-sm font-medium text-gray-500">${game.date || 'N/A'}</td>
-                        <td class="p-4 font-bold text-gray-800 uppercase text-xs">${game.game}</td>
-                        <td class="p-4"><span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">${game.winner}</span></td>
-                        <td class="p-4 font-black text-gray-700 text-sm">${game.results.find(r => r.name === game.winner).score}</td>
-                    </tr>
-                `).join('');
+                if (!history || history.length === 0) {
+                    statsGrid.innerHTML = "<p class='text-slate-500 font-black uppercase tracking-widest'>Aucune donnée enregistrée.</p>";
+                    return;
+                }
 
-                // 2. Gérer les Records par Jeu
+                // 1. Remplissage de l'Historique (15 dernières parties)
+                const lastGames = [...history].reverse().slice(0, 15);
+                historyTable.innerHTML = lastGames.map(game => {
+                    const winnerData = game.results.find(r => r.name === game.winner);
+                    const winScore = winnerData ? winnerData.score : 'N/A';
+                    
+                    return `
+                        <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                            <td class="p-4 text-slate-400 text-xs">${game.date || 'Récemment'}</td>
+                            <td class="p-4 text-white italic">${game.game}</td>
+                            <td class="p-4">
+                                <span class="bg-yellow-500 text-black px-3 py-1 rounded-lg text-[10px] font-black">
+                                    ${game.winner}
+                                </span>
+                            </td>
+                            <td class="p-4 text-center text-xl font-black text-yellow-500">${winScore}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // 2. Calcul des Records par Type de Jeu
                 const gameTypes = [...new Set(history.map(h => h.game))];
-                
+                statsGrid.innerHTML = ""; // Vider avant de remplir
+
                 gameTypes.forEach(gameName => {
                     let playerStats = {};
+                    
                     history.filter(h => h.game === gameName).forEach(entry => {
                         entry.results.forEach(res => {
-                            if (!playerStats[res.name]) playerStats[res.name] = { wins: 0, best: null };
+                            if (!playerStats[res.name]) {
+                                playerStats[res.name] = { wins: 0, best: null };
+                            }
                             if (entry.winner === res.name) playerStats[res.name].wins++;
                             
                             // Logique du Record (Min pour Skyjo, Max pour les autres)
+                            const currentScore = parseInt(res.score);
                             if (playerStats[res.name].best === null) {
-                                playerStats[res.name].best = res.score;
+                                playerStats[res.name].best = currentScore;
                             } else {
                                 if (gameName.toLowerCase().includes('skyjo')) {
-                                    playerStats[res.name].best = Math.min(playerStats[res.name].best, res.score);
+                                    playerStats[res.name].best = Math.min(playerStats[res.name].best, currentScore);
                                 } else {
-                                    playerStats[res.name].best = Math.max(playerStats[res.name].best, res.score);
+                                    playerStats[res.name].best = Math.max(playerStats[res.name].best, currentScore);
                                 }
                             }
                         });
                     });
 
-                    // Couleur dynamique
-                    let color = "text-indigo-600";
-                    let bg = "border-indigo-500";
-                    if(gameName.toLowerCase().includes('skyjo')) { color = "text-green-600"; bg = "border-green-500"; }
-                    if(gameName.toLowerCase().includes('bac')) { color = "text-yellow-600"; bg = "border-yellow-500"; }
+                    // Déterminer la couleur de la carte selon le jeu
+                    let accentColor = "border-yellow-500";
+                    if(gameName.toLowerCase().includes('skyjo')) accentColor = "border-green-500";
+                    if(gameName.toLowerCase().includes('ship')) accentColor = "border-cyan-500";
 
                     let cardHtml = `
-                        <div class="bg-white rounded-[2.5rem] p-8 shadow-xl border-l-[12px] ${bg} animate-pop">
-                            <h3 class="text-2xl font-black mb-6 uppercase tracking-tighter text-gray-800">${gameName}</h3>
-                            <div class="space-y-4">
-                                ${Object.entries(playerStats).sort((a,b) => b[1].wins - a[1].wins).map(([name, data]) => `
-                                    <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div class="glass rounded-[3rem] p-8 border-t-4 ${accentColor} animate-pop shadow-2xl">
+                            <h3 class="text-xl font-black mb-6 italic tracking-tighter text-white">${gameName}</h3>
+                            <div class="space-y-3">
+                                ${Object.entries(playerStats)
+                                    .sort((a,b) => b[1].wins - a[1].wins)
+                                    .map(([name, data]) => `
+                                    <div class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
                                         <div>
-                                            <div class="font-black text-gray-700 uppercase text-xs">${name}</div>
-                                            <div class="text-[10px] font-bold text-gray-400 uppercase">Record: ${data.best} pts</div>
+                                            <div class="text-xs font-black text-slate-300">${name}</div>
+                                            <div class="text-[9px] font-bold text-slate-500 tracking-widest">BEST: ${data.best}</div>
                                         </div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-2xl font-black ${color}">${data.wins}</span>
-                                            <span class="text-[10px] font-black text-gray-400 uppercase">Victoires</span>
+                                        <div class="text-right">
+                                            <span class="text-2xl font-black text-yellow-500">${data.wins}</span>
+                                            <span class="text-[8px] block text-slate-500">VICTOIRES</span>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -116,7 +144,8 @@
                 });
 
             } catch (error) {
-                console.error("Erreur de chargement des stats:", error);
+                console.error("Erreur stats:", error);
+                document.getElementById('stats-grid').innerHTML = "<p class='text-red-500'>ERREUR DE CHARGEMENT DES DONNÉES.</p>";
             }
         }
 
