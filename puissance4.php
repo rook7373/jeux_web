@@ -31,14 +31,14 @@ if (isset($_GET['action'])) {
         body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         
-        /* Plateau éclairci pour une meilleure visibilité */
-        #board { background-color: #2563eb; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.6rem; padding: 1.2rem; border-radius: 2.5rem; border: 8px solid #1d4ed8; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .cell { background-color: #1e293b; border-radius: 50%; aspect-ratio: 1 / 1; position: relative; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: inset 0 4px 8px rgba(0,0,0,0.5); }
+        /* PLATEAU ÉCLAIRCI (BLEU VIF) */
+        #board { background-color: #3b82f6; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.6rem; padding: 1.2rem; border-radius: 2.5rem; border: 8px solid #2563eb; width: 100%; max-width: 500px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); user-select: none; }
+        .cell { background-color: #0f172a; border-radius: 50%; aspect-ratio: 1 / 1; position: relative; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: inset 0 4px 8px rgba(0,0,0,0.6); }
         .column { cursor: pointer; display: flex; flex-direction: column; gap: 0.6rem; border-radius: 1.5rem; padding: 4px; }
         
         .cell.red { background: #ef4444; box-shadow: 0 0 25px rgba(239, 68, 68, 0.6), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.yellow { background: #f59e0b; box-shadow: 0 0 25px rgba(245, 158, 11, 0.6), inset 0 -4px 6px rgba(0,0,0,0.3); }
-        .cell.blue { background: #3b82f6; box-shadow: 0 0 25px rgba(59, 130, 246, 0.6), inset 0 -4px 6px rgba(0,0,0,0.3); }
+        .cell.blue { background: #0ea5e9; box-shadow: 0 0 25px rgba(14, 165, 233, 0.6), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.green { background: #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.6), inset 0 -4px 6px rgba(0,0,0,0.3); }
         .cell.purple { background: #8b5cf6; box-shadow: 0 0 25px rgba(139, 92, 246, 0.6), inset 0 -4px 6px rgba(0,0,0,0.3); }
 
@@ -46,7 +46,7 @@ if (isset($_GET['action'])) {
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
 
         .color-dot { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
-        .color-dot.active { border-color: white; transform: scale(1.2); box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+        .color-dot.active { border-color: black; transform: scale(1.2); box-shadow: 0 0 15px rgba(255,255,255,0.3); }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center font-sans uppercase font-black">
@@ -54,22 +54,22 @@ if (isset($_GET['action'])) {
     <div id="setup" class="max-w-md w-full bg-white p-10 rounded-[3.5rem] shadow-2xl text-slate-900">
         <h2 id="setup-title" class="text-4xl font-black mb-8 text-blue-600 text-center italic tracking-tighter uppercase">P4 <span class="text-slate-200">Arena</span></h2>
         
-        <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-6">
-            <button onclick="setMode('local')" id="m-local" class="bg-blue-500 text-white py-4 rounded-2xl shadow-lg transition">Local</button>
-            <button onclick="setMode('remote')" id="m-remote" class="bg-purple-600 text-white py-4 rounded-2xl opacity-30 shadow-lg transition">En Ligne</button>
+        <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
+            <button type="button" onclick="setMode('local')" id="m-local" class="bg-blue-600 text-white py-4 rounded-2xl shadow-lg transition font-black">Local</button>
+            <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-100 text-slate-400 py-4 rounded-2xl opacity-60 transition font-black">En Ligne</button>
         </div>
 
-        <div id="local-options" class="space-y-4 mb-6">
+        <div id="local-options" class="space-y-4 mb-8">
             <p class="text-center text-[10px] font-black text-slate-400">Choix de l'adversaire :</p>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="setOpponent('ai')" id="opp-ai" class="bg-slate-100 py-3 rounded-2xl text-xs transition border-2 border-transparent border-blue-500">🤖 IA</button>
-                <button onclick="setOpponent('human')" id="opp-human" class="bg-slate-100 py-3 rounded-2xl text-xs transition border-2 border-transparent">👤 Humain</button>
+                <button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all cursor-pointer">🤖 IA</button>
+                <button type="button" onclick="setOpponent('human')" id="opp-human" class="bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black opacity-60 transition-all cursor-pointer">👤 Humain</button>
             </div>
         </div>
 
         <div class="space-y-6">
             <div class="text-center">
-                <p class="text-[10px] text-slate-400 mb-3 tracking-widest uppercase">Couleur de tes pions</p>
+                <p class="text-[10px] text-slate-400 mb-4 tracking-widest uppercase">Couleur des pions</p>
                 <div class="flex justify-center gap-4">
                     <div onclick="setColor('red')" id="c-red" class="color-dot bg-red-500 active"></div>
                     <div onclick="setColor('blue')" id="c-blue" class="color-dot bg-blue-500"></div>
@@ -78,22 +78,24 @@ if (isset($_GET['action'])) {
                 </div>
             </div>
 
-            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-3xl outline-none text-xl text-center focus:border-blue-400 font-black uppercase">
-            <button onclick="startAction()" class="w-full bg-black text-white py-5 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all">Démarrer</button>
-            <button onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest uppercase">RETOUR HUB</button>
+            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-blue-400 font-black uppercase">
+            
+            <button type="button" onclick="startAction()" class="w-full bg-black text-white py-6 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all font-black">Démarrer</button>
+            
+            <button type="button" onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</button>
         </div>
     </div>
 
     <div id="game" class="hidden max-w-2xl w-full glass p-8 rounded-[4rem] border border-white/10 shadow-2xl">
         <div class="flex justify-between items-center mb-8">
-            <button onclick="window.location.href='index.html'" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition">MENU</button>
+            <button onclick="window.location.href='index.html'" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black">MENU</button>
             <div id="players-display" class="flex gap-8 text-[12px] tracking-widest items-center"></div>
-            <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px]">LIEN</button>
+            <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg">LIEN</button>
         </div>
         <div class="flex justify-center mb-10"><div id="board"></div></div>
         <div id="win-overlay" class="hidden text-center">
-            <p id="win-text" class="text-4xl text-yellow-500 mb-8 italic tracking-tighter"></p>
-            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl">ENREGISTRER & QUITTER</button>
+            <p id="win-text" class="text-5xl text-yellow-500 mb-8 italic tracking-tighter"></p>
+            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition">ENREGISTRER & QUITTER</button>
         </div>
     </div>
 
@@ -103,32 +105,43 @@ if (isset($_GET['action'])) {
         let myName = '', myColor = 'red', gameMode = roomId ? 'remote' : 'local', localOpponent = 'ai';
         let gameState = { players: [], board: Array(6).fill(null).map(() => Array(7).fill(null)), currentPlayer: '', lastMove: null, gameOver: false, winner: '' };
 
-        // Masquer le choix de mode si on rejoint via un lien
         window.onload = () => {
             if(roomId) {
-                document.getElementById('mode-selector').style.display = 'none';
-                document.getElementById('local-options').style.display = 'none';
-                document.getElementById('setup-title').innerHTML = "REJOINDRE <span class='text-slate-200'>LIVE</span>";
+                document.getElementById('mode-selector').classList.add('hidden');
+                document.getElementById('local-options').classList.add('hidden');
+                document.getElementById('setup-title').innerHTML = "REJOINDRE <span class='text-slate-200'>ARENA</span>";
                 gameMode = 'remote';
+            } else {
+                setMode('local');
+                setOpponent('ai');
             }
         };
 
         function setMode(m) { 
             gameMode = m; 
-            document.getElementById('m-local').classList.toggle('opacity-30', m !== 'local'); 
-            document.getElementById('m-remote').classList.toggle('opacity-30', m !== 'remote');
+            document.getElementById('m-local').classList.toggle('bg-blue-600', m === 'local');
+            document.getElementById('m-local').classList.toggle('text-white', m === 'local');
+            document.getElementById('m-local').classList.toggle('opacity-60', m !== 'local');
+            document.getElementById('m-remote').classList.toggle('bg-purple-600', m === 'remote');
+            document.getElementById('m-remote').classList.toggle('text-white', m === 'remote');
+            document.getElementById('m-remote').classList.toggle('opacity-60', m !== 'remote');
             document.getElementById('local-options').classList.toggle('hidden', m !== 'local');
         }
+
         function setOpponent(opp) { 
             localOpponent = opp; 
-            document.getElementById('opp-ai').classList.toggle('border-blue-500', opp === 'ai');
-            document.getElementById('opp-human').classList.toggle('border-blue-500', opp === 'human');
+            const ai = document.getElementById('opp-ai');
+            const hu = document.getElementById('opp-human');
+            
+            ai.className = (opp === 'ai') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all cursor-pointer" : "bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black opacity-60 transition-all cursor-pointer";
+            hu.className = (opp === 'human') ? "bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-md transition-all cursor-pointer" : "bg-slate-100 text-slate-400 py-4 rounded-2xl text-xs font-black opacity-60 transition-all cursor-pointer";
         }
+
         function setColor(c) { myColor = c; document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active')); document.getElementById('c-' + c).classList.add('active'); }
 
         async function startAction() {
             const name = document.getElementById('my-name-in').value.trim();
-            if(!name) return alert("Indique ton nom !"); myName = name.toUpperCase();
+            if(!name) return alert("Pseudo !"); myName = name.toUpperCase();
             if (gameMode === 'remote') {
                 if (!roomId) roomId = Math.random().toString(36).substring(2, 8);
                 window.history.pushState({}, '', `?room=${roomId}`);
