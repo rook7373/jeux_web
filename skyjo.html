@@ -6,13 +6,30 @@
     <title>Skyjo - Calepin de Score</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); min-height: 100vh; color: white; }
+        body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); min-height: 100vh; color: white; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
         .score-input:focus { border-color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+        
+        /* Animation Popup */
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body class="p-4 font-sans uppercase font-black">
+
+    <div id="finish-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="bg-white rounded-[3rem] p-10 max-w-sm w-full text-center text-slate-900 animate-pop shadow-2xl">
+            <div class="text-6xl mb-4">🏁</div>
+            <h2 class="text-3xl font-black mb-2 italic tracking-tighter">PARTIE TERMINÉE</h2>
+            <p id="winner-msg" class="text-xl text-green-600 mb-6 font-black uppercase tracking-tighter"></p>
+            
+            <div id="final-scores-list" class="space-y-2 mb-8 text-left bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                </div>
+            
+            <button onclick="saveAndExit()" class="w-full bg-black text-white py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl">ENREGISTRER & QUITTER</button>
+        </div>
+    </div>
 
     <div class="max-w-4xl mx-auto">
         <header class="mb-8 text-center">
@@ -65,6 +82,7 @@
 
     <script>
         let players = [];
+        const STATS_API = 'api.php';
 
         function addPlayer() {
             const input = document.getElementById('p-input');
@@ -107,7 +125,6 @@
         function addRound() {
             players.forEach(p => p.rounds.push(0));
             renderTable();
-            // Scroll automatique vers le bas
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
@@ -136,6 +153,7 @@
         function updateScore(pIdx, rIdx, val) {
             players[pIdx].rounds[rIdx] = parseInt(val) || 0;
             updateFooter();
+            checkGameOver();
         }
 
         function updateFooter() {
@@ -148,6 +166,69 @@
                       </td>`;
             });
             document.getElementById('t-foot').innerHTML = f + "</tr>";
+        }
+
+        function checkGameOver() {
+            const loser = players.find(p => p.rounds.reduce((a,b)=>a+b,0) >= 100);
+            
+            if (loser) {
+                // Au Skyjo, le GAGNANT est celui qui a le MOINS de points
+                const results = players.map(p => ({
+                    name: p.name,
+                    score: p.rounds.reduce((a,b)=>a+b,0)
+                }));
+                
+                const winner = results.reduce((prev, curr) => (curr.score < prev.score) ? curr : prev);
+                
+                document.getElementById('winner-msg').innerText = `${winner.name} GAGNE LA PARTIE !`;
+                document.getElementById('final-scores-list').innerHTML = results
+                    .sort((a,b) => a.score - b.score)
+                    .map(r => `
+                        <div class="flex justify-between font-black uppercase text-sm border-b border-slate-200 pb-2">
+                            <span>${r.name}</span>
+                            <span class="${r.score >= 100 ? 'text-red-500' : 'text-slate-900'}">${r.score} PTS</span>
+                        </div>
+                    `).join('');
+                
+                document.getElementById('finish-modal').classList.remove('hidden');
+            }
+        }
+
+        async function saveAndExit() {
+            const date = new Date().toLocaleDateString('fr-FR');
+            const results = players.map(p => ({
+                name: p.name,
+                score: p.rounds.reduce((a,b)=>a+b,0)
+            }));
+            const winnerName = results.reduce((prev, curr) => (curr.score < prev.score) ? curr : prev).name;
+
+            const gameData = {
+                game: "Skyjo",
+                date: date,
+                results: results,
+                winner: winnerName
+            };
+
+            try {
+                // Récupérer l'historique actuel
+                const resp = await fetch(`${STATS_API}?action=stats`);
+                let history = await resp.json();
+                if (!Array.isArray(history)) history = [];
+                
+                // Ajouter la nouvelle partie
+                history.push(gameData);
+                
+                // Sauvegarder
+                await fetch(`${STATS_API}?action=stats`, {
+                    method: 'POST',
+                    body: JSON.stringify(history)
+                });
+                
+                window.location.href = 'index.html';
+            } catch (e) {
+                console.error("Erreur de sauvegarde:", e);
+                window.location.href = 'index.html';
+            }
         }
     </script>
 </body>
