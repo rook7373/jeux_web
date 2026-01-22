@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 $action = $_GET['action'] ?? '';
 $roomId = $_GET['roomId'] ?? '';
-$statsFile = 'stats_p4.json'; // Fichier dédié aux scores du Puissance 4
+$statsFile = 'stats.json'; // Fichier dédié aux scores du Puissance 4
 
 if ($roomId) {
     $roomId = preg_replace('/[^a-zA-Z0-9]/', '', $roomId);
