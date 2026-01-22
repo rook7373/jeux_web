@@ -19,7 +19,7 @@
         .f6 { transform: rotateY(180deg) translateZ(30px); }
         .scene.held { margin-top: -15px; filter: drop-shadow(0 0 15px var(--player-accent)); }
         .scene.held .face { border: 3px solid var(--player-accent); }
-        .potential-score { color: #64748b; font-style: italic; opacity: 0.6; cursor: pointer; }
+        .potential-score { color: #64748b; font-style: italic; opacity: 0.6; cursor: pointer; transition: 0.2s; }
         .locked-score { font-weight: 900; opacity: 1 !important; font-style: normal !important; }
         .color-opt { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
         .color-opt.selected { border-color: #000; transform: scale(1.2); box-shadow: 0 0 15px rgba(255,255,255,0.3); }
@@ -35,16 +35,16 @@
         </div>
         <div class="flex gap-3">
             <button onclick="window.location.href='index.html'" class="flex-1 bg-slate-100 text-slate-400 py-5 rounded-2xl text-xs">Retour</button>
-            <button onclick="joinGame()" class="flex-[2] bg-black text-white py-5 rounded-2xl tracking-widest text-sm">Rejoindre / Créer</button>
+            <button onclick="joinGame()" class="flex-[2] bg-black text-white py-5 rounded-2xl tracking-widest text-sm">Jouer</button>
         </div>
     </div>
 
     <div id="game" class="hidden max-w-7xl mx-auto grid lg:grid-cols-12 gap-6 mt-4">
         <div class="lg:col-span-7 bg-black/40 backdrop-blur-xl p-8 rounded-[4rem] border-4 border-white/5 flex flex-col items-center">
             <div class="w-full flex justify-between items-center mb-10">
-                <button onclick="window.location.href='index.html'" class="text-[9px] bg-white/10 px-4 py-2 rounded-full tracking-widest">Retour Menu</button>
+                <button onclick="window.location.href='index.html'" class="text-[9px] bg-white/10 px-4 py-2 rounded-full tracking-widest">Menu</button>
                 <div class="px-6 py-2 rounded-full bg-black/30 text-[10px] tracking-widest uppercase border border-white/5">
-                    Tour : <span id="active-player-name" class="text-white">-</span>
+                    Tour de : <span id="active-player-name" class="text-white">-</span>
                 </div>
                 <button onclick="copyLink()" class="text-[9px] bg-green-600 px-4 py-2 rounded-full tracking-widest">Lien</button>
             </div>
@@ -56,11 +56,11 @@
                 <div id="d4" onclick="toggleHold(4)" class="scene"><div class="cube" id="cube4"></div></div>
             </div>
             <div class="text-center w-full max-w-sm">
-                <p id="roll-count" class="text-[10px] text-slate-500 mb-6">Lancers : 0 / 3</p>
-                <button id="roll-btn" onclick="rollDice()" class="bg-white text-slate-900 w-full py-6 rounded-full font-black text-3xl shadow-2xl active:scale-95 transition-all">Lancer</button>
+                <p id="roll-count" class="text-[10px] text-slate-500 mb-6 uppercase">Lancers : 0 / 3</p>
+                <button id="roll-btn" onclick="rollDice()" class="bg-white text-slate-900 w-full py-6 rounded-full font-black text-3xl shadow-2xl active:scale-95 transition-all">Lancer les dés</button>
             </div>
         </div>
-        <div class="lg:col-span-5 bg-white/5 backdrop-blur-lg rounded-[3.5rem] p-8 border border-white/10 shadow-2xl h-fit">
+        <div class="lg:col-span-5 bg-white/5 backdrop-blur-lg rounded-[3.5rem] p-8 border border-white/10 shadow-2xl h-fit overflow-x-auto">
             <table class="w-full">
                 <thead><tr id="table-head" class="text-[9px] text-slate-500 border-b border-white/5 uppercase"><th class="text-left pb-4">Contrats</th></tr></thead>
                 <tbody id="table-body" class="text-xs font-black"></tbody>
@@ -69,7 +69,7 @@
     </div>
 
     <script>
-        const API = 'api_yams.php'; // Doit être dans le même dossier
+        const API = 'api_yams.php';
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', myColorIdx = 0, players = [], cIdx = 0, rolls = 0, dice = [1,1,1,1,1].map(v=>({v,held:false}));
         
@@ -111,12 +111,16 @@
                 const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
                 const data = await r.json();
                 if(data) {
-                    if(data.rolls !== rolls && data.rolls !== 0) animateCubes(data.dice);
+                    // Si le nombre de lancers a changé et que ce n'est pas mon tour, j'anime les dés
+                    if(data.rolls !== rolls && data.rolls !== 0 && data.players[data.cIdx].name !== myName) {
+                        animateCubes(data.dice);
+                    }
                     players = data.players; cIdx = data.cIdx; rolls = data.rolls; dice = data.dice;
-                    if(document.getElementById('table-head').children.length <= 1) renderTableStructure();
+                    // Mise à jour dynamique du tableau si un nouveau joueur arrive
+                    if(document.getElementById('table-head').children.length !== players.length + 1) renderTableStructure();
                     refreshUI();
                 }
-            } catch(e) { console.error("Erreur API : Vérifiez si api_yams.php existe au bon endroit."); }
+            } catch(e) { console.error("Erreur Sync"); }
         }
 
         function refreshUI() {
@@ -138,9 +142,14 @@
 
         function renderTableStructure() {
             const h = document.getElementById('table-head');
-            h.innerHTML = '<th class="text-left pb-4">Contrats</th>';
-            players.forEach(p => h.innerHTML += `<th class="px-2 text-center" style="color:${p.color.b}">${p.name}</th>`);
-            document.getElementById('table-body').innerHTML = cats.map(c => `<tr class="border-b border-white/5"><td class="py-3 font-bold text-slate-500 uppercase text-[9px] tracking-widest">${c}</td>${players.map((p,pi) => `<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black potential-score">-</td>`).join('')}</tr>`).join('');
+            h.innerHTML = '<th class="text-left pb-4 pr-4">Contrats</th>';
+            players.forEach(p => h.innerHTML += `<th class="px-3 text-center" style="color:${p.color.b}">${p.name}</th>`);
+            document.getElementById('table-body').innerHTML = cats.map(c => `
+                <tr class="border-b border-white/5">
+                    <td class="py-3 font-bold text-slate-500 uppercase text-[9px] tracking-widest">${c}</td>
+                    ${players.map((p,pi) => `<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black potential-score px-3">-</td>`).join('')}
+                </tr>
+            `).join('');
         }
 
         function renderScores() {
@@ -150,19 +159,17 @@
                     if(!cell) return;
                     if(p.scores[c] !== undefined) {
                         cell.innerText = p.scores[c];
-                        cell.className = "text-center font-black locked-score";
+                        cell.className = "text-center font-black locked-score px-3";
                         cell.style.color = p.color.b;
                     } else if (pi === cIdx && p.name === myName && rolls > 0) {
                         cell.innerText = calculatePotential(c);
-                        cell.className = "text-center font-black potential-score";
+                        cell.className = "text-center font-black potential-score px-3";
                     } else {
                         cell.innerText = "-";
+                        cell.className = "text-center font-black px-3";
                     }
                 });
             });
-            let t = 0; const me = players.find(p => p.name === myName);
-            if(me) Object.values(me.scores).forEach(v => t += v);
-            document.getElementById('total-val').innerText = t;
         }
 
         function animateCubes(newDice) {
