@@ -10,18 +10,18 @@
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
         
-        /* DÉS OPTIMISÉS IPHONE (Taille réduite à 95px) */
+        /* DÉS IPHONE (Taille ajustée à 90px) */
         .scene { width: 85px; height: 85px; margin: 10px; perspective: 1000px; position: relative; cursor: pointer; }
         
         @media (max-width: 640px) {
-            .scene { width: 95px; height: 95px; margin: 6px; } 
-            .face { width: 95px !important; height: 95px !important; border-radius: 20px !important; }
-            .f1 { transform: rotateY(0deg) translateZ(47.5px) !important; }
-            .f2 { transform: rotateY(-90deg) translateZ(47.5px) !important; }
-            .f3 { transform: rotateX(-90deg) translateZ(47.5px) !important; }
-            .f4 { transform: rotateX(90deg) translateZ(47.5px) !important; }
-            .f5 { transform: rotateY(90deg) translateZ(47.5px) !important; }
-            .f6 { transform: rotateY(180deg) translateZ(47.5px) !important; }
+            .scene { width: 90px; height: 90px; margin: 5px; } 
+            .face { width: 90px !important; height: 90px !important; border-radius: 20px !important; }
+            .f1 { transform: rotateY(0deg) translateZ(45px) !important; }
+            .f2 { transform: rotateY(-90deg) translateZ(45px) !important; }
+            .f3 { transform: rotateX(-90deg) translateZ(45px) !important; }
+            .f4 { transform: rotateX(90deg) translateZ(45px) !important; }
+            .f5 { transform: rotateY(90deg) translateZ(45px) !important; }
+            .f6 { transform: rotateY(180deg) translateZ(45px) !important; }
             .dot { width: 18px !important; height: 18px !important; }
         }
 
@@ -57,8 +57,8 @@
     <div id="win-modal" class="hidden fixed inset-0 z-50 backdrop-blur-2xl bg-black/80 flex items-center justify-center p-4">
         <div class="bg-white rounded-[4rem] p-12 max-w-sm w-full text-center text-slate-900 shadow-2xl">
             <div class="text-8xl mb-6">👑</div>
-            <h2 class="text-4xl font-black mb-2 italic">FIN DE MATCH</h2>
-            <p id="winner-display" class="text-3xl text-green-600 mb-8">-</p>
+            <h2 class="text-4xl font-black mb-2 italic tracking-tighter">FIN DE MATCH</h2>
+            <p id="winner-display" class="text-3xl text-green-600 mb-8 font-black">-</p>
             <div id="final-stats" class="space-y-3 mb-10 text-left bg-slate-50 p-6 rounded-3xl border"></div>
             <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl hover:scale-105 transition-all">REJOUER</button>
         </div>
@@ -76,7 +76,7 @@
     <div id="game" class="hidden max-w-[98%] mx-auto grid lg:grid-cols-12 gap-6 mt-4">
         <div class="lg:col-span-5 bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] border-4 border-white/5 flex flex-col items-center h-fit">
             <div class="w-full flex justify-between items-center mb-8">
-                <div id="active-player-name" class="px-8 py-3 rounded-full bg-black/40 text-xl border border-white/10 font-black">-</div>
+                <div id="active-player-name" class="px-8 py-3 rounded-full bg-black/40 text-2xl border border-white/10 font-black">-</div>
                 <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-5 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all">COPIER LIEN</button>
             </div>
             
@@ -160,9 +160,7 @@
                             document.getElementById(`cube${i}`).style.transform = `rotateX(0deg) rotateY(0deg)`;
                             currentRots[i] = {x:0, y:0};
                         }
-                    } else if(rolls !== oldRolls && players[cIdx].name !== myName) {
-                        animateCubes(data.dice);
-                    }
+                    } else if(rolls !== oldRolls && players[cIdx].name !== myName) animateCubes(data.dice);
                     dice = data.dice;
                     if(document.getElementById('table-head').children.length !== players.length + 1) renderTableStructure();
                     refreshUI();
@@ -292,13 +290,8 @@
                     sndWin.play();
                     const results = players.map(p => ({ name: p.name, score: calculatePlayerTotal(p) }));
                     const winner = results.reduce((prev, curr) => (curr.score > prev.score) ? curr : prev);
-                    
-                    document.getElementById('winner-display').innerText = winner.name;
-                    document.getElementById('final-stats').innerHTML = results.map(r => `
-                        <div class="flex justify-between border-b pb-2 font-black">
-                            <span>${r.name}</span><span>${r.score} PTS</span>
-                        </div>`).join('');
-                    
+                    document.getElementById('winner-display').innerText = `GAGNANT : ${winner.name}`;
+                    document.getElementById('final-stats').innerHTML = results.map(r => `<div class="flex justify-between border-b pb-2 font-black"><span>${r.name}</span><span>${r.score} PTS</span></div>`).join('');
                     const end = Date.now() + 5000;
                     (function frame() {
                         confetti({ particleCount: 7, angle: 60, spread: 55, origin: { x: 0 } });
@@ -309,7 +302,7 @@
                 }
             }
         }
-        function copyLink() { navigator.clipboard.writeText(window.location.href); alert("Lien d'invitation copié !"); }
+        function copyLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
     </script>
 </body>
 </html>
