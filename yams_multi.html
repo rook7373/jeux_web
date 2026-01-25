@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yam's Pro Arena - Elite</title>
+    <title>Yam's Pro Arena - Elite V4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
         
-        /* DÉS OPTIMISÉS (75px sur mobile pour l'alignement) */
-        .scene { width: 85px; height: 85px; perspective: 1000px; position: relative; cursor: pointer; margin: auto; }
+        /* DÉS OPTIMISÉS */
+        .scene { width: 85px; height: 85px; perspective: 1000px; position: relative; cursor: pointer; margin: auto; transition: transform 0.2s; }
         
         @media (max-width: 640px) {
             .scene { width: 75px; height: 75px; } 
@@ -29,6 +29,13 @@
         .face { position: absolute; width: 85px; height: 85px; background: var(--die-color, #ffffff); border: 1px solid rgba(0,0,0,0.2); border-radius: 18px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 8px; box-sizing: border-box; backface-visibility: hidden; }
         .dot { background: var(--dot-color, #1a1a1a); border-radius: 50%; width: 16px; height: 16px; margin: auto; }
         
+        /* ANIMATION YAMS SUR LES DÉS */
+        .yams-dice { animation: yams-glow 0.8s infinite alternate ease-in-out; }
+        @keyframes yams-glow {
+            from { box-shadow: 0 0 10px #fff; transform: scale(1); }
+            to { box-shadow: 0 0 35px var(--player-accent); transform: scale(1.1); }
+        }
+
         .f1 { transform: rotateY(0deg) translateZ(42.5px); }
         .f2 { transform: rotateY(-90deg) translateZ(42.5px); }
         .f3 { transform: rotateX(-90deg) translateZ(42.5px); }
@@ -36,19 +43,19 @@
         .f5 { transform: rotateY(90deg) translateZ(42.5px); }
         .f6 { transform: rotateY(180deg) translateZ(42.5px); }
 
-        .scene.held { transform: translateY(-10px) scale(1.05); }
+        .scene.held { transform: translateY(-10px); }
         .scene.held .face { border: 4px solid white; box-shadow: 0 0 20px var(--player-accent); }
 
-        .cat-label { font-size: 1.1rem; font-weight: 900; color: #e2e8f0; } 
-        .potential-score { color: #94a3b8; opacity: 0.8; font-size: 1.8rem; cursor: pointer; font-style: italic; }
+        .cat-label { font-size: 1rem; font-weight: 900; color: #e2e8f0; line-height: 1.1; } 
+        .potential-score { color: #fbbf24; opacity: 0.6; font-size: 1.8rem; cursor: pointer; font-style: italic; }
         .locked-score { font-weight: 900; font-size: 2.8rem; line-height: 0.8; }
         
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
-        .total-row { background: rgba(255,255,255,0.15); color: #fbbf24; }
+        .total-row { background: rgba(255,255,255,0.1); color: #fbbf24; }
         .color-opt { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
-        .color-opt.selected { border-color: #000; transform: scale(1.25); box-shadow: 0 0 15px rgba(0,0,0,0.3); }
+        .color-opt.selected { border-color: #000; transform: scale(1.2); }
     </style>
 </head>
 <body class="p-2 md:p-4 uppercase font-black">
@@ -64,9 +71,9 @@
     </div>
 
     <div id="setup" class="max-w-lg mx-auto mt-10 bg-white p-8 md:p-12 rounded-[3.5rem] text-slate-900 shadow-2xl">
-        <h1 class="text-4xl mb-10 text-center italic text-green-900">YAM'S ARENA</h1>
+        <h1 class="text-4xl mb-10 text-center italic text-green-900 font-black">YAM'S ARENA</h1>
         <div class="bg-slate-50 p-6 rounded-[3rem] border mb-8 text-center">
-            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-white font-black p-5 rounded-2xl border text-center mb-6 outline-none text-xl uppercase">
+            <input type="text" id="my-name-in" placeholder="PSEUDO..." class="w-full bg-white font-black p-5 rounded-2xl border text-center mb-6 outline-none text-xl uppercase">
             <div id="color-picker" class="flex flex-wrap justify-center gap-3 mb-4"></div>
         </div>
         <button onclick="joinGame()" class="w-full bg-black text-white py-7 rounded-3xl font-black text-2xl shadow-xl active:scale-95 transition-all">REJOINDRE</button>
@@ -76,10 +83,10 @@
         <div class="lg:col-span-5 bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] border-4 border-white/5 flex flex-col items-center h-fit">
             <div class="w-full flex justify-between items-center mb-6">
                 <div id="active-player-name" class="px-6 py-2 rounded-full bg-black/40 text-xl border border-white/10 font-black">-</div>
-                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full font-bold shadow-lg active:scale-90 transition-all">COPIER LIEN</button>
+                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full font-bold shadow-lg active:scale-90 transition-all">LIEN INVITE</button>
             </div>
             
-            <div id="dice-row" class="grid grid-cols-3 md:grid-cols-5 gap-4 mb-12 w-full max-w-sm">
+            <div id="dice-row" class="grid grid-cols-3 md:grid-cols-5 gap-3 mb-10 w-full max-w-sm">
                 <div id="d0" onclick="toggleHold(0)" class="scene"><div class="cube" id="cube0"></div></div>
                 <div id="d1" onclick="toggleHold(1)" class="scene"><div class="cube" id="cube1"></div></div>
                 <div id="d2" onclick="toggleHold(2)" class="scene"><div class="cube" id="cube2"></div></div>
@@ -88,7 +95,7 @@
             </div>
 
             <div class="w-full max-w-sm">
-                <p id="roll-count" class="text-center text-sm mb-4 opacity-60">LANCERS : 0 / 3</p>
+                <p id="roll-count" class="text-center text-sm mb-4 opacity-60 font-bold">LANCERS : 0 / 3</p>
                 <button id="roll-btn" onclick="rollDice()" class="w-full bg-white text-black py-8 rounded-full font-black text-4xl shadow-2xl active:scale-90 transition-all border-b-8 border-slate-300">LANCER</button>
             </div>
         </div>
@@ -104,6 +111,8 @@
     <script>
         const sndYams = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
         const sndWin = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+        const sndRoll = new Audio('https://assets.mixkit.co/active_storage/sfx/1070/1070-preview.mp3');
+
         const API = 'api_yams.php';
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', myColorIdx = 0, players = [], cIdx = 0, rolls = 0, dice = [1,1,1,1,1].map(v=>({v,held:false}));
@@ -117,7 +126,8 @@
             {n:'Orange',b:'#fb923c',d:'#ffffff',a:'#fdba74'}, {n:'Emeraude',b:'#059669',d:'#ffffff',a:'#34d399'}
         ];
 
-        const cats = ["1","2","3","4","5","6","BONUS (63+)","TOTAL SUP","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE","TOTAL GLOBAL"];
+        // LIBELLÉ DU BONUS MIS À JOUR
+        const cats = ["1","2","3","4","5","6","BONUS (+35 SI 63+)","TOTAL SUP","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE","TOTAL GLOBAL"];
         const facesHTML=['','<div class="face f1"><div class="dot" style="grid-area:2/2"></div></div>','<div class="face f2"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f3"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f4"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f5"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f6"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/1"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/3"></div><div class="dot" style="grid-area:3/3"></div></div>'];
 
         const cp = document.getElementById('color-picker');
@@ -153,9 +163,10 @@
                 if(data) {
                     const oldRolls = rolls;
                     players = data.players; cIdx = data.cIdx; rolls = data.rolls;
-                    if(rolls === 0) {
+                    if(rolls === 0 && oldRolls !== 0) {
                         for(let i=0; i<5; i++) {
                             document.getElementById(`cube${i}`).style.transform = `rotateX(0deg) rotateY(0deg)`;
+                            document.getElementById(`d${i}`).classList.remove('yams-dice');
                             currentRots[i] = {x:0, y:0};
                         }
                     } else if(rolls !== oldRolls && players[cIdx].name !== myName) animateCubes(data.dice);
@@ -180,10 +191,19 @@
                     cube.style.transform = `rotateX(${tx}deg) rotateY(${ty}deg)`;
                 }
             });
+            // Déclenchement Instantané si Yam's aligné
+            setTimeout(() => {
+                if(calculatePotential("YAMS") > 0) {
+                    sndYams.play();
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                    for(let i=0; i<5; i++) document.getElementById(`d${i}`).classList.add('yams-dice');
+                }
+            }, 2800);
         }
 
         function rollDice() {
             if(rolls >= 3 || players[cIdx].name !== myName) return;
+            sndRoll.play();
             rolls++; dice.forEach(d => { if(!d.held) d.v = Math.floor(Math.random()*6)+1; });
             animateCubes(dice); syncPush();
         }
@@ -197,12 +217,20 @@
 
         async function lock(c, pi) {
             if(pi !== cIdx || players[pi].name !== myName || rolls === 0 || players[pi].scores[c] !== undefined) return;
-            const s = calculatePotential(c);
-            players[pi].scores[c] = s;
-            if(c === "YAMS" && s > 0) { sndYams.play(); confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } }); }
+            players[pi].scores[c] = calculatePotential(c);
             rolls = 0; dice.forEach(d => { d.held = false; d.v = 1; });
             cIdx = (cIdx + 1) % players.length;
             await syncPush();
+        }
+
+        function renderTableStructure() {
+            const h = document.getElementById('table-head');
+            h.innerHTML = `<th class="text-left pb-4 opacity-40">CONTRATS</th>${players.map(p=>`<th class="px-4 text-center text-xl" style="color:${p.color.b}">${p.name}</th>`).join('')}`;
+            document.getElementById('table-body').innerHTML = cats.map(c => `
+                <tr class="${c.includes("BONUS") || ["TOTAL SUP", "TOTAL GLOBAL"].includes(c) ? 'total-row' : ''} border-b border-white/5">
+                    <td class="py-4 pr-6 cat-label">${c}</td>
+                    ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[100px]">-</td>`).join('')}
+                </tr>`).join('');
         }
 
         function calculatePlayerTotal(p) {
@@ -210,16 +238,6 @@
             let bonus = sSup >= 63 ? 35 : 0;
             let sInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sInf += (p.scores[k] || 0));
             return sSup + bonus + sInf;
-        }
-
-        function renderTableStructure() {
-            const h = document.getElementById('table-head');
-            h.innerHTML = `<th class="text-left pb-4 pr-6 opacity-40">CONTRATS</th>${players.map(p=>`<th class="px-4 text-center text-xl" style="color:${p.color.b}">${p.name}</th>`).join('')}`;
-            document.getElementById('table-body').innerHTML = cats.map(c => `
-                <tr class="${["BONUS (63+)", "TOTAL SUP", "TOTAL GLOBAL"].includes(c) ? 'total-row' : ''} border-b border-white/5">
-                    <td class="py-4 pr-6 cat-label">${c}</td>
-                    ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[100px]">-</td>`).join('')}
-                </tr>`).join('');
         }
 
         function refreshUI() {
@@ -245,7 +263,8 @@
                     const oldVal = cell.innerText;
                     let newVal = "-";
                     let isLocked = false;
-                    if(c === "BONUS (63+)") newVal = bonus;
+                    
+                    if(c.includes("BONUS")) newVal = bonus;
                     else if(c === "TOTAL SUP") newVal = sSup + bonus;
                     else if(c === "TOTAL GLOBAL") newVal = sSup + bonus + sInf;
                     else if(player.scores[c] !== undefined) { newVal = player.scores[c]; isLocked = true; }
@@ -258,7 +277,6 @@
                             cell.style.color = player.color.b;
                         } else if(pi === cIdx && player.name === myName && rolls > 0) {
                             cell.className = "text-center potential-score px-4";
-                            cell.style.color = "";
                         } else { cell.className = "text-center px-4 opacity-10 text-xl"; cell.style.color = ""; }
                     }
                 });
