@@ -28,15 +28,18 @@ if (isset($_GET['action'])) {
     <title>Memory Arena - Kittens</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; font-family: sans-serif; }
+        body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; font-family: sans-serif; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         #grid { display: grid; gap: 0.5rem; width: 100%; max-width: 600px; margin: auto; }
-        .card { aspect-ratio: 1/1; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .card { aspect-ratio: 1/1; position: relative; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .card.flipped { transform: rotateY(180deg); }
-        .card.matched { opacity: 0.4; cursor: default; }
-        .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 1rem; border: 2px solid rgba(255,255,255,0.1); }
+        .card.matched { opacity: 0.3; cursor: default; filter: grayscale(1); }
+        .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 0.75rem; border: 2px solid rgba(255,255,255,0.1); }
         .card-front { background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
         .card-back { background: #3b82f6; transform: rotateY(180deg); background-size: cover; background-position: center; }
+        
+        @keyframes pulse-white { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.05); } }
+        .active-turn { animation: pulse-white 1.5s infinite; border: 2px solid white !important; background: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center font-sans uppercase font-black">
@@ -73,10 +76,10 @@ if (isset($_GET['action'])) {
     </div>
 
     <div id="game" class="hidden max-w-4xl w-full glass p-6 rounded-[4rem] border border-white/10 shadow-2xl">
-        <div class="flex justify-between items-center mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
             <button onclick="location.reload()" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black uppercase">QUITTER</button>
-            <div id="players-display" class="flex gap-8 text-[12px] tracking-widest items-center"></div>
-            <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg uppercase">LIEN INVITE</button>
+            <div id="players-display" class="flex gap-4 text-[12px] tracking-widest items-center"></div>
+            <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg uppercase">INVITER 🔗</button>
         </div>
         <div id="grid"></div>
         <div id="win-overlay" class="hidden text-center mt-10">
@@ -90,7 +93,7 @@ if (isset($_GET['action'])) {
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', gameMode = roomId ? 'remote' : 'local', localOpponent = 'ai';
         let selectedSize = 6;
-        let isProcessingMatch = false;
+        let isWaitingForAnimation = false;
 
         let gameState = { 
             players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '', gridSize: 6
@@ -100,7 +103,6 @@ if (isset($_GET['action'])) {
 
         window.onload = () => {
             if(roomId) {
-                // On cache tout pour celui qui rejoint (il subit la config de l'hôte)
                 document.getElementById('mode-selector').classList.add('hidden');
                 document.getElementById('difficulty-selector').classList.add('hidden');
                 document.getElementById('local-options').classList.add('hidden');
@@ -115,14 +117,8 @@ if (isset($_GET['action'])) {
             gameMode = m;
             document.getElementById('m-local').className = (m === 'local') ? "bg-blue-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
             document.getElementById('m-remote').className = (m === 'remote') ? "bg-purple-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
-            
-            // On ne montre les options adversaire que si c'est LOCAL
             document.getElementById('local-options').classList.toggle('hidden', m !== 'local');
-            
-            // On garde le choix de difficulté visible pour l'HÔTE (si pas de roomId)
-            if (!roomId) {
-                document.getElementById('difficulty-selector').classList.remove('hidden');
-            }
+            if (!roomId) document.getElementById('difficulty-selector').classList.remove('hidden');
         }
 
         function setGridSize(s) {
@@ -150,12 +146,12 @@ if (isset($_GET['action'])) {
                     if (gameState.players.length < 2) {
                         gameState.players.push({ name: myName, score: 0 });
                         if (gameState.players.length === 1) {
-                            gameState.gridSize = selectedSize; // L'hôte définit la taille ici
+                            gameState.gridSize = selectedSize;
                             initBoard();
                         }
                     } else return alert("Plein !");
                 } 
-                setInterval(syncPull, 1000);
+                setInterval(syncPull, 500); // Rafraîchissement plus rapide
             } else {
                 gameState.gridSize = selectedSize;
                 initBoard();
@@ -178,13 +174,13 @@ if (isset($_GET['action'])) {
         async function syncPush() { if(roomId) await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) }); }
 
         async function syncPull() {
-            if(!roomId || isProcessingMatch) return;
+            if(!roomId || isWaitingForAnimation) return;
             try { 
                 const r = await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); 
                 const data = await r.json(); 
                 if (data) { 
-                    // Sécurité : on ne pull pas si l'autre joueur a déjà fini son tour mais que nous on n'a pas encore fini l'animation
-                    if (gameState.flipped.length < 2) {
+                    // On ne met à jour que si on n'a pas de cartes retournées localement
+                    if (gameState.flipped.length === 0) {
                         gameState = data; 
                         render(); 
                     }
@@ -193,17 +189,19 @@ if (isset($_GET['action'])) {
         }
 
         function handleFlip(idx) {
-            if (gameState.gameOver || gameState.flipped.length >= 2 || gameState.matched.includes(idx) || gameState.flipped.includes(idx)) return;
-            if (gameMode === 'remote' && gameState.players[gameState.currentPlayerIdx].name !== myName) return;
+            // VERIFICATION CRITIQUE : C'est à moi de jouer ?
+            const isMyTurn = gameState.players[gameState.currentPlayerIdx]?.name === myName;
+            
+            if (gameState.gameOver || isWaitingForAnimation || gameState.matched.includes(idx) || gameState.flipped.includes(idx)) return;
+            if (gameMode === 'remote' && !isMyTurn) return;
 
             gameState.flipped.push(idx);
             render();
 
-            // Correction Bug : On push immédiatement la 2ème carte pour que l'adversaire la voie
-            if(gameMode === 'remote') syncPush();
+            if (gameMode === 'remote') syncPush();
 
             if (gameState.flipped.length === 2) {
-                isProcessingMatch = true; 
+                isWaitingForAnimation = true; 
                 setTimeout(checkMatch, 1000);
             }
         }
@@ -211,6 +209,7 @@ if (isset($_GET['action'])) {
         function checkMatch() {
             if (gameState.flipped.length < 2) return;
             const [i1, i2] = gameState.flipped;
+            
             if (gameState.board[i1] === gameState.board[i2]) {
                 gameState.matched.push(i1, i2);
                 gameState.players[gameState.currentPlayerIdx].score++;
@@ -222,8 +221,9 @@ if (isset($_GET['action'])) {
                 gameState.currentPlayerIdx = (gameState.currentPlayerIdx + 1) % gameState.players.length;
                 if(gameMode === 'local' && gameState.players[gameState.currentPlayerIdx].name === 'IA 🤖') setTimeout(aiMove, 500);
             }
+            
             gameState.flipped = [];
-            isProcessingMatch = false;
+            isWaitingForAnimation = false;
             render();
             if(gameMode === 'remote') syncPush();
         }
@@ -257,12 +257,18 @@ if (isset($_GET['action'])) {
                 grid.appendChild(card);
             });
 
-            const p1 = gameState.players[0] || { name: '...', score: 0 };
-            const p2 = gameState.players[1] || { name: '...', score: 0 };
+            // Affichage des joueurs avec indicateur de tour
+            const p1 = gameState.players[0] || { name: 'ATTENTE...', score: 0 };
+            const p2 = gameState.players[1] || { name: 'ATTENTE...', score: 0 };
+            
             document.getElementById('players-display').innerHTML = `
-                <span class="${gameState.currentPlayerIdx === 0 ? 'ring-2 ring-white/20 bg-white/5' : 'opacity-40'} px-4 py-2 rounded-2xl text-blue-400">${p1.name}: ${p1.score}</span>
-                <span class="text-slate-700 italic font-bold text-xs">VS</span>
-                <span class="${gameState.currentPlayerIdx === 1 ? 'ring-2 ring-white/20 bg-white/5' : 'opacity-40'} px-4 py-2 rounded-2xl text-purple-400">${p2.name}: ${p2.score}</span>
+                <div class="px-4 py-2 rounded-2xl transition-all border border-transparent ${gameState.currentPlayerIdx === 0 ? 'active-turn text-blue-400' : 'opacity-40 text-white'}">
+                    ${p1.name}: ${p1.score}
+                </div>
+                <span class="text-slate-700 italic font-bold">VS</span>
+                <div class="px-4 py-2 rounded-2xl transition-all border border-transparent ${gameState.currentPlayerIdx === 1 ? 'active-turn text-purple-400' : 'opacity-40 text-white'}">
+                    ${p2.name}: ${p2.score}
+                </div>
             `;
 
             if (gameState.gameOver) {
