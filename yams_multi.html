@@ -10,19 +10,19 @@
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
         
-        /* DÉS GÉANTS IPHONE */
+        /* DÉS OPTIMISÉS IPHONE (Taille réduite à 95px) */
         .scene { width: 85px; height: 85px; margin: 10px; perspective: 1000px; position: relative; cursor: pointer; }
         
         @media (max-width: 640px) {
-            .scene { width: 110px; height: 110px; margin: 6px; } 
-            .face { width: 110px !important; height: 110px !important; border-radius: 24px !important; }
-            .f1 { transform: rotateY(0deg) translateZ(55px) !important; }
-            .f2 { transform: rotateY(-90deg) translateZ(55px) !important; }
-            .f3 { transform: rotateX(-90deg) translateZ(55px) !important; }
-            .f4 { transform: rotateX(90deg) translateZ(55px) !important; }
-            .f5 { transform: rotateY(90deg) translateZ(55px) !important; }
-            .f6 { transform: rotateY(180deg) translateZ(55px) !important; }
-            .dot { width: 22px !important; height: 22px !important; }
+            .scene { width: 95px; height: 95px; margin: 6px; } 
+            .face { width: 95px !important; height: 95px !important; border-radius: 20px !important; }
+            .f1 { transform: rotateY(0deg) translateZ(47.5px) !important; }
+            .f2 { transform: rotateY(-90deg) translateZ(47.5px) !important; }
+            .f3 { transform: rotateX(-90deg) translateZ(47.5px) !important; }
+            .f4 { transform: rotateX(90deg) translateZ(47.5px) !important; }
+            .f5 { transform: rotateY(90deg) translateZ(47.5px) !important; }
+            .f6 { transform: rotateY(180deg) translateZ(47.5px) !important; }
+            .dot { width: 18px !important; height: 18px !important; }
         }
 
         .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 2.8s cubic-bezier(0.2, 0.9, 0.3, 1.05); }
@@ -44,7 +44,6 @@
         .potential-score { color: #94a3b8; opacity: 0.8; font-size: 2.2rem; cursor: pointer; font-style: italic; }
         .locked-score { font-weight: 900; font-size: 3.2rem; line-height: 0.8; }
         
-        /* ANIMATION UNIQUE (évite le clignotement) */
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
@@ -58,10 +57,10 @@
     <div id="win-modal" class="hidden fixed inset-0 z-50 backdrop-blur-2xl bg-black/80 flex items-center justify-center p-4">
         <div class="bg-white rounded-[4rem] p-12 max-w-sm w-full text-center text-slate-900 shadow-2xl">
             <div class="text-8xl mb-6">👑</div>
-            <h2 class="text-4xl font-black mb-2 italic">VICTOIRE !</h2>
+            <h2 class="text-4xl font-black mb-2 italic">FIN DE MATCH</h2>
             <p id="winner-display" class="text-3xl text-green-600 mb-8">-</p>
             <div id="final-stats" class="space-y-3 mb-10 text-left bg-slate-50 p-6 rounded-3xl border"></div>
-            <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl">REJOUER</button>
+            <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl hover:scale-105 transition-all">REJOUER</button>
         </div>
     </div>
 
@@ -76,7 +75,10 @@
 
     <div id="game" class="hidden max-w-[98%] mx-auto grid lg:grid-cols-12 gap-6 mt-4">
         <div class="lg:col-span-5 bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] border-4 border-white/5 flex flex-col items-center h-fit">
-            <div id="active-player-name" class="mb-8 px-10 py-4 rounded-full bg-black/40 text-2xl border border-white/10 font-black">-</div>
+            <div class="w-full flex justify-between items-center mb-8">
+                <div id="active-player-name" class="px-8 py-3 rounded-full bg-black/40 text-xl border border-white/10 font-black">-</div>
+                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-5 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all">COPIER LIEN</button>
+            </div>
             
             <div id="dice-row" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-16">
                 <div id="d0" onclick="toggleHold(0)" class="scene"><div class="cube" id="cube0"></div></div>
@@ -153,8 +155,6 @@
                 if(data) {
                     const oldRolls = rolls;
                     players = data.players; cIdx = data.cIdx; rolls = data.rolls;
-                    
-                    // Reset sur le 1 si nouveau tour
                     if(rolls === 0) {
                         for(let i=0; i<5; i++) {
                             document.getElementById(`cube${i}`).style.transform = `rotateX(0deg) rotateY(0deg)`;
@@ -163,7 +163,6 @@
                     } else if(rolls !== oldRolls && players[cIdx].name !== myName) {
                         animateCubes(data.dice);
                     }
-                    
                     dice = data.dice;
                     if(document.getElementById('table-head').children.length !== players.length + 1) renderTableStructure();
                     refreshUI();
@@ -193,7 +192,6 @@
             animateCubes(dice); syncPush();
         }
 
-        // Optimiste : On change visuellement avant l'envoi
         function toggleHold(i) {
             if(rolls === 0 || players[cIdx].name !== myName) return;
             dice[i].held = !dice[i].held;
@@ -221,6 +219,13 @@
                 </tr>`).join('');
         }
 
+        function calculatePlayerTotal(p) {
+            let sSup = 0; ["1","2","3","4","5","6"].forEach(k => sSup += (p.scores[k] || 0));
+            let bonus = sSup >= 63 ? 35 : 0;
+            let sInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sInf += (p.scores[k] || 0));
+            return sSup + bonus + sInf;
+        }
+
         function refreshUI() {
             const p = players[cIdx]; if(!p) return;
             document.getElementById('active-player-name').innerText = p.name === myName ? "À TOI !" : p.name;
@@ -241,22 +246,15 @@
                 cats.forEach(c => {
                     const cell = document.getElementById(`s-${pi}-${c}`);
                     if(!cell) return;
-                    
                     const oldVal = cell.innerText;
                     let newVal = "-";
                     let isLocked = false;
-
                     if(c === "BONUS (63+)") newVal = bonus;
                     else if(c === "TOTAL SUP") newVal = sSup + bonus;
                     else if(c === "TOTAL GLOBAL") newVal = sSup + bonus + sInf;
-                    else if(player.scores[c] !== undefined) {
-                        newVal = player.scores[c];
-                        isLocked = true;
-                    } else if(pi === cIdx && player.name === myName && rolls > 0) {
-                        newVal = calculatePotential(c);
-                    }
+                    else if(player.scores[c] !== undefined) { newVal = player.scores[c]; isLocked = true; }
+                    else if(pi === cIdx && player.name === myName && rolls > 0) newVal = calculatePotential(c);
 
-                    // On ne met à jour et on n'anime QUE si la valeur a changé (évite le clignotement)
                     if(oldVal != newVal) {
                         cell.innerText = newVal;
                         if(isLocked) {
@@ -265,14 +263,10 @@
                         } else if(pi === cIdx && player.name === myName && rolls > 0) {
                             cell.className = "text-center potential-score px-4";
                             cell.style.color = "";
-                        } else {
-                            cell.className = "text-center px-4 opacity-10 text-2xl";
-                            cell.style.color = "";
-                        }
+                        } else { cell.className = "text-center px-4 opacity-10 text-2xl"; cell.style.color = ""; }
                     }
                 });
             });
-            // Mise à jour visuelle des dés tenus
             dice.forEach((d,i)=> document.getElementById(`d${i}`).classList.toggle('held', d.held));
         }
 
@@ -292,9 +286,19 @@
         function isSuite(a,l){const s=[...new Set(a)].sort();let c=1,m=1;for(let i=0;i<s.length-1;i++){s[i+1]==s[i]+1?c++:c=1;m=Math.max(m,c)}return m>=l}
 
         function checkGameOver() {
-            if (players.length > 0 && players.every(p => ["1","2","3","4","5","6","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].every(cat => p.scores[cat] !== undefined))) {
+            const scoringCats = ["1","2","3","4","5","6","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"];
+            if (players.length > 0 && players.every(p => scoringCats.every(cat => p.scores[cat] !== undefined))) {
                 if(document.getElementById('win-modal').classList.contains('hidden')) {
                     sndWin.play();
+                    const results = players.map(p => ({ name: p.name, score: calculatePlayerTotal(p) }));
+                    const winner = results.reduce((prev, curr) => (curr.score > prev.score) ? curr : prev);
+                    
+                    document.getElementById('winner-display').innerText = winner.name;
+                    document.getElementById('final-stats').innerHTML = results.map(r => `
+                        <div class="flex justify-between border-b pb-2 font-black">
+                            <span>${r.name}</span><span>${r.score} PTS</span>
+                        </div>`).join('');
+                    
                     const end = Date.now() + 5000;
                     (function frame() {
                         confetti({ particleCount: 7, angle: 60, spread: 55, origin: { x: 0 } });
@@ -305,6 +309,7 @@
                 }
             }
         }
+        function copyLink() { navigator.clipboard.writeText(window.location.href); alert("Lien d'invitation copié !"); }
     </script>
 </body>
 </html>
