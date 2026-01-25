@@ -13,14 +13,13 @@
         @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
         .cat-chip { transition: all 0.2s; border: 2px solid #e2e8f0; text-align: center; padding: 0.8rem; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; border-radius: 1rem; background: white; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; }
         .cat-chip.active { background-color: #fbbf24; color: white; border-color: #d97706; }
-        
-        /* Animation des Emojis */
         .emoji-bubble { animation: popOut 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popOut { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
         .floating-reactions { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 100px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .emoji-btn { font-size: 1.5rem; cursor: pointer; transition: transform 0.1s; }
         .emoji-btn:active { transform: scale(1.4); }
+        .google-link { background: #4285F4; color: white; padding: 2px 6px; border-radius: 5px; font-size: 10px; margin-left: 8px; transition: opacity 0.2s; }
+        .google-link:hover { opacity: 0.8; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900 pb-24">
@@ -94,7 +93,8 @@
         let timerInterval = null, isInputRendered = false;
         const API = 'api.php';
 
-        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Gros mot", "Phrase de beauf", "Lieu coquin", "Dans ma chambre", "Mème", "Pokémon", "Jeu Vidéo", "Harry Potter", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "Slogan", "Expression", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Façon de mourir", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal", "Objet rouge", "Chaud", "Froid", "Lourd", "Léger", "Dans une voiture", "Dans une école", "Dans la forêt", "Cadeau pourri", "Excuse d'absence"];
+        // Liste nettoyée (sans humour gras) et correction du bug d'apostrophe
+        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Lieu coquin", "Dans ma chambre", "Mème", "Pokémon", "Jeu Vidéo", "Harry Potter", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "Slogan", "Expression", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal", "Objet rouge", "Chaud", "Froid", "Lourd", "Léger", "Dans une voiture", "Dans une école", "Dans la forêt", "Excuse d'absence"];
 
         window.onload = () => {
             renderCatList();
@@ -105,19 +105,30 @@
         };
 
         function renderCatList() {
-            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `<div id="cat-${c}" onclick="toggleCat('${c}')" class="cat-chip font-black">${c}</div>`).join('');
+            // Utilisation de backticks pour éviter le bug de l'apostrophe dans toggleCat
+            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `<div id="cat-${c.replace(/'/g, "_")}" onclick="toggleCat(\`${c}\`)" class="cat-chip font-black">${c}</div>`).join('');
         }
 
         function toggleCat(c) {
             const idx = selectedCats.indexOf(c);
-            if(idx > -1) { selectedCats.splice(idx, 1); document.getElementById(`cat-${c}`).classList.remove('active'); }
-            else { selectedCats.push(c); document.getElementById(`cat-${c}`).classList.add('active'); }
+            const safeId = c.replace(/'/g, "_");
+            if(idx > -1) { 
+                selectedCats.splice(idx, 1); 
+                document.getElementById(`cat-${safeId}`).classList.remove('active'); 
+            }
+            else { 
+                selectedCats.push(c); 
+                document.getElementById(`cat-${safeId}`).classList.add('active'); 
+            }
         }
 
         function pickRandom6() {
             document.querySelectorAll('.cat-chip').forEach(el => el.classList.remove('active'));
             selectedCats = [...categoriesList].sort(() => 0.5 - Math.random()).slice(0, 6);
-            selectedCats.forEach(c => document.getElementById(`cat-${c}`)?.classList.add('active'));
+            selectedCats.forEach(c => {
+                const safeId = c.replace(/'/g, "_");
+                document.getElementById(`cat-${safeId}`)?.classList.add('active');
+            });
         }
 
         async function startAction() {
@@ -148,36 +159,38 @@
 
         async function syncPull() {
             if(!roomId) return;
-            const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
-            const data = await r.json();
-            if (!data) return;
+            try {
+                const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
+                const data = await r.json();
+                if (!data) return;
 
-            if (data.status === 'validation') {
-                status = 'validation'; clearInterval(timerInterval);
-            } else if (players[0] && myName !== players[0].name) {
-                status = data.status;
-            }
-
-            data.players.forEach(pSrv => {
-                let pLoc = players.find(pl => pl.name === pSrv.name);
-                if (pLoc) {
-                    pLoc.rounds = pSrv.rounds;
-                    pLoc.reaction = pSrv.reaction; // Sync des emojis
-                    if (pLoc.name !== myName) pLoc.currentInputs = pSrv.currentInputs;
-                } else { players.push(pSrv); }
-            });
-
-            if (players[0] && myName !== players[0].name) {
-                if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
-                    selectedCats = data.selectedCats; isInputRendered = false;
+                if (data.status === 'validation') {
+                    status = 'validation'; clearInterval(timerInterval);
+                } else if (players[0] && myName !== players[0].name) {
+                    status = data.status;
                 }
-            }
 
-            currentLetter = data.currentLetter; usedLetters = data.usedLetters || [];
-            refusedWords = data.refusedWords || []; maxTime = data.maxTime;
-            maxRounds = data.maxRounds; currentRoundCount = data.currentRoundCount;
-            if (players[0] && myName !== players[0].name) timeLeft = data.timeLeft;
-            refreshUI();
+                data.players.forEach(pSrv => {
+                    let pLoc = players.find(pl => pl.name === pSrv.name);
+                    if (pLoc) {
+                        pLoc.rounds = pSrv.rounds;
+                        pLoc.reaction = pSrv.reaction;
+                        if (pLoc.name !== myName) pLoc.currentInputs = pSrv.currentInputs;
+                    } else { players.push(pSrv); }
+                });
+
+                if (players[0] && myName !== players[0].name) {
+                    if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
+                        selectedCats = data.selectedCats; isInputRendered = false;
+                    }
+                }
+
+                currentLetter = data.currentLetter; usedLetters = data.usedLetters || [];
+                refusedWords = data.refusedWords || []; maxTime = data.maxTime;
+                maxRounds = data.maxRounds; currentRoundCount = data.currentRoundCount;
+                if (players[0] && myName !== players[0].name) timeLeft = data.timeLeft;
+                refreshUI();
+            } catch(e) {}
         }
 
         function sendReaction(emoji) {
@@ -205,7 +218,7 @@
 
         function renderInputs() {
             if (isInputRendered) return;
-            document.getElementById('bac-inputs').innerHTML = selectedCats.map(c => `<div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">${c}</label><input type="text" oninput="updateWord('${c}', this.value)" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none"></div>`).join('');
+            document.getElementById('bac-inputs').innerHTML = selectedCats.map(c => `<div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">${c}</label><input type="text" oninput="updateWord(\`${c}\`, this.value)" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none"></div>`).join('');
             isInputRendered = true;
         }
 
@@ -225,10 +238,19 @@
                     const isRefused = refusedWords.includes(id);
                     const isDup = word && players.some((o, oi) => oi !== pi && (o.currentInputs[cat] || '').trim().toLowerCase() === word.toLowerCase());
                     let pts = isRefused ? 0 : (isDup ? 5 : 10); if (!word) pts = 0;
-                    h += `<button onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-4 rounded-2xl border-2 transition-all ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : 'bg-white border-white')}">
-                        <span class="font-bold text-sm uppercase">${p.name} ${p.reaction ? `<span class="emoji-bubble ml-2">${p.reaction}</span>` : ''}: ${word || '-'}</span>
+                    
+                    // Génération du lien Google
+                    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(cat + ' ' + word)}`;
+                    const googleBtn = word ? `<a href="${searchUrl}" target="_blank" class="google-link" onclick="event.stopPropagation()">🔍 Vérifier</a>` : '';
+
+                    h += `<div onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-4 rounded-2xl border-2 cursor-pointer transition-all ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : 'bg-white border-white')}">
+                        <span class="font-bold text-sm uppercase flex items-center">
+                            ${p.name}: ${word || '-'} 
+                            ${googleBtn}
+                            ${p.reaction ? `<span class="emoji-bubble ml-2">${p.reaction}</span>` : ''}
+                        </span>
                         <span class="text-[10px] font-black">${pts} PTS</span>
-                    </button>`;
+                    </div>`;
                 });
                 h += `</div></div>`;
             });
