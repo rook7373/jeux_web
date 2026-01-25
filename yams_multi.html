@@ -10,23 +10,23 @@
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
         
-        /* DÉS IPHONE (Taille ajustée à 90px) */
-        .scene { width: 85px; height: 85px; margin: 10px; perspective: 1000px; position: relative; cursor: pointer; }
+        /* DÉS OPTIMISÉS (75px sur mobile pour l'alignement) */
+        .scene { width: 85px; height: 85px; perspective: 1000px; position: relative; cursor: pointer; margin: auto; }
         
         @media (max-width: 640px) {
-            .scene { width: 90px; height: 90px; margin: 5px; } 
-            .face { width: 90px !important; height: 90px !important; border-radius: 20px !important; }
-            .f1 { transform: rotateY(0deg) translateZ(45px) !important; }
-            .f2 { transform: rotateY(-90deg) translateZ(45px) !important; }
-            .f3 { transform: rotateX(-90deg) translateZ(45px) !important; }
-            .f4 { transform: rotateX(90deg) translateZ(45px) !important; }
-            .f5 { transform: rotateY(90deg) translateZ(45px) !important; }
-            .f6 { transform: rotateY(180deg) translateZ(45px) !important; }
-            .dot { width: 18px !important; height: 18px !important; }
+            .scene { width: 75px; height: 75px; } 
+            .face { width: 75px !important; height: 75px !important; border-radius: 15px !important; }
+            .f1 { transform: rotateY(0deg) translateZ(37.5px) !important; }
+            .f2 { transform: rotateY(-90deg) translateZ(37.5px) !important; }
+            .f3 { transform: rotateX(-90deg) translateZ(37.5px) !important; }
+            .f4 { transform: rotateX(90deg) translateZ(37.5px) !important; }
+            .f5 { transform: rotateY(90deg) translateZ(37.5px) !important; }
+            .f6 { transform: rotateY(180deg) translateZ(37.5px) !important; }
+            .dot { width: 14px !important; height: 14px !important; }
         }
 
         .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 2.8s cubic-bezier(0.2, 0.9, 0.3, 1.05); }
-        .face { position: absolute; width: 85px; height: 85px; background: var(--die-color, #ffffff); border: 1px solid rgba(0,0,0,0.2); border-radius: 18px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 10px; box-sizing: border-box; backface-visibility: hidden; }
+        .face { position: absolute; width: 85px; height: 85px; background: var(--die-color, #ffffff); border: 1px solid rgba(0,0,0,0.2); border-radius: 18px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 8px; box-sizing: border-box; backface-visibility: hidden; }
         .dot { background: var(--dot-color, #1a1a1a); border-radius: 50%; width: 16px; height: 16px; margin: auto; }
         
         .f1 { transform: rotateY(0deg) translateZ(42.5px); }
@@ -36,13 +36,12 @@
         .f5 { transform: rotateY(90deg) translateZ(42.5px); }
         .f6 { transform: rotateY(180deg) translateZ(42.5px); }
 
-        .scene.held { transform: translateY(-20px) scale(1.1); }
-        .scene.held .face { border: 5px solid white; box-shadow: 0 0 30px var(--player-accent); }
+        .scene.held { transform: translateY(-10px) scale(1.05); }
+        .scene.held .face { border: 4px solid white; box-shadow: 0 0 20px var(--player-accent); }
 
-        /* TYPO XL */
-        .cat-label { font-size: 1.3rem; font-weight: 900; color: #e2e8f0; } 
-        .potential-score { color: #94a3b8; opacity: 0.8; font-size: 2.2rem; cursor: pointer; font-style: italic; }
-        .locked-score { font-weight: 900; font-size: 3.2rem; line-height: 0.8; }
+        .cat-label { font-size: 1.1rem; font-weight: 900; color: #e2e8f0; } 
+        .potential-score { color: #94a3b8; opacity: 0.8; font-size: 1.8rem; cursor: pointer; font-style: italic; }
+        .locked-score { font-weight: 900; font-size: 2.8rem; line-height: 0.8; }
         
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -57,10 +56,10 @@
     <div id="win-modal" class="hidden fixed inset-0 z-50 backdrop-blur-2xl bg-black/80 flex items-center justify-center p-4">
         <div class="bg-white rounded-[4rem] p-12 max-w-sm w-full text-center text-slate-900 shadow-2xl">
             <div class="text-8xl mb-6">👑</div>
-            <h2 class="text-4xl font-black mb-2 italic tracking-tighter">FIN DE MATCH</h2>
-            <p id="winner-display" class="text-3xl text-green-600 mb-8 font-black">-</p>
+            <h2 class="text-3xl font-black mb-2 italic">FIN DE MATCH</h2>
+            <p id="winner-display" class="text-2xl text-green-600 mb-8 font-black">-</p>
             <div id="final-stats" class="space-y-3 mb-10 text-left bg-slate-50 p-6 rounded-3xl border"></div>
-            <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl hover:scale-105 transition-all">REJOUER</button>
+            <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl">REJOUER</button>
         </div>
     </div>
 
@@ -75,12 +74,12 @@
 
     <div id="game" class="hidden max-w-[98%] mx-auto grid lg:grid-cols-12 gap-6 mt-4">
         <div class="lg:col-span-5 bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] border-4 border-white/5 flex flex-col items-center h-fit">
-            <div class="w-full flex justify-between items-center mb-8">
-                <div id="active-player-name" class="px-8 py-3 rounded-full bg-black/40 text-2xl border border-white/10 font-black">-</div>
-                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-5 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all">COPIER LIEN</button>
+            <div class="w-full flex justify-between items-center mb-6">
+                <div id="active-player-name" class="px-6 py-2 rounded-full bg-black/40 text-xl border border-white/10 font-black">-</div>
+                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full font-bold shadow-lg active:scale-90 transition-all">COPIER LIEN</button>
             </div>
             
-            <div id="dice-row" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-16">
+            <div id="dice-row" class="grid grid-cols-3 md:grid-cols-5 gap-4 mb-12 w-full max-w-sm">
                 <div id="d0" onclick="toggleHold(0)" class="scene"><div class="cube" id="cube0"></div></div>
                 <div id="d1" onclick="toggleHold(1)" class="scene"><div class="cube" id="cube1"></div></div>
                 <div id="d2" onclick="toggleHold(2)" class="scene"><div class="cube" id="cube2"></div></div>
@@ -89,13 +88,13 @@
             </div>
 
             <div class="w-full max-w-sm">
-                <p id="roll-count" class="text-center text-sm mb-6 opacity-60">LANCERS : 0 / 3</p>
-                <button id="roll-btn" onclick="rollDice()" class="w-full bg-white text-black py-10 rounded-full font-black text-5xl shadow-2xl active:scale-90 transition-all border-b-8 border-slate-300">LANCER</button>
+                <p id="roll-count" class="text-center text-sm mb-4 opacity-60">LANCERS : 0 / 3</p>
+                <button id="roll-btn" onclick="rollDice()" class="w-full bg-white text-black py-8 rounded-full font-black text-4xl shadow-2xl active:scale-90 transition-all border-b-8 border-slate-300">LANCER</button>
             </div>
         </div>
 
         <div class="lg:col-span-7 bg-white/5 backdrop-blur-lg rounded-[3.5rem] p-4 md:p-8 border border-white/10 shadow-2xl h-fit overflow-x-auto">
-            <table class="w-full border-separate border-spacing-y-3">
+            <table class="w-full border-separate border-spacing-y-2">
                 <thead id="table-head"></thead>
                 <tbody id="table-body"></tbody>
             </table>
@@ -105,7 +104,6 @@
     <script>
         const sndYams = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
         const sndWin = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-
         const API = 'api_yams.php';
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', myColorIdx = 0, players = [], cIdx = 0, rolls = 0, dice = [1,1,1,1,1].map(v=>({v,held:false}));
@@ -207,21 +205,21 @@
             await syncPush();
         }
 
-        function renderTableStructure() {
-            const h = document.getElementById('table-head');
-            h.innerHTML = `<th class="text-left pb-4 pr-6 opacity-40">CONTRATS</th>${players.map(p=>`<th class="px-4 text-center text-xl" style="color:${p.color.b}">${p.name}</th>`).join('')}`;
-            document.getElementById('table-body').innerHTML = cats.map(c => `
-                <tr class="${["BONUS (63+)", "TOTAL SUP", "TOTAL GLOBAL"].includes(c) ? 'total-row' : ''} border-b border-white/5">
-                    <td class="py-5 pr-6 cat-label">${c}</td>
-                    ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[130px]">-</td>`).join('')}
-                </tr>`).join('');
-        }
-
         function calculatePlayerTotal(p) {
             let sSup = 0; ["1","2","3","4","5","6"].forEach(k => sSup += (p.scores[k] || 0));
             let bonus = sSup >= 63 ? 35 : 0;
             let sInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sInf += (p.scores[k] || 0));
             return sSup + bonus + sInf;
+        }
+
+        function renderTableStructure() {
+            const h = document.getElementById('table-head');
+            h.innerHTML = `<th class="text-left pb-4 pr-6 opacity-40">CONTRATS</th>${players.map(p=>`<th class="px-4 text-center text-xl" style="color:${p.color.b}">${p.name}</th>`).join('')}`;
+            document.getElementById('table-body').innerHTML = cats.map(c => `
+                <tr class="${["BONUS (63+)", "TOTAL SUP", "TOTAL GLOBAL"].includes(c) ? 'total-row' : ''} border-b border-white/5">
+                    <td class="py-4 pr-6 cat-label">${c}</td>
+                    ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[100px]">-</td>`).join('')}
+                </tr>`).join('');
         }
 
         function refreshUI() {
@@ -253,7 +251,7 @@
                     else if(player.scores[c] !== undefined) { newVal = player.scores[c]; isLocked = true; }
                     else if(pi === cIdx && player.name === myName && rolls > 0) newVal = calculatePotential(c);
 
-                    if(oldVal != newVal) {
+                    if(String(oldVal).trim() !== String(newVal).trim()) {
                         cell.innerText = newVal;
                         if(isLocked) {
                             cell.className = "text-center locked-score px-4 animate-pop";
@@ -261,7 +259,7 @@
                         } else if(pi === cIdx && player.name === myName && rolls > 0) {
                             cell.className = "text-center potential-score px-4";
                             cell.style.color = "";
-                        } else { cell.className = "text-center px-4 opacity-10 text-2xl"; cell.style.color = ""; }
+                        } else { cell.className = "text-center px-4 opacity-10 text-xl"; cell.style.color = ""; }
                     }
                 });
             });
@@ -288,10 +286,10 @@
             if (players.length > 0 && players.every(p => scoringCats.every(cat => p.scores[cat] !== undefined))) {
                 if(document.getElementById('win-modal').classList.contains('hidden')) {
                     sndWin.play();
-                    const results = players.map(p => ({ name: p.name, score: calculatePlayerTotal(p) }));
-                    const winner = results.reduce((prev, curr) => (curr.score > prev.score) ? curr : prev);
-                    document.getElementById('winner-display').innerText = `GAGNANT : ${winner.name}`;
-                    document.getElementById('final-stats').innerHTML = results.map(r => `<div class="flex justify-between border-b pb-2 font-black"><span>${r.name}</span><span>${r.score} PTS</span></div>`).join('');
+                    const res = players.map(p => ({ name: p.name, score: calculatePlayerTotal(p) }));
+                    const winner = res.reduce((prev, curr) => (curr.score > prev.score) ? curr : prev);
+                    document.getElementById('winner-display').innerText = `VAINQUEUR : ${winner.name}`;
+                    document.getElementById('final-stats').innerHTML = res.map(r => `<div class="flex justify-between border-b border-black/10 pb-2"><span>${r.name}</span><span>${r.score} PTS</span></div>`).join('');
                     const end = Date.now() + 5000;
                     (function frame() {
                         confetti({ particleCount: 7, angle: 60, spread: 55, origin: { x: 0 } });
