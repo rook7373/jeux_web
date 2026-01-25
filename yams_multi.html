@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yam's Pro Arena - Elite V4</title>
+    <title>Yam's Pro Arena - Elite V5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
         
-        /* DÉS OPTIMISÉS */
+        /* DÉS IPHONE OPTIMISÉS */
         .scene { width: 85px; height: 85px; perspective: 1000px; position: relative; cursor: pointer; margin: auto; transition: transform 0.2s; }
-        
         @media (max-width: 640px) {
             .scene { width: 75px; height: 75px; } 
             .face { width: 75px !important; height: 75px !important; border-radius: 15px !important; }
@@ -29,7 +28,7 @@
         .face { position: absolute; width: 85px; height: 85px; background: var(--die-color, #ffffff); border: 1px solid rgba(0,0,0,0.2); border-radius: 18px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 8px; box-sizing: border-box; backface-visibility: hidden; }
         .dot { background: var(--dot-color, #1a1a1a); border-radius: 50%; width: 16px; height: 16px; margin: auto; }
         
-        /* ANIMATION YAMS SUR LES DÉS */
+        /* EFFET YAMS DÉTECTÉ */
         .yams-dice { animation: yams-glow 0.8s infinite alternate ease-in-out; }
         @keyframes yams-glow {
             from { box-shadow: 0 0 10px #fff; transform: scale(1); }
@@ -46,14 +45,20 @@
         .scene.held { transform: translateY(-10px); }
         .scene.held .face { border: 4px solid white; box-shadow: 0 0 20px var(--player-accent); }
 
-        .cat-label { font-size: 1rem; font-weight: 900; color: #e2e8f0; line-height: 1.1; } 
-        .potential-score { color: #fbbf24; opacity: 0.6; font-size: 1.8rem; cursor: pointer; font-style: italic; }
+        /* TYPO & SCORES */
+        .cat-label { font-size: 1rem; font-weight: 900; color: #e2e8f0; } 
+        .potential-score { color: #fbbf24; opacity: 0.5; font-size: 1.8rem; cursor: pointer; font-style: italic; }
         .locked-score { font-weight: 900; font-size: 2.8rem; line-height: 0.8; }
         
+        /* TOTAL GLOBAL JAUNE ÉCLATANT */
+        .global-total-row { background: rgba(251, 191, 36, 0.15) !important; border-top: 2px solid #fbbf24; }
+        .global-total-label { color: #fbbf24 !important; font-size: 1.2rem !important; }
+        .global-total-score { color: #fbbf24 !important; font-size: 3.5rem !important; line-height: 0.8; text-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
-        .total-row { background: rgba(255,255,255,0.1); color: #fbbf24; }
+        .total-row { background: rgba(255,255,255,0.08); color: #cbd5e1; }
         .color-opt { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
         .color-opt.selected { border-color: #000; transform: scale(1.2); }
     </style>
@@ -118,15 +123,7 @@
         let myName = '', myColorIdx = 0, players = [], cIdx = 0, rolls = 0, dice = [1,1,1,1,1].map(v=>({v,held:false}));
         let currentRots = Array(5).fill(0).map(()=>({x:0, y:0}));
 
-        const colors = [
-            {n:'Ivoire',b:'#fdf8e8',d:'#1a1a1a',a:'#fbbf24'}, {n:'Bleu',b:'#3b82f6',d:'#ffffff',a:'#60a5fa'},
-            {n:'Rouge',b:'#ef4444',d:'#ffffff',a:'#f87171'}, {n:'Or',b:'#fbbf24',d:'#451a03',a:'#fbbf24'},
-            {n:'Vert',b:'#10b981',d:'#ffffff',a:'#34d399'}, {n:'Violet',b:'#8b5cf6',d:'#ffffff',a:'#a78bfa'},
-            {n:'Rose',b:'#f472b6',d:'#ffffff',a:'#fb7185'}, {n:'Cyan',b:'#22d3ee',d:'#1a1a1a',a:'#67e8f9'},
-            {n:'Orange',b:'#fb923c',d:'#ffffff',a:'#fdba74'}, {n:'Emeraude',b:'#059669',d:'#ffffff',a:'#34d399'}
-        ];
-
-        // LIBELLÉ DU BONUS MIS À JOUR
+        const colors = [{n:'Ivoire',b:'#fdf8e8',d:'#1a1a1a',a:'#fbbf24'}, {n:'Bleu',b:'#3b82f6',d:'#ffffff',a:'#60a5fa'},{n:'Rouge',b:'#ef4444',d:'#ffffff',a:'#f87171'}, {n:'Or',b:'#fbbf24',d:'#451a03',a:'#fbbf24'},{n:'Vert',b:'#10b981',d:'#ffffff',a:'#34d399'}, {n:'Violet',b:'#8b5cf6',d:'#ffffff',a:'#a78bfa'},{n:'Rose',b:'#f472b6',d:'#ffffff',a:'#fb7185'}, {n:'Cyan',b:'#22d3ee',d:'#1a1a1a',a:'#67e8f9'},{n:'Orange',b:'#fb923c',d:'#ffffff',a:'#fdba74'}, {n:'Emeraude',b:'#059669',d:'#ffffff',a:'#34d399'}];
         const cats = ["1","2","3","4","5","6","BONUS (+35 SI 63+)","TOTAL SUP","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE","TOTAL GLOBAL"];
         const facesHTML=['','<div class="face f1"><div class="dot" style="grid-area:2/2"></div></div>','<div class="face f2"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f3"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f4"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f5"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f6"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/1"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/3"></div><div class="dot" style="grid-area:3/3"></div></div>'];
 
@@ -191,7 +188,6 @@
                     cube.style.transform = `rotateX(${tx}deg) rotateY(${ty}deg)`;
                 }
             });
-            // Déclenchement Instantané si Yam's aligné
             setTimeout(() => {
                 if(calculatePotential("YAMS") > 0) {
                     sndYams.play();
@@ -226,11 +222,15 @@
         function renderTableStructure() {
             const h = document.getElementById('table-head');
             h.innerHTML = `<th class="text-left pb-4 opacity-40">CONTRATS</th>${players.map(p=>`<th class="px-4 text-center text-xl" style="color:${p.color.b}">${p.name}</th>`).join('')}`;
-            document.getElementById('table-body').innerHTML = cats.map(c => `
-                <tr class="${c.includes("BONUS") || ["TOTAL SUP", "TOTAL GLOBAL"].includes(c) ? 'total-row' : ''} border-b border-white/5">
-                    <td class="py-4 pr-6 cat-label">${c}</td>
+            document.getElementById('table-body').innerHTML = cats.map(c => {
+                const isGlobal = (c === "TOTAL GLOBAL");
+                const isCalc = c.includes("BONUS") || ["TOTAL SUP", "TOTAL GLOBAL"].includes(c);
+                return `
+                <tr class="${isGlobal ? 'global-total-row' : (isCalc ? 'total-row' : '')} border-b border-white/5">
+                    <td class="py-4 pr-6 cat-label ${isGlobal ? 'global-total-label' : ''}">${c}</td>
                     ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[100px]">-</td>`).join('')}
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
         }
 
         function calculatePlayerTotal(p) {
@@ -272,7 +272,9 @@
 
                     if(String(oldVal).trim() !== String(newVal).trim()) {
                         cell.innerText = newVal;
-                        if(isLocked) {
+                        if(c === "TOTAL GLOBAL") {
+                            cell.className = "text-center global-total-score px-4 animate-pop";
+                        } else if(isLocked) {
                             cell.className = "text-center locked-score px-4 animate-pop";
                             cell.style.color = player.color.b;
                         } else if(pi === cIdx && player.name === myName && rolls > 0) {
