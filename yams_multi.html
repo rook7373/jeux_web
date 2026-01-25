@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yam's Pro Arena - Elite V5</title>
+    <title>Yam's Pro Arena - Elite V6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
@@ -11,7 +11,7 @@
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
         
         /* DÉS IPHONE OPTIMISÉS */
-        .scene { width: 85px; height: 85px; perspective: 1000px; position: relative; cursor: pointer; margin: auto; transition: transform 0.2s; }
+        .scene { width: 85px; height: 85px; perspective: 1000px; position: relative; cursor: pointer; margin: auto; }
         @media (max-width: 640px) {
             .scene { width: 75px; height: 75px; } 
             .face { width: 75px !important; height: 75px !important; border-radius: 15px !important; }
@@ -28,7 +28,6 @@
         .face { position: absolute; width: 85px; height: 85px; background: var(--die-color, #ffffff); border: 1px solid rgba(0,0,0,0.2); border-radius: 18px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 8px; box-sizing: border-box; backface-visibility: hidden; }
         .dot { background: var(--dot-color, #1a1a1a); border-radius: 50%; width: 16px; height: 16px; margin: auto; }
         
-        /* EFFET YAMS DÉTECTÉ */
         .yams-dice { animation: yams-glow 0.8s infinite alternate ease-in-out; }
         @keyframes yams-glow {
             from { box-shadow: 0 0 10px #fff; transform: scale(1); }
@@ -50,17 +49,15 @@
         .potential-score { color: #fbbf24; opacity: 0.5; font-size: 1.8rem; cursor: pointer; font-style: italic; }
         .locked-score { font-weight: 900; font-size: 2.8rem; line-height: 0.8; }
         
-        /* TOTAL GLOBAL JAUNE ÉCLATANT */
+        /* TOTAL JAUNE */
         .global-total-row { background: rgba(251, 191, 36, 0.15) !important; border-top: 2px solid #fbbf24; }
-        .global-total-label { color: #fbbf24 !important; font-size: 1.2rem !important; }
-        .global-total-score { color: #fbbf24 !important; font-size: 3.5rem !important; line-height: 0.8; text-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+        .global-total-label { color: #fbbf24 !important; }
+        .global-total-score { color: #fbbf24 !important; font-size: 3.5rem !important; line-height: 0.8; }
 
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
-        .total-row { background: rgba(255,255,255,0.08); color: #cbd5e1; }
-        .color-opt { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
-        .color-opt.selected { border-color: #000; transform: scale(1.2); }
+        .total-row { background: rgba(255,255,255,0.08); }
     </style>
 </head>
 <body class="p-2 md:p-4 uppercase font-black">
@@ -88,9 +85,8 @@
         <div class="lg:col-span-5 bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] border-4 border-white/5 flex flex-col items-center h-fit">
             <div class="w-full flex justify-between items-center mb-6">
                 <div id="active-player-name" class="px-6 py-2 rounded-full bg-black/40 text-xl border border-white/10 font-black">-</div>
-                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full font-bold shadow-lg active:scale-90 transition-all">LIEN INVITE</button>
+                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full font-bold shadow-lg active:scale-90 transition-all">COPIER LIEN</button>
             </div>
-            
             <div id="dice-row" class="grid grid-cols-3 md:grid-cols-5 gap-3 mb-10 w-full max-w-sm">
                 <div id="d0" onclick="toggleHold(0)" class="scene"><div class="cube" id="cube0"></div></div>
                 <div id="d1" onclick="toggleHold(1)" class="scene"><div class="cube" id="cube1"></div></div>
@@ -98,13 +94,11 @@
                 <div id="d3" onclick="toggleHold(3)" class="scene"><div class="cube" id="cube3"></div></div>
                 <div id="d4" onclick="toggleHold(4)" class="scene"><div class="cube" id="cube4"></div></div>
             </div>
-
             <div class="w-full max-w-sm">
                 <p id="roll-count" class="text-center text-sm mb-4 opacity-60 font-bold">LANCERS : 0 / 3</p>
                 <button id="roll-btn" onclick="rollDice()" class="w-full bg-white text-black py-8 rounded-full font-black text-4xl shadow-2xl active:scale-90 transition-all border-b-8 border-slate-300">LANCER</button>
             </div>
         </div>
-
         <div class="lg:col-span-7 bg-white/5 backdrop-blur-lg rounded-[3.5rem] p-4 md:p-8 border border-white/10 shadow-2xl h-fit overflow-x-auto">
             <table class="w-full border-separate border-spacing-y-2">
                 <thead id="table-head"></thead>
@@ -199,6 +193,7 @@
 
         function rollDice() {
             if(rolls >= 3 || players[cIdx].name !== myName) return;
+            sndRoll.currentTime = 0; // Reset le son pour réactivité
             sndRoll.play();
             rolls++; dice.forEach(d => { if(!d.held) d.v = Math.floor(Math.random()*6)+1; });
             animateCubes(dice); syncPush();
@@ -225,19 +220,11 @@
             document.getElementById('table-body').innerHTML = cats.map(c => {
                 const isGlobal = (c === "TOTAL GLOBAL");
                 const isCalc = c.includes("BONUS") || ["TOTAL SUP", "TOTAL GLOBAL"].includes(c);
-                return `
-                <tr class="${isGlobal ? 'global-total-row' : (isCalc ? 'total-row' : '')} border-b border-white/5">
+                return `<tr class="${isGlobal ? 'global-total-row' : (isCalc ? 'total-row' : '')} border-b border-white/5">
                     <td class="py-4 pr-6 cat-label ${isGlobal ? 'global-total-label' : ''}">${c}</td>
                     ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[100px]">-</td>`).join('')}
                 </tr>`;
             }).join('');
-        }
-
-        function calculatePlayerTotal(p) {
-            let sSup = 0; ["1","2","3","4","5","6"].forEach(k => sSup += (p.scores[k] || 0));
-            let bonus = sSup >= 63 ? 35 : 0;
-            let sInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sInf += (p.scores[k] || 0));
-            return sSup + bonus + sInf;
         }
 
         function refreshUI() {
@@ -260,7 +247,7 @@
                 cats.forEach(c => {
                     const cell = document.getElementById(`s-${pi}-${c}`);
                     if(!cell) return;
-                    const oldVal = cell.innerText;
+                    const oldVal = cell.textContent;
                     let newVal = "-";
                     let isLocked = false;
                     
@@ -270,16 +257,23 @@
                     else if(player.scores[c] !== undefined) { newVal = player.scores[c]; isLocked = true; }
                     else if(pi === cIdx && player.name === myName && rolls > 0) newVal = calculatePotential(c);
 
+                    // LOGIQUE ANTI-CLIGNOTEMENT
                     if(String(oldVal).trim() !== String(newVal).trim()) {
-                        cell.innerText = newVal;
+                        cell.textContent = newVal;
                         if(c === "TOTAL GLOBAL") {
                             cell.className = "text-center global-total-score px-4 animate-pop";
                         } else if(isLocked) {
-                            cell.className = "text-center locked-score px-4 animate-pop";
+                            // On ajoute animate-pop UNIQUEMENT si la cellule n'était pas déjà verrouillée
+                            if (!cell.classList.contains('locked-score')) {
+                                cell.className = "text-center locked-score px-4 animate-pop";
+                            }
                             cell.style.color = player.color.b;
                         } else if(pi === cIdx && player.name === myName && rolls > 0) {
                             cell.className = "text-center potential-score px-4";
-                        } else { cell.className = "text-center px-4 opacity-10 text-xl"; cell.style.color = ""; }
+                        } else { 
+                            cell.className = "text-center px-4 opacity-10 text-xl"; 
+                            cell.style.color = ""; 
+                        }
                     }
                 });
             });
@@ -306,7 +300,13 @@
             if (players.length > 0 && players.every(p => scoringCats.every(cat => p.scores[cat] !== undefined))) {
                 if(document.getElementById('win-modal').classList.contains('hidden')) {
                     sndWin.play();
-                    const res = players.map(p => ({ name: p.name, score: calculatePlayerTotal(p) }));
+                    const res = players.map(p => ({ 
+                        name: p.name, 
+                        score: (function(){
+                            let s=0; ["1","2","3","4","5","6","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k=>s+=(p.scores[k]||0));
+                            if(s>=63)s+=35;return s;
+                        })() 
+                    }));
                     const winner = res.reduce((prev, curr) => (curr.score > prev.score) ? curr : prev);
                     document.getElementById('winner-display').innerText = `VAINQUEUR : ${winner.name}`;
                     document.getElementById('final-stats').innerHTML = res.map(r => `<div class="flex justify-between border-b border-black/10 pb-2"><span>${r.name}</span><span>${r.score} PTS</span></div>`).join('');
