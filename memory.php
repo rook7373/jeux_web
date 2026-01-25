@@ -31,7 +31,7 @@ if (isset($_GET['action'])) {
         body { background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); color: white; min-height: 100vh; font-family: sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         
-        #grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; width: 100%; max-width: 600px; margin: auto; }
+        #grid { display: grid; gap: 0.5rem; width: 100%; max-width: 600px; margin: auto; }
         
         .card { aspect-ratio: 1/1; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
         .card.flipped { transform: rotateY(180deg); }
@@ -52,6 +52,15 @@ if (isset($_GET['action'])) {
             <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-200 text-slate-500 py-4 rounded-2xl font-black">En Ligne</button>
         </div>
 
+        <div id="difficulty-selector" class="mb-8">
+            <p class="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Taille de la grille :</p>
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="setGridSize(4)" id="btn-s4" class="bg-slate-200 text-slate-500 py-3 rounded-xl text-xs font-black">4x4</button>
+                <button type="button" onclick="setGridSize(6)" id="btn-s6" class="bg-blue-600 text-white py-3 rounded-xl text-xs font-black shadow-md">6x6</button>
+                <button type="button" onclick="setGridSize(8)" id="btn-s8" class="bg-slate-200 text-slate-500 py-3 rounded-xl text-xs font-black">8x8</button>
+            </div>
+        </div>
+
         <div id="local-options" class="space-y-4 mb-8">
             <p class="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Adversaire :</p>
             <div class="grid grid-cols-2 gap-3">
@@ -63,13 +72,12 @@ if (isset($_GET['action'])) {
         <div class="space-y-6">
             <input type="text" id="my-name-in" onkeydown="if(event.key === 'Enter') startAction()" placeholder="TON PSEUDO..." class="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-blue-400 font-black uppercase">
             <button type="button" onclick="startAction()" class="w-full bg-black text-white py-6 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all font-black">Démarrer</button>
-            <button type="button" onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</button>
         </div>
     </div>
 
     <div id="game" class="hidden max-w-4xl w-full glass p-6 rounded-[4rem] border border-white/10 shadow-2xl">
         <div class="flex justify-between items-center mb-8">
-            <button onclick="window.location.href='index.html'" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black uppercase">MENU</button>
+            <button onclick="location.reload()" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black uppercase">QUITTER</button>
             <div id="players-display" class="flex gap-8 text-[12px] tracking-widest items-center"></div>
             <button onclick="copyLink()" id="btn-copy" class="hidden bg-blue-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg uppercase">LIEN</button>
         </div>
@@ -78,7 +86,7 @@ if (isset($_GET['action'])) {
 
         <div id="win-overlay" class="hidden text-center mt-10">
             <p id="win-text" class="text-5xl text-yellow-500 mb-8 italic tracking-tighter"></p>
-            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition uppercase">ENREGISTRER & QUITTER</button>
+            <button onclick="location.reload()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition uppercase">REJOUER</button>
         </div>
     </div>
 
@@ -86,23 +94,25 @@ if (isset($_GET['action'])) {
         const API = 'memory.php'; 
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', gameMode = roomId ? 'remote' : 'local', localOpponent = 'ai';
+        let selectedSize = 6;
+        let isSyncing = false;
+
         let gameState = { 
-            players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '' 
+            players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '', gridSize: 6
         };
 
-        // Images de chatons fiables
-        const kittenImages = Array.from({length: 18}, (_, i) => `https://loremflickr.com/200/200/kitten?lock=${i}`);
+        const kittenImages = Array.from({length: 32}, (_, i) => `https://loremflickr.com/200/200/kitten?lock=${i}`);
 
         window.onload = () => {
             if(roomId) {
-                // Masquer les options si on rejoint une partie
                 document.getElementById('mode-selector').classList.add('hidden');
+                document.getElementById('difficulty-selector').classList.add('hidden');
                 document.getElementById('local-options').classList.add('hidden');
                 document.getElementById('setup-title').innerHTML = "REJOINDRE <span class='text-slate-200'>ARENA</span>";
                 setMode('remote');
             } else {
                 setMode('local');
-                setOpponent('ai');
+                setGridSize(6);
             }
         };
 
@@ -111,6 +121,14 @@ if (isset($_GET['action'])) {
             document.getElementById('m-local').className = (m === 'local') ? "bg-blue-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
             document.getElementById('m-remote').className = (m === 'remote') ? "bg-purple-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
             document.getElementById('local-options').classList.toggle('hidden', m !== 'local');
+            document.getElementById('difficulty-selector').classList.toggle('hidden', m !== 'local');
+        }
+
+        function setGridSize(s) {
+            selectedSize = s;
+            [4, 6, 8].forEach(x => {
+                document.getElementById('btn-s'+x).className = (x === s) ? "bg-blue-600 text-white py-3 rounded-xl text-xs font-black shadow-md" : "bg-slate-200 text-slate-500 py-3 rounded-xl text-xs font-black";
+            });
         }
 
         function setOpponent(opp) {
@@ -130,10 +148,15 @@ if (isset($_GET['action'])) {
                 if (!gameState.players.find(p => p.name === myName)) {
                     if (gameState.players.length < 2) {
                         gameState.players.push({ name: myName, score: 0 });
-                        if (gameState.players.length === 1) initBoard();
+                        if (gameState.players.length === 1) {
+                            gameState.gridSize = selectedSize;
+                            initBoard();
+                        }
                     } else return alert("Plein !");
-                } setInterval(syncPull, 2000);
+                } 
+                setInterval(syncPull, 1000);
             } else {
+                gameState.gridSize = selectedSize;
                 initBoard();
                 gameState.players = [{ name: myName, score: 0 }, { name: localOpponent === 'ai' ? 'IA 🤖' : 'JOUEUR 2', score: 0 }];
             }
@@ -145,27 +168,45 @@ if (isset($_GET['action'])) {
         }
 
         function initBoard() {
-            let pairs = [...kittenImages, ...kittenImages].sort(() => Math.random() - 0.5);
+            const numPairs = (gameState.gridSize * gameState.gridSize) / 2;
+            let selectedImages = kittenImages.slice(0, numPairs);
+            let pairs = [...selectedImages, ...selectedImages].sort(() => Math.random() - 0.5);
             gameState.board = pairs;
         }
 
-        async function syncPush() { if(roomId) await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) }); }
+        async function syncPush() { 
+            if(roomId) await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) }); 
+        }
+
         async function syncPull() {
-            if(!roomId) return;
-            try { const r = await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); const data = await r.json(); if (data) { gameState = data; render(); } } catch(e) {}
+            if(!roomId || isSyncing) return;
+            try { 
+                const r = await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); 
+                const data = await r.json(); 
+                if (data) { 
+                    // On ne met à jour que si on n'est pas au milieu d'une animation locale
+                    if (gameState.flipped.length < 2) {
+                        gameState = data; 
+                        render(); 
+                    }
+                } 
+            } catch(e) {}
         }
 
         function handleFlip(idx) {
-            if (gameState.gameOver || gameState.flipped.length === 2 || gameState.matched.includes(idx) || gameState.flipped.includes(idx)) return;
+            if (gameState.gameOver || gameState.flipped.length >= 2 || gameState.matched.includes(idx) || gameState.flipped.includes(idx)) return;
             if (gameMode === 'remote' && gameState.players[gameState.currentPlayerIdx].name !== myName) return;
 
             gameState.flipped.push(idx);
             render();
 
             if (gameState.flipped.length === 2) {
+                isSyncing = true; // Bloque le pull pour éviter les clignotements
+                if(gameMode === 'remote') syncPush();
                 setTimeout(checkMatch, 1000);
+            } else {
+                if(gameMode === 'remote') syncPush();
             }
-            if(gameMode === 'remote') syncPush();
         }
 
         function checkMatch() {
@@ -182,6 +223,7 @@ if (isset($_GET['action'])) {
                 if(gameMode === 'local' && gameState.players[gameState.currentPlayerIdx].name === 'IA 🤖') setTimeout(aiMove, 500);
             }
             gameState.flipped = [];
+            isSyncing = false;
             render();
             if(gameMode === 'remote') syncPush();
         }
@@ -200,7 +242,10 @@ if (isset($_GET['action'])) {
         }
 
         function render() {
-            const grid = document.getElementById('grid'); grid.innerHTML = '';
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${gameState.gridSize}, 1fr)`;
+
             gameState.board.forEach((img, i) => {
                 const card = document.createElement('div');
                 card.className = `card ${gameState.flipped.includes(i) || gameState.matched.includes(i) ? 'flipped' : ''} ${gameState.matched.includes(i) ? 'matched' : ''}`;
@@ -226,17 +271,6 @@ if (isset($_GET['action'])) {
             }
         }
 
-        async function saveAndReset() {
-            const gameData = { game: "Memory", date: new Date().toLocaleDateString('fr-FR'), results: gameState.players, winner: gameState.winner };
-            try { 
-                const r = await fetch(`api.php?action=stats`); 
-                let history = await r.json(); 
-                if (!Array.isArray(history)) history = []; 
-                history.push(gameData);
-                await fetch(`api.php?action=stats`, { method: 'POST', body: JSON.stringify(history) }); 
-                window.location.href = 'index.html';
-            } catch (e) { window.location.href = 'index.html'; }
-        }
         function copyLink() { navigator.clipboard.writeText(window.location.href); alert("LIEN COPIÉ !"); }
     </script>
 </body>
