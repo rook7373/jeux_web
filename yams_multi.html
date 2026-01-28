@@ -9,6 +9,7 @@
     
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
+        
         .scene { width: 80px; height: 80px; margin: 8px; perspective: 1000px; position: relative; cursor: pointer; }
         
         @media (max-width: 640px) {
@@ -45,7 +46,7 @@
         @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
         .total-row { background: rgba(255,255,255,0.15); color: #fbbf24; }
-        .color-opt { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.3s; }
+        .color-opt { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .color-opt.selected { border-color: #000; transform: scale(1.2); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
@@ -57,7 +58,7 @@
             <h2 class="text-4xl font-black mb-2 italic">FIN DE MATCH</h2>
             <p id="winner-display" class="text-2xl text-green-600 mb-8 font-black uppercase">-</p>
             <div id="final-stats" class="space-y-3 mb-10 text-left bg-slate-50 p-6 rounded-3xl border"></div>
-            <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl">REJOUER</button>
+            <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-3xl font-black text-xl hover:scale-105 transition-all">REJOUER</button>
         </div>
     </div>
 
@@ -65,7 +66,7 @@
         <h1 class="text-4xl mb-10 text-center italic text-green-900 font-black tracking-tighter">YAM'S ARENA</h1>
         <div class="bg-slate-50 p-6 rounded-[3rem] border mb-8 text-center">
             <input type="text" id="my-name-in" placeholder="PSEUDO..." class="w-full bg-white font-black p-5 rounded-2xl border text-center mb-6 outline-none text-xl uppercase shadow-inner">
-            <p class="text-[10px] text-slate-400 mb-4 tracking-widest font-bold">COULEUR</p>
+            <p class="text-[10px] text-slate-400 mb-4 tracking-widest font-bold">CHOISIS TA COULEUR</p>
             <div id="color-picker" class="flex flex-wrap justify-center gap-3 mb-4"></div>
         </div>
         <button onclick="joinGame()" class="w-full bg-black text-white py-7 rounded-3xl font-black text-2xl shadow-xl active:scale-95 transition-all">REJOINDRE</button>
@@ -75,7 +76,7 @@
         <div class="lg:col-span-5 bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] border-4 border-white/5 flex flex-col items-center h-fit">
             <div class="w-full flex justify-between items-center mb-6">
                 <div id="active-player-name" class="px-6 py-2 rounded-full bg-black/40 text-xl border border-white/10 font-black">-</div>
-                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full tracking-widest font-black">COPIER LIEN</button>
+                <button onclick="copyLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all font-black">COPIER LIEN</button>
             </div>
             
             <div id="dice-row" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-12">
@@ -86,9 +87,9 @@
                 <div id="d4" onclick="toggleHold(4)" class="scene"><div class="cube" id="cube4"></div></div>
             </div>
 
-            <div class="w-full max-w-sm text-center">
-                <p id="roll-count" class="text-sm mb-4 opacity-60 font-bold">LANCERS : 0 / 3</p>
-                <button id="roll-btn" onclick="rollDice()" class="w-full bg-white text-black py-8 rounded-full font-black text-4xl shadow-2xl active:scale-90 border-b-8 border-slate-300">LANCER</button>
+            <div class="w-full max-w-sm">
+                <p id="roll-count" class="text-center text-sm mb-4 opacity-60 font-bold">LANCERS : 0 / 3</p>
+                <button id="roll-btn" onclick="rollDice()" class="w-full bg-white text-black py-8 rounded-full font-black text-4xl shadow-2xl active:scale-90 transition-all border-b-8 border-slate-300">LANCER</button>
             </div>
         </div>
 
@@ -101,7 +102,10 @@
     </div>
 
     <script>
+        const sndYams = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
+        const sndWin = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
         const API = 'api_yams.php';
+        
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', myColorIdx = 0, players = [], cIdx = 0, rolls = 0, dice = [1,1,1,1,1].map(v=>({v,held:false}));
         let currentRots = Array(5).fill(0).map(()=>({x:0, y:0}));
@@ -117,10 +121,10 @@
         const cats = ["1","2","3","4","5","6","BONUS (63+)","TOTAL SUP","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE","TOTAL GLOBAL"];
         const facesHTML=['','<div class="face f1"><div class="dot" style="grid-area:2/2"></div></div>','<div class="face f2"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f3"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f4"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f5"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f6"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/1"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/3"></div><div class="dot" style="grid-area:3/3"></div></div>'];
 
-        window.onload = () => {
+        window.addEventListener('DOMContentLoaded', () => {
             const cp = document.getElementById('color-picker');
             cp.innerHTML = colors.map((c,i)=>`<div onclick="selCol(${i})" class="color-opt ${i===0?'selected':''}" style="background:${c.b}"></div>`).join('');
-        };
+        });
 
         function selCol(i){ 
             myColorIdx=i; 
@@ -129,7 +133,7 @@
 
         async function joinGame() {
             myName = document.getElementById('my-name-in').value.trim();
-            if(!myName) return;
+            if(!myName) { alert("Entre un pseudo !"); return; }
             if(!roomId) roomId = Math.random().toString(36).substring(7);
             window.history.pushState({}, '', `?room=${roomId}`);
             await syncPull();
@@ -144,7 +148,12 @@
 
         async function syncPush() {
             if(!roomId) return;
-            await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify({ players, cIdx, rolls, dice, roomId }) });
+            try {
+                await fetch(`${API}?action=sync&roomId=${roomId}`, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ players, cIdx, rolls, dice, roomId }) 
+                });
+            } catch(e) {}
         }
 
         async function syncPull() {
@@ -186,8 +195,10 @@
 
         function rollDice() {
             if(rolls >= 3 || players[cIdx].name !== myName) return;
-            rolls++; dice.forEach(d => { if(!d.held) d.v = Math.floor(Math.random()*6)+1; });
-            animateCubes(dice); syncPush();
+            rolls++; 
+            dice.forEach(d => { if(!d.held) d.v = Math.floor(Math.random()*6)+1; });
+            animateCubes(dice); 
+            syncPush();
         }
 
         function toggleHold(i) {
@@ -199,7 +210,12 @@
 
         async function lock(c, pi) {
             if(pi !== cIdx || players[pi].name !== myName || rolls === 0 || players[pi].scores[c] !== undefined) return;
-            players[pi].scores[c] = calculatePotential(c);
+            const s = calculatePotential(c);
+            players[pi].scores[c] = s;
+            if(c === "YAMS" && s > 0) { 
+                sndYams.play(); 
+                confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } }); 
+            }
             rolls = 0; dice.forEach(d => { d.held = false; d.v = 1; });
             cIdx = (cIdx + 1) % players.length;
             await syncPush();
@@ -215,6 +231,13 @@
                 </tr>`).join('');
         }
 
+        function calculatePlayerTotal(p) {
+            let sSup = 0; ["1","2","3","4","5","6"].forEach(k => sSup += (p.scores[k] || 0));
+            let bonus = sSup >= 63 ? 35 : 0;
+            let sInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sInf += (p.scores[k] || 0));
+            return sSup + bonus + sInf;
+        }
+
         function refreshUI() {
             const p = players[cIdx]; if(!p) return;
             document.getElementById('active-player-name').innerText = p.name === myName ? "À TOI !" : p.name;
@@ -222,42 +245,27 @@
             document.documentElement.style.setProperty('--die-color', p.color.b);
             document.documentElement.style.setProperty('--dot-color', p.color.d);
             document.documentElement.style.setProperty('--player-accent', p.color.a);
-            document.getElementById('roll-btn').style.backgroundColor = p.color.b;
-            document.getElementById('roll-btn').style.color = p.color.d;
+            const rollBtn = document.getElementById('roll-btn');
+            rollBtn.style.backgroundColor = p.color.b; rollBtn.style.color = p.color.d;
+            rollBtn.disabled = (p.name !== myName || rolls >= 3);
             document.getElementById('roll-count').innerText = `LANCERS : ${rolls} / 3`;
-            document.getElementById('roll-btn').disabled = (p.name !== myName || rolls >= 3);
-            
             players.forEach((player, pi) => {
                 let sSup = 0; ["1","2","3","4","5","6"].forEach(k => sSup += (player.scores[k] || 0));
                 let bonus = sSup >= 63 ? 35 : 0;
                 let sInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sInf += (player.scores[k] || 0));
                 cats.forEach(c => {
-                    const cell = document.getElementById(`s-${pi}-${c}`);
-                    if(!cell) return;
-                    
-                    const oldVal = cell.innerText; // On stocke l'ancienne valeur
-                    let newVal = "-";
-                    let isLocked = false;
-                    
-                    if(c === "BONUS (63+)") newVal = bonus.toString();
-                    else if(c === "TOTAL SUP") newVal = (sSup + bonus).toString();
-                    else if(c === "TOTAL GLOBAL") newVal = (sSup + bonus + sInf).toString();
-                    else if(player.scores[c] !== undefined) { newVal = player.scores[c].toString(); isLocked = true; }
-                    else if(pi === cIdx && player.name === myName && rolls > 0) newVal = calculatePotential(c).toString();
-
-                    // CORE FIX: Mise à jour uniquement si changement
-                    if(oldVal !== newVal) {
+                    const cell = document.getElementById(`s-${pi}-${c}`); if(!cell) return;
+                    const oldVal = cell.innerText; let newVal = "-"; let isLocked = false;
+                    if(c === "BONUS (63+)") newVal = bonus;
+                    else if(c === "TOTAL SUP") newVal = sSup + bonus;
+                    else if(c === "TOTAL GLOBAL") newVal = sSup + bonus + sInf;
+                    else if(player.scores[c] !== undefined) { newVal = player.scores[c]; isLocked = true; }
+                    else if(pi === cIdx && player.name === myName && rolls > 0) newVal = calculatePotential(c);
+                    if(oldVal != newVal) {
                         cell.innerText = newVal;
-                        if(isLocked) {
-                            cell.className = "text-center locked-score px-4 animate-pop";
-                            cell.style.color = player.color.b;
-                        } else if(pi === cIdx && player.name === myName && rolls > 0) {
-                            cell.className = "text-center potential-score px-4";
-                            cell.style.color = "";
-                        } else { 
-                            cell.className = "text-center px-4 opacity-10 text-xl"; 
-                            cell.style.color = ""; 
-                        }
+                        if(isLocked) { cell.className = "text-center locked-score px-4 animate-pop"; cell.style.color = player.color.b; } 
+                        else if(pi === cIdx && player.name === myName && rolls > 0) { cell.className = "text-center potential-score px-4"; cell.style.color = ""; } 
+                        else { cell.className = "text-center px-4 opacity-10 text-xl"; cell.style.color = ""; }
                     }
                 });
             });
@@ -277,26 +285,26 @@
             if(c=="CHANCE") return sum;
             return 0;
         }
+
         function isSuite(a,l){const s=[...new Set(a)].sort();let c=1,m=1;for(let i=0;i<s.length-1;i++){s[i+1]==s[i]+1?c++:c=1;m=Math.max(m,c)}return m>=l}
 
         function checkGameOver() {
             const scoringCats = ["1","2","3","4","5","6","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"];
             if (players.length > 0 && players.every(p => scoringCats.every(cat => p.scores[cat] !== undefined))) {
                 if(document.getElementById('win-modal').classList.contains('hidden')) {
-                    const results = players.map(p => ({ name: p.name, score: (function(player){
-                        let sSup = 0; ["1","2","3","4","5","6"].forEach(k => sSup += (player.scores[k] || 0));
-                        let bonus = sSup >= 63 ? 35 : 0;
-                        let sInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sInf += (player.scores[k] || 0));
-                        return sSup + bonus + sInf;
-                    })(p) }));
+                    sndWin.play();
+                    const results = players.map(p => ({ name: p.name, score: calculatePlayerTotal(p) }));
                     const winner = results.reduce((prev, curr) => (curr.score > prev.score) ? curr : prev);
                     document.getElementById('winner-display').innerText = `GAGNANT : ${winner.name}`;
                     document.getElementById('final-stats').innerHTML = results.map(r => `<div class="flex justify-between border-b pb-2 font-black"><span>${r.name}</span><span>${r.score} PTS</span></div>`).join('');
+                    const end = Date.now() + 5000;
+                    (function frame() { confetti({ particleCount: 7, angle: 60, spread: 55, origin: { x: 0 } }); confetti({ particleCount: 7, angle: 120, spread: 55, origin: { x: 1 } }); if (Date.now() < end) requestAnimationFrame(frame); }());
                     document.getElementById('win-modal').classList.remove('hidden');
                 }
             }
         }
-        function copyLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
+
+        function copyLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié ! Envoie-le à tes amis."); }
     </script>
 </body>
 </html>
