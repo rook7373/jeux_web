@@ -355,36 +355,35 @@
             if (gameState.status !== 'playing' || gameState.turn !== 1) return; // Ensure it's AI's turn
 
             try {
+                console.log(`AI making move... roomId: ${gameState.roomId}`);
                 const aiMoveResult = await fetch(`${API}?action=ai_shoot&roomId=${gameState.roomId}`);
                 
+                console.log(`Response status: ${aiMoveResult.status}`);
+                
                 if (!aiMoveResult.ok) {
-                    console.error(`API error: ${aiMoveResult.status} ${aiMoveResult.statusText}`);
-                    // Get error details from response
                     const errorText = await aiMoveResult.text();
-                    console.error('Response:', errorText);
-                    // Retry in a moment
-                    setTimeout(makeAIMove, 2000);
+                    console.error(`API error (${aiMoveResult.status}): ${errorText}`);
+                    alert(`Erreur API: ${aiMoveResult.status} - ${errorText.substring(0, 100)}`);
                     return;
                 }
 
                 const data = await aiMoveResult.json();
+                console.log('API response:', data);
 
                 if (data.success) {
-                    Object.assign(gameState, data.gameState); // Get updated gameState from server
+                    Object.assign(gameState, data.gameState);
                     updateUI();
 
                     if (gameState.status === 'finished') {
                         showEndScreen(gameState.winner === gameState.myName);
                     }
                 } else {
-                    console.error('API error:', data.error);
-                    // Retry in a moment
-                    setTimeout(makeAIMove, 2000);
+                    console.error('API returned error:', data.error);
+                    alert(`Erreur IA: ${data.error}`);
                 }
             } catch (err) {
-                console.error('Exception in makeAIMove:', err);
-                // Retry in a moment
-                setTimeout(makeAIMove, 2000);
+                console.error('Exception in makeAIMove:', err.message);
+                alert(`Exception: ${err.message}`);
             }
         }
 

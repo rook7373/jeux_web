@@ -161,8 +161,8 @@ switch ($action) {
         }
 
         $requestData = json_decode(file_get_contents('php://input'), true);
-        $shotIdx = $requestData['shotIdx'];
-        $playerIdx = $requestData['playerIdx'];
+        $shotIdx = isset($requestData['shotIdx']) ? intval($requestData['shotIdx']) : -1;
+        $playerIdx = isset($requestData['playerIdx']) ? intval($requestData['playerIdx']) : -1;
 
         // Validate turn
         if ($gameState['turn'] !== $playerIdx) {
@@ -187,17 +187,21 @@ switch ($action) {
 
         // Check for game over (current player wins)
         $opponentShipsRemaining = false;
-        foreach ($gameState['players'][$opponentIdx]['ships'] as &$ship) { // Use reference to modify 'hits' if needed later
-            $shipSunk = true;
-            foreach ($ship['coords'] as $coord) {
-                if (!in_array($coord, $gameState['players'][$opponentIdx]['shotsReceived'])) {
-                    $shipSunk = false;
+        if (isset($gameState['players'][$opponentIdx]['ships']) && is_array($gameState['players'][$opponentIdx]['ships'])) {
+            foreach ($gameState['players'][$opponentIdx]['ships'] as &$ship) {
+                if (!isset($ship['coords']) || !is_array($ship['coords'])) continue;
+                
+                $shipSunk = true;
+                foreach ($ship['coords'] as $coord) {
+                    if (!in_array($coord, $gameState['players'][$opponentIdx]['shotsReceived'])) {
+                        $shipSunk = false;
+                        break;
+                    }
+                }
+                if (!$shipSunk) {
+                    $opponentShipsRemaining = true;
                     break;
                 }
-            }
-            if (!$shipSunk) {
-                $opponentShipsRemaining = true;
-                break;
             }
         }
 
@@ -231,36 +235,56 @@ switch ($action) {
 
     case 'ai_shoot':
         $gameState = getGameState($roomFile);
-        if (!$gameState || $gameState['turn'] !== 1) { // Ensure it's AI's turn
-            echo json_encode(['error' => 'Not AI\'s turn or game not initialized.']);
+        if (!$gameState) {
+            echo json_encode(['success' => false, 'error' => 'Game state not found']);
+            exit;
+        }
+        
+        if ($gameState['turn'] !== 1) {
+            echo json_encode(['success' => false, 'error' => 'Not AI\'s turn']);
             exit;
         }
 
-        $playerShotsReceived = $gameState['players'][0]['shotsReceived'];
+        // Get player shots received (ensure it's an array)
+        $playerShotsReceived = isset($gameState['players'][0]['shotsReceived']) ? 
+                               (is_array($gameState['players'][0]['shotsReceived']) ? 
+                                $gameState['players'][0]['shotsReceived'] : []) : [];
+        
         $aiShot = getAIMove($playerShotsReceived);
 
         if ($aiShot !== -1) {
             $gameState['players'][0]['shotsReceived'][] = $aiShot;
-            // Check if AI hit a player ship
+            
+            // Collect all player ship coordinates
             $playerShipsCoords = [];
-            foreach($gameState['players'][0]['ships'] as $ship) {
-                $playerShipsCoords = array_merge($playerShipsCoords, $ship['coords']);
+            if (isset($gameState['players'][0]['ships']) && is_array($gameState['players'][0]['ships'])) {
+                foreach($gameState['players'][0]['ships'] as $ship) {
+                    if (isset($ship['coords']) && is_array($ship['coords'])) {
+                        $playerShipsCoords = array_merge($playerShipsCoords, $ship['coords']);
+                    }
+                }
             }
+            
+            // Check if AI hit
             $isHit = in_array($aiShot, $playerShipsCoords);
 
             // Check for game over (AI wins)
             $playerShipsRemaining = false;
-            foreach ($gameState['players'][0]['ships'] as $ship) {
-                $shipSunk = true;
-                foreach ($ship['coords'] as $coord) {
-                    if (!in_array($coord, $gameState['players'][0]['shotsReceived'])) {
-                        $shipSunk = false;
+            if (isset($gameState['players'][0]['ships']) && is_array($gameState['players'][0]['ships'])) {
+                foreach ($gameState['players'][0]['ships'] as $ship) {
+                    if (!isset($ship['coords']) || !is_array($ship['coords'])) continue;
+                    
+                    $shipSunk = true;
+                    foreach ($ship['coords'] as $coord) {
+                        if (!in_array($coord, $gameState['players'][0]['shotsReceived'])) {
+                            $shipSunk = false;
+                            break;
+                        }
+                    }
+                    if (!$shipSunk) {
+                        $playerShipsRemaining = true;
                         break;
                     }
-                }
-                if (!$shipSunk) {
-                    $playerShipsRemaining = true;
-                    break;
                 }
             }
 
