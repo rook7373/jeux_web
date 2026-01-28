@@ -384,7 +384,7 @@
                         showEndScreen(gameState.winner === gameState.myName);
                     }
                 } else {
-                    console.error('API response not successful:', data);
+                    console.error('API response not successful or missing gameState:', data);
                 }
             } catch (err) {
                 console.error('Error in makeAIMove:', err.message);

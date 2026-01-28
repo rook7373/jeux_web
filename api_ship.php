@@ -253,8 +253,13 @@ switch ($action) {
         
         $aiShot = getAIMove($playerShotsReceived);
 
-        if ($aiShot !== -1) {
-            $gameState['players'][0]['shotsReceived'][] = $aiShot;
+        if ($aiShot === -1) {
+            echo json_encode(['success' => false, 'error' => 'AI could not find an available shot.']);
+            exit;
+        }
+
+        // If AI shot is found
+        $gameState['players'][0]['shotsReceived'][] = $aiShot;
             
             // Collect all player ship coordinates
             $playerShipsCoords = [];
