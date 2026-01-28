@@ -208,10 +208,10 @@
             const color = piece.charAt(0);
             const type = piece.charAt(1); // 'p' for pawn, 'k' for king
 
-            if (color === 'r') { // Red pieces
+            if (color === 'r') { // Red pieces (Cats)
                 return (type === 'p') ? '🐱' : '👑🐱'; // Cat face for pawn, crowned cat for king
-            } else { // Black pieces
-                return (type === 'p') ? '🐾' : '👑🐾'; // Paw prints for pawn, crowned paw prints for king
+            } else { // Black pieces (Dogs)
+                return (type === 'p') ? '🐶' : '👑🐶'; // Dog face for pawn, crowned dog for king
             }
         }
 
@@ -225,11 +225,11 @@
             const opponentColor = (color === 'r') ? 'b' : 'r';
 
             const directions = [];
-            if (color === 'r' || isKing) { // Red pieces move down, Kings move both ways
-                directions.push({dr: 1, dc: -1}, {dr: 1, dc: 1});
-            }
-            if (color === 'b' || isKing) { // Black pieces move up, Kings move both ways
+            if (color === 'r' || isKing) { // Red pieces move UP, Kings move both ways
                 directions.push({dr: -1, dc: -1}, {dr: -1, dc: 1});
+            }
+            if (color === 'b' || isKing) { // Black pieces move DOWN, Kings move both ways
+                directions.push({dr: 1, dc: -1}, {dr: 1, dc: 1});
             }
 
             const captureMoves = [];
