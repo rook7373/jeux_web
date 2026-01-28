@@ -34,52 +34,65 @@ function saveGameState($roomFile, $gameState) {
 function generateShips() {
     $shipSizes = [5, 4, 3, 3, 2];
     $ships = [];
-    $occupiedCells = [];
+    $occupiedCells = []; // Stores actual ship cells AND their buffer zones
 
     foreach ($shipSizes as $size) {
         $placed = false;
-        while (!$placed) {
+        $attempts = 0; // Safety counter
+        while (!$placed && $attempts < 1000) { // Limit attempts to prevent infinite loops
+            $attempts++;
             $horizontal = (bool)rand(0, 1);
             $startRow = rand(0, 9);
             $startCol = rand(0, 9);
 
-            $shipCoords = [];
-            $valid = true;
+            $currentShipCoords = []; // Cells the current ship would occupy
+            $currentBufferCoords = []; // Cells for the buffer zone around the current ship
+
+            $validPlacement = true;
 
             for ($i = 0; $i < $size; $i++) {
                 $r = $horizontal ? $startRow : $startRow + $i;
                 $c = $horizontal ? $startCol + $i : $startCol;
 
+                // Check bounds for the ship itself
                 if ($r < 0 || $r >= 10 || $c < 0 || $c >= 10) {
-                    $valid = false;
+                    $validPlacement = false;
                     break;
                 }
                 $coord = $r * 10 + $c;
-                if (in_array($coord, $occupiedCells)) {
-                    $valid = false;
-                    break;
-                }
-                // Check surrounding cells for buffer
+                $currentShipCoords[] = $coord;
+
+                // Calculate buffer cells around this segment of the ship
                 for ($dr = -1; $dr <= 1; $dr++) {
                     for ($dc = -1; $dc <= 1; $dc++) {
-                        if ($dr == 0 && $dc == 0) continue;
                         $adjR = $r + $dr;
                         $adjC = $c + $dc;
-                        $adjCoord = $adjR * 10 + $adjC;
-                        if (in_array($adjCoord, $occupiedCells)) {
-                            $valid = false;
-                            break 2;
+                        // Only add valid grid coordinates to buffer
+                        if ($adjR >= 0 && $adjR < 10 && $adjC >= 0 && $adjC < 10) {
+                            $currentBufferCoords[] = $adjR * 10 + $adjC;
                         }
                     }
                 }
-                $shipCoords[] = $coord;
             }
 
-            if ($valid) {
-                $ships[] = ['coords' => $shipCoords, 'hits' => []];
-                $occupiedCells = array_merge($occupiedCells, $shipCoords);
-                $placed = true;
+            if ($validPlacement) {
+                // Combine ship and its buffer for collision check
+                $potentialOccupied = array_unique(array_merge($currentShipCoords, $currentBufferCoords));
+                
+                // Check for overlap with already occupied cells (ships + their buffers)
+                if (count(array_intersect($potentialOccupied, $occupiedCells)) === 0) {
+                    // Valid placement found!
+                    $ships[] = ['coords' => $currentShipCoords, 'hits' => []];
+                    $occupiedCells = array_merge($occupiedCells, $potentialOccupied);
+                    $placed = true;
+                }
             }
+        } // End of while loop
+
+        if (!$placed) {
+            // This case indicates that after many attempts, a ship could not be placed.
+            error_log("Failed to place ship of size $size after $attempts attempts.");
+            throw new Exception("Failed to place all AI ships.");
         }
     }
     return $ships;
