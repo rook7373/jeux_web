@@ -109,7 +109,14 @@ switch ($action) {
         $playerShipsCoords = $playerShipsData['playerShips'] ?? [];
         $playerName = $playerShipsData['playerName'] ?? 'Player';
         
-        // Normalize player ships to the same structure as AI ships
+        // Ensure playerShipsCoords is an array and cast to integers
+        if (!is_array($playerShipsCoords)) {
+            $playerShipsCoords = [];
+        }
+        $playerShipsCoords = array_map('intval', $playerShipsCoords);
+        
+        // Group player ship coordinates into separate ships based on positions
+        // For now, create a single ship entry with all coords (simplified approach)
         $playerShips = [];
         if (!empty($playerShipsCoords)) {
             $playerShips[] = ['coords' => $playerShipsCoords, 'hits' => []];
@@ -132,12 +139,18 @@ switch ($action) {
                     'ready' => true,
                 ]
             ],
-            'turn' => 0, // 0 for player, 1 for AI
+            'turn' => 0,
             'status' => 'playing',
             'winner' => null,
         ];
+        
+        // Ensure directory exists
+        if (!is_dir(__DIR__ . '/rooms')) {
+            mkdir(__DIR__ . '/rooms', 0755, true);
+        }
+        
         saveGameState($roomFile, $gameState);
-        echo json_encode(['success' => true, 'roomId' => $roomId, 'gameState' => $gameState]); // Return full gameState
+        echo json_encode(['success' => true, 'roomId' => $roomId, 'gameState' => $gameState]);
         break;
 
     case 'shoot':
