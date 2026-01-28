@@ -1,6 +1,20 @@
 <?php
 header('Content-Type: application/json');
 
+// Global error handler
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    http_response_code(200);
+    echo json_encode(['success' => false, 'error' => "PHP Error: $errstr (Line $errline)"]);
+    exit;
+});
+
+// Global exception handler
+set_exception_handler(function($exception) {
+    http_response_code(200);
+    echo json_encode(['success' => false, 'error' => "Exception: " . $exception->getMessage()]);
+    exit;
+});
+
 $action = $_GET['action'] ?? '';
 $roomId = $_GET['roomId'] ?? '';
 $roomFile = __DIR__ . '/rooms/room_' . $roomId . '.json';
