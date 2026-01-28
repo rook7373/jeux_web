@@ -352,25 +352,22 @@
         }
 
         async function makeAIMove() {
-            if (gameState.status !== 'playing' || gameState.turn !== 1) return; // Ensure it's AI's turn
+            if (gameState.status !== 'playing' || gameState.turn !== 1) return;
 
             try {
-                console.log(`AI making move... roomId: ${gameState.roomId}`);
                 const aiMoveResult = await fetch(`${API}?action=ai_shoot&roomId=${gameState.roomId}`);
                 
-                console.log(`Response status: ${aiMoveResult.status}`);
-                
                 if (!aiMoveResult.ok) {
+                    console.error(`API HTTP Error: ${aiMoveResult.status}`);
                     const errorText = await aiMoveResult.text();
-                    console.error(`API error (${aiMoveResult.status}): ${errorText}`);
-                    alert(`Erreur API: ${aiMoveResult.status} - ${errorText.substring(0, 100)}`);
+                    console.error('Server response:', errorText);
                     return;
                 }
 
                 const data = await aiMoveResult.json();
-                console.log('API response:', data);
+                console.log('AI Move Response:', data);
 
-                if (data.success) {
+                if (data.success === true && data.gameState) {
                     Object.assign(gameState, data.gameState);
                     updateUI();
 
@@ -378,12 +375,10 @@
                         showEndScreen(gameState.winner === gameState.myName);
                     }
                 } else {
-                    console.error('API returned error:', data.error);
-                    alert(`Erreur IA: ${data.error}`);
+                    console.error('API response not successful:', data);
                 }
             } catch (err) {
-                console.error('Exception in makeAIMove:', err.message);
-                alert(`Exception: ${err.message}`);
+                console.error('Error in makeAIMove:', err.message);
             }
         }
 

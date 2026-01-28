@@ -17,7 +17,8 @@ set_exception_handler(function($exception) {
 
 $action = $_GET['action'] ?? '';
 $roomId = $_GET['roomId'] ?? '';
-$roomFile = __DIR__ . '/rooms/room_' . $roomId . '.json';
+// Use a prefix for ship games to avoid conflicts with other games
+$roomFile = __DIR__ . '/rooms/ship_' . $roomId . '.json';
 
 function getGameState($roomFile) {
     if (file_exists($roomFile)) {
