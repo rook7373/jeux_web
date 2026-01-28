@@ -225,10 +225,22 @@
             for(let i=0; i<100; i++) {
                 const el = document.getElementById(`my-${i}`);
                 el.className = 'grid-cell rounded-md';
-                if(gameState.myShips.includes(i)) el.classList.add('ship');
+                
+                // Check if this cell is part of a ship
+                let isShip = false;
+                if (me() && me().ships) {
+                    for (let ship of me().ships) {
+                        if (ship.coords && ship.coords.includes(i)) {
+                            isShip = true;
+                            break;
+                        }
+                    }
+                }
+                if (isShip) el.classList.add('ship');
+                
                 if(me() && me().shotsReceived.includes(i)) {
                     // Debugging: Log the shot and whether it's a hit or miss
-                    const isHit = gameState.myShips.includes(i);
+                    const isHit = isShip;
                     console.log(`AI shot at ${i}: ${isHit ? 'Hit' : 'Miss'}`);
                     el.classList.add(isHit ? 'hit' : 'miss');
                 }
@@ -242,14 +254,25 @@
                 const el = document.getElementById(`tgt-${i}`);
                 el.className = 'grid-cell rounded-md';
                 if(opponent().shotsReceived.includes(i)) {
-                    const isHit = opponent().ships.includes(i);
+                    // Check if this cell is part of an opponent ship
+                    let isHit = false;
+                    if (opponent().ships) {
+                        for (let ship of opponent().ships) {
+                            if (ship.coords && ship.coords.includes(i)) {
+                                isHit = true;
+                                break;
+                            }
+                        }
+                    }
                     el.classList.add(isHit ? 'hit' : 'miss');
                 }
             }
         }
 
         async function confirmShips() {
-            me().ships = gameState.myShips;
+            // Convert ships to the normalized structure before sending to server
+            const normalizedShips = [{ coords: gameState.myShips, hits: [] }];
+            me().ships = normalizedShips;
             me().ready = true;
             document.getElementById('setup-controls').classList.add('hidden');
             

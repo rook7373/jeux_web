@@ -92,8 +92,14 @@ function getAIMove($playerBoardShots) {
 switch ($action) {
     case 'init_ai_game':
         $playerShipsData = json_decode(file_get_contents('php://input'), true);
-        $playerShips = $playerShipsData['playerShips'] ?? [];
+        $playerShipsCoords = $playerShipsData['playerShips'] ?? [];
         $playerName = $playerShipsData['playerName'] ?? 'Player';
+        
+        // Normalize player ships to the same structure as AI ships
+        $playerShips = [];
+        if (!empty($playerShipsCoords)) {
+            $playerShips[] = ['coords' => $playerShipsCoords, 'hits' => []];
+        }
         
         $aiShips = generateShips();
 
