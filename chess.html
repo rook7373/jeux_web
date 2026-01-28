@@ -338,7 +338,7 @@
 
         async function startAction() {
             const name = document.getElementById('my-name-in').value.trim();
-            if(!name) return alert("Pseudo !"); myName = name.toUpperCase();
+            if(!name) return alert("Veuillez entrer un pseudo pour commencer !"); myName = name.toUpperCase();
             
             gameState.board = JSON.parse(JSON.stringify(initialBoard)); // Deep copy initial board
 

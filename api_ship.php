@@ -91,14 +91,16 @@ function getAIMove($playerBoardShots) {
 
 switch ($action) {
     case 'init_ai_game':
-        $playerShips = json_decode(file_get_contents('php://input'), true)['playerShips'] ?? [];
+        $playerShipsData = json_decode(file_get_contents('php://input'), true);
+        $playerShips = $playerShipsData['playerShips'] ?? [];
+        $playerName = $playerShipsData['playerName'] ?? 'Player';
         
         $aiShips = generateShips();
 
         $gameState = [
             'players' => [
                 [
-                    'name' => 'Player', // This will be replaced by actual player name from client
+                    'name' => $playerName,
                     'ships' => $playerShips,
                     'shotsReceived' => [],
                     'ready' => true,
@@ -112,9 +114,69 @@ switch ($action) {
             ],
             'turn' => 0, // 0 for player, 1 for AI
             'status' => 'playing',
+            'winner' => null,
         ];
         saveGameState($roomFile, $gameState);
-        echo json_encode(['success' => true, 'roomId' => $roomId, 'aiShips' => $aiShips]);
+        echo json_encode(['success' => true, 'roomId' => $roomId, 'gameState' => $gameState]); // Return full gameState
+        break;
+
+    case 'shoot':
+        $gameState = getGameState($roomFile);
+        if (!$gameState) {
+            echo json_encode(['success' => false, 'error' => 'Game not found or not initialized.']);
+            exit;
+        }
+
+        $requestData = json_decode(file_get_contents('php://input'), true);
+        $shotIdx = $requestData['shotIdx'];
+        $playerIdx = $requestData['playerIdx'];
+
+        // Validate turn
+        if ($gameState['turn'] !== $playerIdx) {
+            echo json_encode(['success' => false, 'error' => 'Not your turn.']);
+            exit;
+        }
+
+        $opponentIdx = 1 - $playerIdx;
+        
+        // Ensure shotsReceived is an array before pushing
+        if (!isset($gameState['players'][$opponentIdx]['shotsReceived']) || !is_array($gameState['players'][$opponentIdx]['shotsReceived'])) {
+            $gameState['players'][$opponentIdx]['shotsReceived'] = [];
+        }
+
+        // Prevent shooting the same spot twice
+        if (in_array($shotIdx, $gameState['players'][$opponentIdx]['shotsReceived'])) {
+            echo json_encode(['success' => false, 'error' => 'Already shot this spot.']);
+            exit;
+        }
+
+        $gameState['players'][$opponentIdx]['shotsReceived'][] = $shotIdx;
+
+        // Check for game over (current player wins)
+        $opponentShipsRemaining = false;
+        foreach ($gameState['players'][$opponentIdx]['ships'] as &$ship) { // Use reference to modify 'hits' if needed later
+            $shipSunk = true;
+            foreach ($ship['coords'] as $coord) {
+                if (!in_array($coord, $gameState['players'][$opponentIdx]['shotsReceived'])) {
+                    $shipSunk = false;
+                    break;
+                }
+            }
+            if (!$shipSunk) {
+                $opponentShipsRemaining = true;
+                break;
+            }
+        }
+
+        if (!$opponentShipsRemaining) {
+            $gameState['status'] = 'finished';
+            $gameState['winner'] = $gameState['players'][$playerIdx]['name'];
+        } else {
+            $gameState['turn'] = $opponentIdx; // Switch to opponent's turn
+        }
+
+        saveGameState($roomFile, $gameState);
+        echo json_encode(['success' => true, 'gameState' => $gameState]);
         break;
 
     case 'sync':
