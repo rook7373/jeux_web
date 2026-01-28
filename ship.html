@@ -284,44 +284,84 @@
             opponent().shotsReceived.push(idx);
             renderTargetGrid(); // Update target grid immediately
 
-            // Send shot to the server API
-            const shotResult = await fetch(`${API}?action=shoot&roomId=${gameState.roomId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shotIdx: idx, playerIdx: gameState.myIdx })
-            });
-            const data = await shotResult.json();
+            try {
+                // Send shot to the server API
+                const shotResult = await fetch(`${API}?action=shoot&roomId=${gameState.roomId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ shotIdx: idx, playerIdx: gameState.myIdx })
+                });
 
-            if (data.success) {
-                // Update local gameState with the server's response
-                Object.assign(gameState, data.gameState); 
-                updateUI();
-
-                if (gameState.status === 'finished') {
-                    showEndScreen(gameState.winner === gameState.myName);
-                } else if (gameMode === 'local' && gameState.turn === 1) { // It's AI's turn
-                    setTimeout(makeAIMove, 1500); // Small delay for AI to "think"
+                if (!shotResult.ok) {
+                    console.error(`API error: ${shotResult.status} ${shotResult.statusText}`);
+                    const errorText = await shotResult.text();
+                    console.error('Response:', errorText);
+                    // Remove the shot from local state if failed
+                    opponent().shotsReceived = opponent().shotsReceived.filter(s => s !== idx);
+                    renderTargetGrid();
+                    return;
                 }
-            } else {
-                alert('Erreur lors du tir.');
+
+                const data = await shotResult.json();
+
+                if (data.success) {
+                    // Update local gameState with the server's response
+                    Object.assign(gameState, data.gameState); 
+                    updateUI();
+
+                    if (gameState.status === 'finished') {
+                        showEndScreen(gameState.winner === gameState.myName);
+                    } else if (gameMode === 'local' && gameState.turn === 1) { // It's AI's turn
+                        setTimeout(makeAIMove, 1500); // Small delay for AI to "think"
+                    }
+                } else {
+                    console.error('API error:', data.error);
+                    // Remove the shot from local state if failed
+                    opponent().shotsReceived = opponent().shotsReceived.filter(s => s !== idx);
+                    renderTargetGrid();
+                }
+            } catch (err) {
+                console.error('Exception in shoot:', err);
+                // Remove the shot from local state if failed
+                opponent().shotsReceived = opponent().shotsReceived.filter(s => s !== idx);
+                renderTargetGrid();
             }
         }
 
         async function makeAIMove() {
             if (gameState.status !== 'playing' || gameState.turn !== 1) return; // Ensure it's AI's turn
 
-            const aiMoveResult = await fetch(`${API}?action=ai_shoot&roomId=${gameState.roomId}`);
-            const data = await aiMoveResult.json();
-
-            if (data.success) {
-                Object.assign(gameState, data.gameState); // Get updated gameState from server
-                updateUI();
-
-                if (gameState.status === 'finished') {
-                    showEndScreen(gameState.winner === gameState.myName);
+            try {
+                const aiMoveResult = await fetch(`${API}?action=ai_shoot&roomId=${gameState.roomId}`);
+                
+                if (!aiMoveResult.ok) {
+                    console.error(`API error: ${aiMoveResult.status} ${aiMoveResult.statusText}`);
+                    // Get error details from response
+                    const errorText = await aiMoveResult.text();
+                    console.error('Response:', errorText);
+                    // Retry in a moment
+                    setTimeout(makeAIMove, 2000);
+                    return;
                 }
-            } else {
-                alert('Erreur lors du tour de l\'IA.');
+
+                const data = await aiMoveResult.json();
+
+                if (data.success) {
+                    Object.assign(gameState, data.gameState); // Get updated gameState from server
+                    updateUI();
+
+                    if (gameState.status === 'finished') {
+                        showEndScreen(gameState.winner === gameState.myName);
+                    }
+                } else {
+                    console.error('API error:', data.error);
+                    // Retry in a moment
+                    setTimeout(makeAIMove, 2000);
+                }
+            } catch (err) {
+                console.error('Exception in makeAIMove:', err);
+                // Retry in a moment
+                setTimeout(makeAIMove, 2000);
             }
         }
 
