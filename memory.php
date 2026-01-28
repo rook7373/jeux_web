@@ -96,7 +96,7 @@ if (isset($_GET['action'])) {
         let isWaitingForAnimation = false;
 
         let gameState = { 
-            players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '', gridSize: 6
+            players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '', gridSize: 6, aiMemory: []
         };
 
         const kittenImages = Array.from({length: 32}, (_, i) => `https://loremflickr.com/200/200/kitten?lock=${i}`);
@@ -151,11 +151,14 @@ if (isset($_GET['action'])) {
                         }
                     } else return alert("Plein !");
                 } 
-                setInterval(syncPull, 500); // Rafraîchissement plus rapide
+                setInterval(syncPull, 1000); // Sync every second
             } else {
                 gameState.gridSize = selectedSize;
                 initBoard();
                 gameState.players = [{ name: myName, score: 0 }, { name: localOpponent === 'ai' ? 'IA 🤖' : 'JOUEUR 2', score: 0 }];
+                if (localOpponent === 'ai') {
+                    gameState.aiMemory = Array(gameState.gridSize * gameState.gridSize).fill(null);
+                }
             }
 
             document.getElementById('setup').classList.add('hidden');
@@ -174,34 +177,33 @@ if (isset($_GET['action'])) {
         async function syncPush() { if(roomId) await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) }); }
 
         async function syncPull() {
-            if(!roomId || isWaitingForAnimation) return;
+            if(!roomId) return;
             try { 
                 const r = await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); 
                 const data = await r.json(); 
-                if (data) { 
-                    // On ne met à jour que si on n'a pas de cartes retournées localement
-                    if (gameState.flipped.length === 0) {
-                        gameState = data; 
-                        render(); 
-                    }
+                if (data && JSON.stringify(data) !== JSON.stringify(gameState)) { 
+                    gameState = data; 
+                    render(); 
                 } 
             } catch(e) {}
         }
 
         function handleFlip(idx) {
-            // VERIFICATION CRITIQUE : C'est à moi de jouer ?
             const isMyTurn = gameState.players[gameState.currentPlayerIdx]?.name === myName;
-            
-            if (gameState.gameOver || isWaitingForAnimation || gameState.matched.includes(idx) || gameState.flipped.includes(idx)) return;
-            if (gameMode === 'remote' && !isMyTurn) return;
+            if (gameState.gameOver || gameState.flipped.includes(idx) || gameState.matched.includes(idx) || (gameMode === 'remote' && !isMyTurn) || gameState.flipped.length >= 2) return;
+
+            if (localOpponent === 'ai' && gameState.players[gameState.currentPlayerIdx].name === 'IA 🤖') {
+                gameState.aiMemory[idx] = gameState.board[idx];
+            }
 
             gameState.flipped.push(idx);
+            
+            if (gameMode === 'remote') {
+                syncPush();
+            }
             render();
 
-            if (gameMode === 'remote') syncPush();
-
             if (gameState.flipped.length === 2) {
-                isWaitingForAnimation = true; 
                 setTimeout(checkMatch, 1000);
             }
         }
@@ -219,25 +221,56 @@ if (isset($_GET['action'])) {
                 }
             } else {
                 gameState.currentPlayerIdx = (gameState.currentPlayerIdx + 1) % gameState.players.length;
-                if(gameMode === 'local' && gameState.players[gameState.currentPlayerIdx].name === 'IA 🤖') setTimeout(aiMove, 500);
             }
             
             gameState.flipped = [];
-            isWaitingForAnimation = false;
+
+            if(gameMode === 'local' && gameState.players[gameState.currentPlayerIdx].name === 'IA 🤖') {
+                setTimeout(aiMove, 500);
+            }
+            
+            if(gameMode === 'remote') {
+                syncPush();
+            }
             render();
-            if(gameMode === 'remote') syncPush();
         }
 
         function aiMove() {
-            let available = gameState.board.map((_, i) => i).filter(i => !gameState.matched.includes(i));
+            // 1. Check for known pairs in memory
+            for (let i = 0; i < gameState.aiMemory.length; i++) {
+                if (gameState.aiMemory[i]) {
+                    for (let j = i + 1; j < gameState.aiMemory.length; j++) {
+                        if (gameState.aiMemory[i] === gameState.aiMemory[j] && !gameState.matched.includes(i) && !gameState.matched.includes(j)) {
+                            handleFlip(i);
+                            setTimeout(() => handleFlip(j), 500);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 2. No known pair, pick a random card
+            let available = gameState.board.map((_, i) => i).filter(i => !gameState.matched.includes(i) && !gameState.flipped.includes(i) && gameState.aiMemory[i] === null);
+            if (available.length === 0) { // if all cards have been seen at least once
+                available = gameState.board.map((_, i) => i).filter(i => !gameState.matched.includes(i) && !gameState.flipped.includes(i));
+            }
             if(available.length === 0) return;
+            
             let move1 = available[Math.floor(Math.random() * available.length)];
             handleFlip(move1);
+
+            // 3. After flipping one, check memory for its pair
             setTimeout(() => {
-                let available2 = available.filter(i => i !== move1);
-                if(available2.length === 0) return;
-                let move2 = available2[Math.floor(Math.random() * available2.length)];
-                handleFlip(move2);
+                const pairIndex = gameState.aiMemory.findIndex((card, index) => card === gameState.board[move1] && index !== move1 && !gameState.matched.includes(index));
+                if (pairIndex !== -1) {
+                    handleFlip(pairIndex);
+                } else {
+                    // 4. No pair found, pick another random card
+                    let available2 = gameState.board.map((_, i) => i).filter(i => !gameState.matched.includes(i) && !gameState.flipped.includes(i));
+                    if(available2.length === 0) return;
+                    let move2 = available2[Math.floor(Math.random() * available2.length)];
+                    handleFlip(move2);
+                }
             }, 1000);
         }
 
