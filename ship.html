@@ -270,6 +270,7 @@
         }
 
         async function confirmShips() {
+            console.log('confirmShips: Function started.');
             // Convert ships to the normalized structure before sending to server
             const normalizedShips = [{ coords: gameState.myShips, hits: [] }];
             me().ships = normalizedShips;
@@ -278,31 +279,45 @@
             
             if (gameMode === 'local') {
                 try {
+                    console.log('confirmShips: Attempting to fetch init_ai_game.');
                     const response = await fetch(`${API}?action=init_ai_game&roomId=${gameState.roomId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ playerShips: gameState.myShips, playerName: gameState.myName })
                     });
+                    console.log('confirmShips: Fetch response received.', response);
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('confirmShips: HTTP Error during init_ai_game.', response.status, errorText);
+                        alert('Erreur réseau lors de l\'initialisation du jeu : ' + errorText);
+                        document.getElementById('setup-controls').classList.remove('hidden');
+                        return;
+                    }
+
                     const data = await response.json();
-                    console.log('Init AI Game Response:', data);
+                    console.log('confirmShips: Init AI Game Response data:', data);
                     
                     if (data.success) {
+                        console.log('confirmShips: Init AI Game successful, updating gameState.');
                         Object.assign(gameState, data.gameState); 
                         gameState.myIdx = 0; 
                         gameState.status = 'playing'; 
                         updateUI();
+                        console.log('confirmShips: Game state updated and updateUI called. Current status:', gameState.status);
                     } else {
-                        console.error('Init AI Game Error:', data.error);
+                        console.error('confirmShips: Init AI Game Error from API:', data.error);
                         alert('Erreur : ' + (data.error || 'Inconnu'));
                         // Reload setup to try again
                         document.getElementById('setup-controls').classList.remove('hidden');
                     }
                 } catch (err) {
-                    console.error('Exception in confirmShips:', err);
+                    console.error('confirmShips: Exception in confirmShips:', err);
                     alert('Exception: ' + err.message);
                     document.getElementById('setup-controls').classList.remove('hidden');
                 }
             } else { // remote mode
+                console.log('confirmShips: Remote mode, calling syncPush.');
                 await syncPush();
             }
         }
