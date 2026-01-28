@@ -119,8 +119,8 @@
 
         function getPieceChar(piece) {
             const pieces = {
-                'wP': '🐱', 'wR': '🐈', 'wN': '🐎', 'wB': '🦉', 'wQ': '👑', 'wK': '🦁',
-                'bP': '🐾', 'bR': '🐈‍⬛', 'bN': '🐎', 'bB': '🦉', 'bQ': '😼', 'bK': '🐯'
+                'wP': '♙', 'wR': '♖', 'wN': '♘', 'wB': '♗', 'wQ': '♕', 'wK': '♔',
+                'bP': '♟', 'bR': '♜', 'bN': '♞', 'bB': '♝', 'bQ': '♛', 'bK': '♚'
             };
             return pieces[piece] || '';
         }
@@ -216,10 +216,14 @@
                     makeMove(gameState.selectedPiece, {row, col});
                     gameState.selectedPiece = null;
                     gameState.possibleMoves = [];
-                    gameState.currentPlayer = (gameState.currentPlayer === 'white' ? 'black' : 'white');
-                    if(gameMode === 'local' && localOpponent === 'ai' && gameState.currentPlayer.charAt(0) !== myColor.charAt(0)) {
-                        setTimeout(aiMove, 1000);
+                    
+                    if (!gameState.gameOver) {
+                        gameState.currentPlayer = (gameState.currentPlayer === 'white' ? 'black' : 'white');
+                        if(gameMode === 'local' && localOpponent === 'ai' && gameState.currentPlayer.charAt(0) !== myColor.charAt(0)) {
+                            setTimeout(aiMove, 1000);
+                        }
                     }
+                    
                     if (gameMode === 'remote') syncPush();
                     render();
                     return;
@@ -301,15 +305,130 @@
                     if (canMoveTo(row + dr, col + dc)) moves.push({row: row + dr, col: col + dc});
                 }
             }
-            return moves;
+            
+            // Filtrer les mouvements qui mettent le roi en échec
+            return moves.filter(move => {
+                const simulatedBoard = JSON.parse(JSON.stringify(gameState.board));
+                simulatedBoard[move.row][move.col] = piece;
+                simulatedBoard[row][col] = '';
+                return !isKingInCheck(simulatedBoard, color);
+            });
+        }
+
+        function isKingInCheck(board, kingColor) {
+            let kingPos = null;
+            const opponentColor = (kingColor === 'w') ? 'b' : 'w';
+            
+            // Trouver la position du roi
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] === kingColor + 'K') {
+                        kingPos = {row: r, col: c};
+                        break;
+                    }
+                }
+                if (kingPos) break;
+            }
+            
+            if (!kingPos) return false;
+            
+            // Vérifier si une pièce ennemie attaque le roi
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const piece = board[r][c];
+                    if (piece && piece.charAt(0) === opponentColor) {
+                        if (canAttack(board, r, c, kingPos.row, kingPos.col, piece.charAt(1))) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function canAttack(board, fromRow, fromCol, toRow, toCol, pieceType) {
+            const color = board[fromRow][fromCol].charAt(0);
+            const opponentColor = (color === 'w') ? 'b' : 'w';
+            const isOpponent = (r, c) => isOnBoard(r, c) && board[r][c] && board[r][c].charAt(0) === opponentColor;
+            const isEmpty = (r, c) => isOnBoard(r, c) && !board[r][c];
+
+            if (pieceType === 'P') {
+                const direction = (color === 'w') ? -1 : 1;
+                return (fromRow + direction === toRow && Math.abs(fromCol - toCol) === 1);
+            } else if (pieceType === 'N') {
+                const dr = Math.abs(fromRow - toRow);
+                const dc = Math.abs(fromCol - toCol);
+                return (dr === 2 && dc === 1) || (dr === 1 && dc === 2);
+            } else if (pieceType === 'K') {
+                return Math.abs(fromRow - toRow) <= 1 && Math.abs(fromCol - toCol) <= 1;
+            } else if (pieceType === 'R' || pieceType === 'Q') {
+                if (fromRow === toRow) {
+                    const step = fromCol < toCol ? 1 : -1;
+                    for (let c = fromCol + step; c !== toCol; c += step) {
+                        if (board[fromRow][c]) return false;
+                    }
+                    return true;
+                }
+                if (fromCol === toCol) {
+                    const step = fromRow < toRow ? 1 : -1;
+                    for (let r = fromRow + step; r !== toRow; r += step) {
+                        if (board[r][fromCol]) return false;
+                    }
+                    return true;
+                }
+            }
+            if (pieceType === 'B' || pieceType === 'Q') {
+                if (Math.abs(fromRow - toRow) === Math.abs(fromCol - toCol)) {
+                    const dr = fromRow < toRow ? 1 : -1;
+                    const dc = fromCol < toCol ? 1 : -1;
+                    for (let r = fromRow + dr, c = fromCol + dc; r !== toRow; r += dr, c += dc) {
+                        if (board[r][c]) return false;
+                    }
+                    return true;
+                }
+            }
+            return false;
         }
 
         function makeMove(from, to) {
             const piece = gameState.board[from.row][from.col];
             gameState.board[to.row][to.col] = piece;
             gameState.board[from.row][from.col] = '';
-            if (piece.charAt(1) === 'P' && (to.row === 0 || to.row === 7)) {
-                gameState.board[to.row][to.col] = piece.charAt(0) + 'Q';
+            
+            // Promotion du pion SEULEMENT s'il arrive à la dernière ligne
+            const color = piece.charAt(0);
+            if (piece.charAt(1) === 'P' && ((color === 'w' && to.row === 0) || (color === 'b' && to.row === 7))) {
+                gameState.board[to.row][to.col] = color + 'Q';
+            }
+            
+            checkGameEnd();
+        }
+
+        function checkGameEnd() {
+            const currentColor = gameState.currentPlayer.charAt(0);
+            const opponentColor = (currentColor === 'w') ? 'b' : 'w';
+            
+            // Vérifier si le joueur actuel a des mouvements légaux
+            let hasLegalMove = false;
+            for (let r = 0; r < ROWS && !hasLegalMove; r++) {
+                for (let c = 0; c < COLS && !hasLegalMove; c++) {
+                    const piece = gameState.board[r][c];
+                    if (piece && piece.charAt(0) === currentColor) {
+                        if (getPossibleMoves(r, c).length > 0) {
+                            hasLegalMove = true;
+                        }
+                    }
+                }
+            }
+            
+            if (!hasLegalMove) {
+                gameState.gameOver = true;
+                // Vérifier si c'est un échec et mat ou un pat
+                if (isKingInCheck(gameState.board, currentColor)) {
+                    gameState.winner = (currentColor === 'w') ? 'NOIR' : 'BLANC';
+                } else {
+                    gameState.winner = 'PAT (NULLE)';
+                }
             }
         }
 
