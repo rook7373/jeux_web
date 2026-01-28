@@ -277,21 +277,30 @@
             document.getElementById('setup-controls').classList.add('hidden');
             
             if (gameMode === 'local') {
-                const response = await fetch(`${API}?action=init_ai_game&roomId=${gameState.roomId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerShips: gameState.myShips, playerName: gameState.myName })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    Object.assign(gameState, data.gameState); 
-                    // Make sure players are correctly set in the local gameState from the server response
-                    // The server ensures AI player is at index 1 and player at 0.
-                    gameState.myIdx = 0; 
-                    gameState.status = 'playing'; 
-                    updateUI();
-                } else {
-                    alert('Erreur lors de l\'initialisation de la partie IA.');
+                try {
+                    const response = await fetch(`${API}?action=init_ai_game&roomId=${gameState.roomId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ playerShips: gameState.myShips, playerName: gameState.myName })
+                    });
+                    const data = await response.json();
+                    console.log('Init AI Game Response:', data);
+                    
+                    if (data.success) {
+                        Object.assign(gameState, data.gameState); 
+                        gameState.myIdx = 0; 
+                        gameState.status = 'playing'; 
+                        updateUI();
+                    } else {
+                        console.error('Init AI Game Error:', data.error);
+                        alert('Erreur : ' + (data.error || 'Inconnu'));
+                        // Reload setup to try again
+                        document.getElementById('setup-controls').classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.error('Exception in confirmShips:', err);
+                    alert('Exception: ' + err.message);
+                    document.getElementById('setup-controls').classList.remove('hidden');
                 }
             } else { // remote mode
                 await syncPush();
