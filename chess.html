@@ -130,6 +130,181 @@
             return pieces[piece] || '';
         }
 
+        // Helper to check if a square is on the board
+        const isOnBoard = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
+
+        // Helper to get raw moves for a piece (without king safety checks)
+        // This will be used by getPossibleMoves and isKingInCheck
+        function getRawMoves(row, col, currentBoard) {
+            const moves = [];
+            const piece = currentBoard[row][col];
+            if (!piece) return moves;
+
+            const color = piece.charAt(0); // 'w' or 'b'
+            const type = piece.charAt(1); // 'P', 'R', 'N', 'B', 'Q', 'K'
+            const opponentColor = (color === 'w') ? 'b' : 'w';
+
+            // Helper to check if a square contains an opponent's piece
+            const isOpponent = (r, c) => isOnBoard(r, c) && currentBoard[r][c] && currentBoard[r][c].startsWith(opponentColor);
+            // Helper to check if a square is empty
+            const isEmpty = (r, c) => isOnBoard(r, c) && !currentBoard[r][c];
+            // Helper to check if a square is empty or contains an opponent's piece
+            const canMoveTo = (r, c) => isOnBoard(r, c) && (!currentBoard[r][c] || currentBoard[r][c].startsWith(opponentColor));
+
+            if (type === 'P') { // Pawn logic
+                const direction = (color === 'w') ? -1 : 1; // White moves up (row decreases), Black moves down (row increases)
+                const startRow = (color === 'w') ? 6 : 1; // White pawns start on row 6, Black on row 1
+
+                // 1. One square forward
+                const oneStepRow = row + direction;
+                if (isEmpty(oneStepRow, col)) {
+                    moves.push({row: oneStepRow, col: col});
+                }
+
+                // 2. Two squares forward (from starting position)
+                if (row === startRow && isEmpty(oneStepRow, col) && isEmpty(row + 2 * direction, col)) {
+                    moves.push({row: row + 2 * direction, col: col});
+                }
+
+                // 3. Diagonal captures
+                const captureCols = [col - 1, col + 1];
+                for (const captureCol of captureCols) {
+                    if (isOpponent(oneStepRow, captureCol)) {
+                        moves.push({row: oneStepRow, col: captureCol});
+                    }
+                }
+
+                // TODO: En passant (requires tracking last move)
+
+            } else if (type === 'R') { // Rook logic
+                const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]]; // horizontal and vertical
+                for (const [dr, dc] of directions) {
+                    for (let i = 1; i < ROWS; i++) {
+                        const newRow = row + dr * i;
+                        const newCol = col + dc * i;
+                        if (!isOnBoard(newRow, newCol)) break; // Out of bounds
+                        if (isEmpty(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                        } else if (isOpponent(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                            break; // Blocked by opponent, but can capture
+                        } else { // Blocked by own piece
+                            break;
+                        }
+                    }
+                }
+            } else if (type === 'N') { // Knight logic
+                const knightMoves = [
+                    [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                    [1, -2], [1, 2], [2, -1], [2, 1]
+                ];
+                for (const [dr, dc] of knightMoves) {
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    if (canMoveTo(newRow, newCol)) {
+                        moves.push({row: newRow, col: newCol});
+                    }
+                }
+            } else if (type === 'B') { // Bishop logic
+                const directions = [[1, 1], [1, -1], [-1, 1], [-1, -1]]; // Diagonals
+                for (const [dr, dc] of directions) {
+                    for (let i = 1; i < ROWS; i++) {
+                        const newRow = row + dr * i;
+                        const newCol = col + dc * i;
+                        if (!isOnBoard(newRow, newCol)) break;
+                        if (isEmpty(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                        } else if (isOpponent(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                            break;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            } else if (type === 'Q') { // Queen logic (combination of Rook and Bishop)
+                // Rook moves
+                const rookDirections = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                for (const [dr, dc] of rookDirections) {
+                    for (let i = 1; i < ROWS; i++) {
+                        const newRow = row + dr * i;
+                        const newCol = col + dc * i;
+                        if (!isOnBoard(newRow, newCol)) break;
+                        if (isEmpty(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                        } else if (isOpponent(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                            break;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                // Bishop moves
+                const bishopDirections = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+                for (const [dr, dc] of bishopDirections) {
+                    for (let i = 1; i < ROWS; i++) {
+                        const newRow = row + dr * i;
+                        const newCol = col + dc * i;
+                        if (!isOnBoard(newRow, newCol)) break;
+                        if (isEmpty(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                        } else if (isOpponent(newRow, newCol)) {
+                            moves.push({row: newRow, col: newCol});
+                            break;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            } else if (type === 'K') { // King logic
+                const kingMoves = [
+                    [-1, -1], [-1, 0], [-1, 1], [0, -1],
+                    [0, 1], [1, -1], [1, 0], [1, 1]
+                ];
+                for (const [dr, dc] of kingMoves) {
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    if (canMoveTo(newRow, newCol)) {
+                        moves.push({row: newRow, col: newCol});
+                    }
+                }
+            return moves;
+        }
+
+        // Checks if the king of a given color is in check on the current board state
+        function isKingInCheck(currentBoard, kingColor) {
+            let kingPos = null;
+            // 1. Find the king's position
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (currentBoard[r][c] === kingColor + 'K') {
+                        kingPos = {row: r, col: c};
+                        break;
+                    }
+                }
+                if (kingPos) break;
+            }
+
+            if (!kingPos) return false; // Should not happen in a valid game state
+
+            const opponentColor = (kingColor === 'w') ? 'b' : 'w';
+
+            // 2. Iterate through all opponent pieces and see if any attack the king
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const piece = currentBoard[r][c];
+                    if (piece && piece.startsWith(opponentColor)) {
+                        const rawMoves = getRawMoves(r, c, currentBoard); // Get all moves opponent piece can make
+                        if (rawMoves.some(move => move.row === kingPos.row && move.col === kingPos.col)) {
+                            return true; // Opponent piece attacks the king
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
         window.onload = () => {
             if(roomId) {
                 document.getElementById('mode-selector').classList.add('hidden');
@@ -248,62 +423,25 @@
         // These functions need full implementation for a working chess game.
         // For now, they are placeholders.
 
+        // getPossibleMoves now filters raw moves based on king safety
         function getPossibleMoves(row, col) {
-            const moves = [];
-            const piece = gameState.board[row][col];
-            if (!piece) return moves;
+            const rawMoves = getRawMoves(row, col, gameState.board);
+            const legalMoves = [];
+            const originalPiece = gameState.board[row][col];
+            const pieceColor = originalPiece.charAt(0);
 
-            const color = piece.charAt(0); // 'w' or 'b'
-            const type = piece.charAt(1); // 'P', 'R', 'N', 'B', 'Q', 'K'
-            const opponentColor = (color === 'w') ? 'b' : 'w';
+            for (const move of rawMoves) {
+                // Simulate the move to check for king safety
+                const simulatedBoard = JSON.parse(JSON.stringify(gameState.board)); // Deep copy
+                // Perform the simulated move
+                simulatedBoard[move.row][move.col] = originalPiece;
+                simulatedBoard[row][col] = '';
 
-            // Helper to check if a square is on the board
-            const isOnBoard = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
-            // Helper to check if a square contains an opponent's piece
-            const isOpponent = (r, c) => isOnBoard(r, c) && gameState.board[r][c] && gameState.board[r][c].startsWith(opponentColor);
-            // Helper to check if a square is empty
-            const isEmpty = (r, c) => isOnBoard(r, c) && !gameState.board[r][c];
-
-            if (type === 'P') { // Pawn logic
-                const direction = (color === 'w') ? -1 : 1; // White moves up (row decreases), Black moves down (row increases)
-                const startRow = (color === 'w') ? 6 : 1; // White pawns start on row 6, Black on row 1
-
-                // 1. One square forward
-                const oneStepRow = row + direction;
-                if (isEmpty(oneStepRow, col)) {
-                    moves.push({row: oneStepRow, col: col});
-                }
-
-                // 2. Two squares forward (from starting position)
-                if (row === startRow && isEmpty(oneStepRow, col) && isEmpty(row + 2 * direction, col)) {
-                    moves.push({row: row + 2 * direction, col: col});
-                }
-
-                // 3. Diagonal captures
-                const captureCols = [col - 1, col + 1];
-                for (const captureCol of captureCols) {
-                    if (isOpponent(oneStepRow, captureCol)) {
-                        moves.push({row: oneStepRow, col: captureCol});
-                    }
-                }
-
-                // TODO: En passant (requires tracking last move)
-                // TODO: Promotion (when pawn reaches last rank)
-
-            } else if (type === 'R') { // Rook (simplified placeholder - needs full implementation)
-                 // Horizontal and Vertical
-                // This is a placeholder and doesn't handle blocking
-                for (let i = 0; i < ROWS; i++) {
-                    if (i !== row && (!gameState.board[i][col] || gameState.board[i][col].startsWith(opponentColor))) moves.push({row: i, col: col});
-                }
-                for (let j = 0; j < COLS; j++) {
-                    if (j !== col && (!gameState.board[row][j] || gameState.board[row][j].startsWith(opponentColor))) moves.push({row: row, col: j});
+                if (!isKingInCheck(simulatedBoard, pieceColor)) {
+                    legalMoves.push(move);
                 }
             }
-            // Add logic for other pieces (Knight, Bishop, Queen, King)
-            // ...
-
-            return moves;
+            return legalMoves;
         }
 
         function makeMove(from, to) {
@@ -326,48 +464,83 @@
 
             gameState.lastMove = { from, to, pieceMoved: piece, pieceCaptured: null }; // pieceCaptured can be added if needed
             // For now, this just records the move. More advanced states might be needed for undo/redo or full PGN.
+
+            // After every move, check if the game has ended
+            checkGameEnd();
         }
 
-        function checkWin() {
-            // Check for checkmate or stalemate
-            // This is very complex for chess
-            return false; 
-        }
-
-        function aiMove() {
-            // Simple AI: Find all legal moves for current player and pick one randomly.
-            // This requires a fully functional getPossibleMoves for all pieces and check/checkmate detection.
-            // For now, it will just log a message.
-            console.log("AI is thinking (not implemented yet for chess)");
-            // Placeholder: make a random valid pawn move
+        // Checks for checkmate or stalemate
+        function checkGameEnd() {
             const currentPlayerColor = gameState.currentPlayer.charAt(0);
-            const playerPieces = [];
+            let hasLegalMoves = false;
+
+            // Check if the current player has any legal moves
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
                     const piece = gameState.board[r][c];
                     if (piece && piece.startsWith(currentPlayerColor)) {
-                        playerPieces.push({row: r, col: c, piece: piece});
+                        if (getPossibleMoves(r, c).length > 0) {
+                            hasLegalMoves = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasLegalMoves) break;
+            }
+
+            if (!hasLegalMoves) {
+                gameState.gameOver = true;
+                if (isKingInCheck(gameState.board, currentPlayerColor)) {
+                    // Checkmate: current player's king is in check and has no legal moves
+                    gameState.winner = (currentPlayerColor === 'w') ? 'black' : 'white';
+                    document.getElementById('win-text').innerText = `${gameState.winner.toUpperCase()} GAGNE PAR ÉCHEC ET MAT !`;
+                } else {
+                    // Stalemate: current player's king is not in check and has no legal moves
+                    gameState.winner = 'DRAW';
+                    document.getElementById('win-text').innerText = "PARTIE NULLE PAR PAT !";
+                }
+            }
+        }
+
+        function aiMove() {
+            const currentPlayerColor = gameState.currentPlayer.charAt(0);
+            const allPossibleAIMoves = [];
+
+            // Gather all legal moves for all of the AI's pieces
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const piece = gameState.board[r][c];
+                    if (piece && piece.startsWith(currentPlayerColor)) {
+                        const movesForPiece = getPossibleMoves(r, c);
+                        movesForPiece.forEach(move => {
+                            allPossibleAIMoves.push({ from: {row: r, col: c}, to: move });
+                        });
                     }
                 }
             }
 
-            // Find a random pawn move
-            const pawns = playerPieces.filter(p => p.piece.charAt(1) === 'P');
-            if (pawns.length > 0) {
-                for(let i = 0; i < pawns.length; i++){
-                    const pawn = pawns[Math.floor(Math.random() * pawns.length)];
-                    const possiblePawnMoves = getPossibleMoves(pawn.row, pawn.col);
-                    if (possiblePawnMoves.length > 0) {
-                        const randomMove = possiblePawnMoves[Math.floor(Math.random() * possiblePawnMoves.length)];
-                        makeMove(pawn, randomMove);
-                        gameState.currentPlayer = (gameState.currentPlayer === 'white' ? 'black' : 'white');
-                        if (gameMode === 'remote') syncPush();
-                        render();
-                        return;
-                    }
-                }
+            if (allPossibleAIMoves.length > 0) {
+                // Pick a random move
+                const randomMove = allPossibleAIMoves[Math.floor(Math.random() * allPossibleAIMoves.length)];
+                
+                // Execute the move
+                makeMove(randomMove.from, randomMove.to);
+                
+                // After AI moves, switch player and render
+                gameState.currentPlayer = (gameState.currentPlayer === 'white' ? 'black' : 'white');
+                if (gameMode === 'remote') syncPush();
+                render();
+            } else {
+                // If AI has no legal moves, it's either checkmate or stalemate
+                // checkGameEnd() is called by makeMove, so this block might be redundant if makeMove is always called.
+                // However, if AI is the only player left, this might be triggered if no moves were available.
+                console.log("AI has no legal moves. Game might be over.");
+                // For now, if no moves, just switch player to avoid hanging
+                // It's better for checkGameEnd() to be the single source of truth for game over conditions.
+                gameState.currentPlayer = (gameState.currentPlayer === 'white' ? 'black' : 'white');
+                checkGameEnd(); // Ensure game end check happens
+                render();
             }
-            // If no pawn moves found or other pieces not implemented, AI does nothing for now
         }
 
         function render() {
