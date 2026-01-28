@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL); // Report all errors
+ini_set('display_errors', 1); // Display errors directly in the output
 header('Content-Type: application/json');
 
 // Global error handler
