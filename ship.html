@@ -227,9 +227,13 @@
                 el.className = 'grid-cell rounded-md';
                 if(gameState.myShips.includes(i)) el.classList.add('ship');
                 if(me() && me().shotsReceived.includes(i)) {
-                    el.classList.add(gameState.myShips.includes(i) ? 'hit' : 'miss');
+                    // Debugging: Log the shot and whether it's a hit or miss
+                    const isHit = gameState.myShips.includes(i);
+                    console.log(`AI shot at ${i}: ${isHit ? 'Hit' : 'Miss'}`);
+                    el.classList.add(isHit ? 'hit' : 'miss');
                 }
             }
+            console.log("Player's shots received:", me() ? me().shotsReceived : 'N/A');
         }
 
         function renderTargetGrid() {
