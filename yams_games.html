@@ -10,18 +10,19 @@
     <style>
         body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); overflow-x: hidden; color: white; min-height: 100vh; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
         
+        /* DÉS RÉDUITS POUR IPHONE */
         .scene { width: 80px; height: 80px; margin: 8px; perspective: 1000px; position: relative; cursor: pointer; }
         
         @media (max-width: 640px) {
-            .scene { width: 70px; height: 70px; margin: 4px; } 
-            .face { width: 70px !important; height: 70px !important; border-radius: 12px !important; }
-            .f1 { transform: rotateY(0deg) translateZ(35px) !important; }
-            .f2 { transform: rotateY(-90deg) translateZ(35px) !important; }
-            .f3 { transform: rotateX(-90deg) translateZ(35px) !important; }
-            .f4 { transform: rotateX(90deg) translateZ(35px) !important; }
-            .f5 { transform: rotateY(90deg) translateZ(35px) !important; }
-            .f6 { transform: rotateY(180deg) translateZ(35px) !important; }
-            .dot { width: 12px !important; height: 12px !important; }
+            .scene { width: 80px; height: 80px; margin: 4px; } 
+            .face { width: 80px !important; height: 80px !important; border-radius: 16px !important; }
+            .f1 { transform: rotateY(0deg) translateZ(40px) !important; }
+            .f2 { transform: rotateY(-90deg) translateZ(40px) !important; }
+            .f3 { transform: rotateX(-90deg) translateZ(40px) !important; }
+            .f4 { transform: rotateX(90deg) translateZ(40px) !important; }
+            .f5 { transform: rotateY(90deg) translateZ(40px) !important; }
+            .f6 { transform: rotateY(180deg) translateZ(40px) !important; }
+            .dot { width: 14px !important; height: 14px !important; }
         }
 
         .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 2.8s cubic-bezier(0.2, 0.9, 0.3, 1.05); }
@@ -38,16 +39,16 @@
         .scene.held { transform: translateY(-15px) scale(1.05); }
         .scene.held .face { border: 4px solid white; box-shadow: 0 0 25px var(--player-accent); }
 
-        .cat-label { font-size: 1.1rem; font-weight: 900; color: #e2e8f0; } 
-        .potential-score { color: #94a3b8; opacity: 0.8; font-size: 1.8rem; cursor: pointer; font-style: italic; }
-        .locked-score { font-weight: 900; font-size: 2.5rem; line-height: 0.8; }
+        .cat-label { font-size: 1.2rem; font-weight: 900; color: #e2e8f0; } 
+        .potential-score { color: #94a3b8; opacity: 0.8; font-size: 2rem; cursor: pointer; font-style: italic; }
+        .locked-score { font-weight: 900; font-size: 2.8rem; line-height: 0.8; }
         
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
         .total-row { background: rgba(255,255,255,0.15); color: #fbbf24; }
-        .color-opt { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .color-opt.selected { border-color: #000; transform: scale(1.2); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .color-opt { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
+        .color-opt.selected { border-color: #000; transform: scale(1.2); box-shadow: 0 0 10px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body class="p-2 md:p-4 uppercase font-black">
@@ -65,10 +66,9 @@
     <div id="setup" class="max-w-lg mx-auto mt-10 bg-white p-8 md:p-12 rounded-[3.5rem] text-slate-900 shadow-2xl">
         <h1 class="text-4xl mb-10 text-center italic text-green-900 font-black tracking-tighter">YAM'S ARENA</h1>
         <div class="bg-slate-50 p-6 rounded-[3rem] border mb-8 text-center">
-            <input type="text" id="my-name-in" placeholder="PSEUDO..." class="w-full bg-white font-black p-5 rounded-2xl border text-center mb-6 outline-none text-xl uppercase shadow-inner">
-            <p class="text-[10px] text-slate-400 mb-4 tracking-widest font-bold">CHOISIS TA COULEUR</p>
-            <div id="color-picker" class="flex flex-wrap justify-center gap-3 mb-4">
-                </div>
+            <input type="text" id="my-name-in" placeholder="PSEUDO..." class="w-full bg-white font-black p-5 rounded-2xl border text-center mb-6 outline-none text-xl uppercase">
+            <p class="text-[10px] text-slate-400 mb-3 tracking-widest font-bold">COULEUR</p>
+            <div id="color-picker" class="flex flex-wrap justify-center gap-2 mb-4"></div>
         </div>
         <button onclick="joinGame()" class="w-full bg-black text-white py-7 rounded-3xl font-black text-2xl shadow-xl active:scale-95 transition-all">REJOINDRE</button>
     </div>
@@ -106,7 +106,6 @@
         const sndYams = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
         const sndWin = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
         const API = 'api_yams.php';
-        
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', myColorIdx = 0, players = [], cIdx = 0, rolls = 0, dice = [1,1,1,1,1].map(v=>({v,held:false}));
         let currentRots = Array(5).fill(0).map(()=>({x:0, y:0}));
@@ -122,37 +121,22 @@
         const cats = ["1","2","3","4","5","6","BONUS (63+)","TOTAL SUP","BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE","TOTAL GLOBAL"];
         const facesHTML=['','<div class="face f1"><div class="dot" style="grid-area:2/2"></div></div>','<div class="face f2"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f3"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f4"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f5"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/2"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:3/3"></div></div>','<div class="face f6"><div class="dot" style="grid-area:1/1"></div><div class="dot" style="grid-area:2/1"></div><div class="dot" style="grid-area:3/1"></div><div class="dot" style="grid-area:1/3"></div><div class="dot" style="grid-area:2/3"></div><div class="dot" style="grid-area:3/3"></div></div>'];
 
-        // Initialisation propre au chargement
-        window.addEventListener('DOMContentLoaded', () => {
-            const cp = document.getElementById('color-picker');
-            cp.innerHTML = colors.map((c,i)=>`<div onclick="selCol(${i})" class="color-opt ${i===0?'selected':''}" style="background:${c.b}"></div>`).join('');
-        });
+        // Initialisation des cercles de couleurs
+        const cp = document.getElementById('color-picker');
+        cp.innerHTML = colors.map((c,i)=>`<div onclick="selCol(${i})" class="color-opt ${i==0?'selected':''}" style="background:${c.b}"></div>`).join('');
 
-        function selCol(i){ 
-            myColorIdx=i; 
-            document.querySelectorAll('.color-opt').forEach((o,idx)=>o.classList.toggle('selected', idx===i)); 
-        }
+        function selCol(i){ myColorIdx=i; document.querySelectorAll('.color-opt').forEach((o,idx)=>o.classList.toggle('selected', idx===i)); }
 
         async function joinGame() {
             myName = document.getElementById('my-name-in').value.trim();
-            if(!myName) { alert("Entre un pseudo !"); return; }
-            
+            if(!myName) return;
             if(!roomId) roomId = Math.random().toString(36).substring(7);
             window.history.pushState({}, '', `?room=${roomId}`);
-            
             await syncPull();
-            
-            // Si le joueur n'existe pas dans le salon, on l'ajoute
-            if(!players.find(p => p.name === myName)) {
-                players.push({ name: myName, color: colors[myColorIdx], scores: {} });
-            }
-            
+            if(!players.find(p => p.name === myName)) players.push({ name: myName, color: colors[myColorIdx], scores: {} });
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
-            
-            // Prépare les dés
             for(let i=0;i<5;i++) document.getElementById(`cube${i}`).innerHTML=facesHTML.slice(1).join('');
-            
             await syncPush();
             setInterval(syncPull, 2000);
             renderTableStructure();
@@ -160,12 +144,7 @@
 
         async function syncPush() {
             if(!roomId) return;
-            try {
-                await fetch(`${API}?action=sync&roomId=${roomId}`, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ players, cIdx, rolls, dice, roomId }) 
-                });
-            } catch(e) { console.error("Push error", e); }
+            await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify({ players, cIdx, rolls, dice, roomId }) });
         }
 
         async function syncPull() {
@@ -175,19 +154,13 @@
                 const data = await r.json();
                 if(data) {
                     const oldRolls = rolls;
-                    players = data.players; 
-                    cIdx = data.cIdx; 
-                    rolls = data.rolls;
-                    
+                    players = data.players; cIdx = data.cIdx; rolls = data.rolls;
                     if(rolls === 0) {
                         for(let i=0; i<5; i++) {
                             document.getElementById(`cube${i}`).style.transform = `rotateX(0deg) rotateY(0deg)`;
                             currentRots[i] = {x:0, y:0};
                         }
-                    } else if(rolls !== oldRolls && players[cIdx].name !== myName) {
-                        animateCubes(data.dice);
-                    }
-                    
+                    } else if(rolls !== oldRolls && players[cIdx].name !== myName) animateCubes(data.dice);
                     dice = data.dice;
                     if(document.getElementById('table-head').children.length !== players.length + 1) renderTableStructure();
                     refreshUI();
@@ -200,17 +173,12 @@
             targetDice.forEach((d, i) => {
                 if(!d.held) {
                     const cube = document.getElementById(`cube${i}`);
-                    cube.style.transition = 'none'; 
-                    cube.offsetHeight; // force reflow
+                    cube.style.transition = 'none'; cube.offsetHeight;
                     cube.style.transition = 'transform 2.8s cubic-bezier(0.2, 0.9, 0.3, 1.05)';
-                    
                     let spins = (Math.floor(Math.random() * 2) + 10) * 360;
-                    currentRots[i].x += spins; 
-                    currentRots[i].y += spins;
-                    
+                    currentRots[i].x += spins; currentRots[i].y += spins;
                     let tx = Math.round(currentRots[i].x/360)*360, ty = Math.round(currentRots[i].y/360)*360;
                     if(d.v===2) ty+=90; if(d.v===3) tx+=90; if(d.v===4) tx-=90; if(d.v===5) ty-=90; if(d.v===6) ty+=180;
-                    
                     cube.style.transform = `rotateX(${tx}deg) rotateY(${ty}deg)`;
                 }
             });
@@ -218,10 +186,8 @@
 
         function rollDice() {
             if(rolls >= 3 || players[cIdx].name !== myName) return;
-            rolls++; 
-            dice.forEach(d => { if(!d.held) d.v = Math.floor(Math.random()*6)+1; });
-            animateCubes(dice); 
-            syncPush();
+            rolls++; dice.forEach(d => { if(!d.held) d.v = Math.floor(Math.random()*6)+1; });
+            animateCubes(dice); syncPush();
         }
 
         function toggleHold(i) {
@@ -235,14 +201,8 @@
             if(pi !== cIdx || players[pi].name !== myName || rolls === 0 || players[pi].scores[c] !== undefined) return;
             const s = calculatePotential(c);
             players[pi].scores[c] = s;
-            
-            if(c === "YAMS" && s > 0) { 
-                sndYams.play(); 
-                confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } }); 
-            }
-            
-            rolls = 0; 
-            dice.forEach(d => { d.held = false; d.v = 1; });
+            if(c === "YAMS" && s > 0) { sndYams.play(); confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } }); }
+            rolls = 0; dice.forEach(d => { d.held = false; d.v = 1; });
             cIdx = (cIdx + 1) % players.length;
             await syncPush();
         }
@@ -250,11 +210,10 @@
         function renderTableStructure() {
             const h = document.getElementById('table-head');
             h.innerHTML = `<th class="text-left pb-4 pr-6 opacity-40">CONTRATS</th>${players.map(p=>`<th class="px-4 text-center text-xl" style="color:${p.color.b}">${p.name}</th>`).join('')}`;
-            
             document.getElementById('table-body').innerHTML = cats.map(c => `
                 <tr class="${["BONUS (63+)", "TOTAL SUP", "TOTAL GLOBAL"].includes(c) ? 'total-row' : ''} border-b border-white/5">
                     <td class="py-5 pr-6 cat-label text-left">${c}</td>
-                    ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[100px]">-</td>`).join('')}
+                    ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[120px]">-</td>`).join('')}
                 </tr>`).join('');
         }
 
@@ -267,49 +226,41 @@
 
         function refreshUI() {
             const p = players[cIdx]; if(!p) return;
-            
             document.getElementById('active-player-name').innerText = p.name === myName ? "À TOI !" : p.name;
             document.getElementById('active-player-name').style.color = p.color.b;
-            
             document.documentElement.style.setProperty('--die-color', p.color.b);
             document.documentElement.style.setProperty('--dot-color', p.color.d);
             document.documentElement.style.setProperty('--player-accent', p.color.a);
-            
-            const rollBtn = document.getElementById('roll-btn');
-            rollBtn.style.backgroundColor = p.color.b;
-            rollBtn.style.color = p.color.d;
-            rollBtn.disabled = (p.name !== myName || rolls >= 3);
-            
+            document.getElementById('roll-btn').style.backgroundColor = p.color.b;
+            document.getElementById('roll-btn').style.color = p.color.d;
             document.getElementById('roll-count').innerText = `LANCERS : ${rolls} / 3`;
+            document.getElementById('roll-btn').disabled = (p.name !== myName || rolls >= 3);
             
             players.forEach((player, pi) => {
                 let sSup = 0; ["1","2","3","4","5","6"].forEach(k => sSup += (player.scores[k] || 0));
                 let bonus = sSup >= 63 ? 35 : 0;
                 let sInf = 0; ["BRELAN","CARRÉ","FULL","PTE SUITE","GDE SUITE","YAMS","CHANCE"].forEach(k => sInf += (player.scores[k] || 0));
-                
                 cats.forEach(c => {
                     const cell = document.getElementById(`s-${pi}-${c}`);
                     if(!cell) return;
-                    
+                    const oldVal = cell.innerText;
                     let newVal = "-";
                     let isLocked = false;
-                    
                     if(c === "BONUS (63+)") newVal = bonus;
                     else if(c === "TOTAL SUP") newVal = sSup + bonus;
                     else if(c === "TOTAL GLOBAL") newVal = sSup + bonus + sInf;
                     else if(player.scores[c] !== undefined) { newVal = player.scores[c]; isLocked = true; }
                     else if(pi === cIdx && player.name === myName && rolls > 0) newVal = calculatePotential(c);
 
-                    cell.innerText = newVal;
-                    if(isLocked) {
-                        cell.className = "text-center locked-score px-4 animate-pop";
-                        cell.style.color = player.color.b;
-                    } else if(pi === cIdx && player.name === myName && rolls > 0) {
-                        cell.className = "text-center potential-score px-4";
-                        cell.style.color = "";
-                    } else { 
-                        cell.className = "text-center px-4 opacity-10 text-xl"; 
-                        cell.style.color = ""; 
+                    if(oldVal != newVal) {
+                        cell.innerText = newVal;
+                        if(isLocked) {
+                            cell.className = "text-center locked-score px-4 animate-pop";
+                            cell.style.color = player.color.b;
+                        } else if(pi === cIdx && player.name === myName && rolls > 0) {
+                            cell.className = "text-center potential-score px-4";
+                            cell.style.color = "";
+                        } else { cell.className = "text-center px-4 opacity-10 text-2xl"; cell.style.color = ""; }
                     }
                 });
             });
@@ -329,7 +280,6 @@
             if(c=="CHANCE") return sum;
             return 0;
         }
-
         function isSuite(a,l){const s=[...new Set(a)].sort();let c=1,m=1;for(let i=0;i<s.length-1;i++){s[i+1]==s[i]+1?c++:c=1;m=Math.max(m,c)}return m>=l}
 
         function checkGameOver() {
@@ -339,10 +289,8 @@
                     sndWin.play();
                     const results = players.map(p => ({ name: p.name, score: calculatePlayerTotal(p) }));
                     const winner = results.reduce((prev, curr) => (curr.score > prev.score) ? curr : prev);
-                    
                     document.getElementById('winner-display').innerText = `GAGNANT : ${winner.name}`;
                     document.getElementById('final-stats').innerHTML = results.map(r => `<div class="flex justify-between border-b pb-2 font-black"><span>${r.name}</span><span>${r.score} PTS</span></div>`).join('');
-                    
                     const end = Date.now() + 5000;
                     (function frame() {
                         confetti({ particleCount: 7, angle: 60, spread: 55, origin: { x: 0 } });
@@ -353,11 +301,7 @@
                 }
             }
         }
-
-        function copyLink() { 
-            navigator.clipboard.writeText(window.location.href); 
-            alert("Lien copié ! Envoie-le à tes amis."); 
-        }
+        function copyLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
     </script>
 </body>
 </html>
