@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ship Arena - ScoreMaster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: radial-gradient(circle at center, #020617 0%, #000000 100%); color: white; min-height: 100vh; overflow-x: hidden; font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(14, 165, 233, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(14, 165, 233, 0.1); }
+        .grid-cell { aspect-ratio: 1; border: 1px solid rgba(14, 165, 233, 0.2); transition: all 0.2s; cursor: pointer; position: relative; }
+        .grid-cell:hover { background: rgba(14, 165, 233, 0.1); }
+        
+        .ship {
+            background-color: #0ea5e9 !important;
+            border-color: #0284c7;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 0 15px rgba(14, 165, 233, 0.5);
+            background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21 15H3C2.44772 15 2 15.4477 2 16V18C2 18.5523 2.44772 19 3 19H21C21.5523 19 22 18.5523 22 18V16C22 15.4477 21.5523 15 21 15Z' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M6 15L7.5 9L16.5 9L18 15' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12 9V3' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-size: 70%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .miss { background: rgba(255, 255, 255, 0.05); }
+        .miss::after { content: '●'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 2rem; opacity: 0.3; }
+        .hit { background: #ef4444 !important; animation: pulse-red 1s infinite; border-color: #dc2626; box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 0 20px rgba(239, 68, 68, 0.7); }
+        @keyframes pulse-red { 0%, 100% { background-color: #ef4444; } 50% { background-color: #b91c1c; } }
+
+        .radar-line { position: absolute; top: 0; left: 0; width: 200%; height: 1px; background: linear-gradient(to right, transparent, #0ea5e9, transparent); animation: scan 4s linear infinite; pointer-events: none; }
+        @keyframes scan { from { top: -10%; transform: rotate(-10deg); } to { top: 110%; transform: rotate(10deg); } }
+        
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="p-4 font-sans uppercase font-black">
+
+    <div id="win-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-xl items-center justify-center p-4">
+        <div class="bg-white rounded-[3rem] p-10 max-w-sm w-full text-center text-slate-900 animate-pop shadow-2xl">
+            <div id="win-icon" class="text-6xl mb-4"></div>
+            <h2 id="win-title" class="text-3xl font-black mb-2 italic tracking-tighter uppercase"></h2>
+            <p id="winner-msg" class="text-xl mb-6 font-black uppercase"></p>
+            <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl">REJOUER</button>
+        </div>
+    </div>
+
+    <div id="setup" class="max-w-md mx-auto mt-10 bg-white p-10 rounded-[3.5rem] text-slate-900 shadow-2xl">
+        <h2 id="setup-title" class="text-3xl mb-8 text-sky-600 text-center italic tracking-tighter">BATAILLE NAVALE</h2>
+        
+        <!-- Mode Selector -->
+        <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
+            <button type="button" onclick="setMode('local')" id="m-local" class="bg-sky-600 text-white py-4 rounded-2xl shadow-lg transition font-black">LOCAL</button>
+            <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-200 text-slate-500 py-4 rounded-2xl transition font-black">EN LIGNE</button>
+        </div>
+
+        <!-- Local Options (Opponent Selector) -->
+        <div id="local-options" class="space-y-4 mb-8 hidden">
+            <p class="text-center text-[10px] font-black text-slate-400">CHOIX DE L'ADVERSAIRE :</p>
+            <div class="grid grid-cols-1 gap-3">
+                <button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-sky-600 text-white py-4 rounded-2xl text-xs font-black shadow-md">🤖 IA</button>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 p-6 rounded-3xl border mb-6">
+            <input type="text" id="my-name-in" placeholder="TON PSEUDO..." class="w-full bg-white font-black p-4 rounded-2xl border text-center outline-none focus:border-sky-500 uppercase">
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.location.href='index.html'" class="flex-1 bg-slate-100 text-slate-400 py-5 rounded-2xl text-xs">RETOUR</button>
+            <button onclick="startAction()" class="flex-[2] bg-black text-white py-5 rounded-2xl tracking-widest text-sm">DÉMARRER</button>
+        </div>
+    </div>
+
+    <div id="game" class="hidden max-w-4xl mx-auto mt-4 space-y-6">
+        
+        <div class="flex justify-between items-center glass p-4 rounded-3xl border border-sky-500/20">
+            <button onclick="window.location.href='index.html'" class="text-[9px] bg-white/10 px-4 py-2 rounded-full">MENU</button>
+            <div id="status-msg" class="text-xs tracking-widest text-sky-400 animate-pulse">EN ATTENTE...</div>
+            <button onclick="copyLink()" id="btn-copy" class="text-[9px] bg-sky-600 px-4 py-2 rounded-full hidden">LIEN</button>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            
+            <div class="space-y-4">
+                <h3 class="text-[10px] text-center tracking-[0.3em] text-white/40">TA FLOTTE (DÉFENSE)</h3>
+                <div class="relative glass rounded-2xl overflow-hidden aspect-square border-2 border-sky-500/30">
+                    <div class="radar-line"></div>
+                    <div id="my-grid" class="grid grid-cols-10 h-full p-2 gap-1"></div>
+                </div>
+                <div id="setup-controls" class="flex gap-2">
+                    <button onclick="autoPlace()" class="flex-1 bg-white/10 py-3 rounded-xl text-[10px]">PLACEMENT AUTO</button>
+                    <button onclick="confirmShips()" id="btn-ready" class="flex-1 bg-sky-600 py-3 rounded-xl text-[10px] hidden">PRÊT AU COMBAT</button>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-[10px] text-center tracking-[0.3em] text-white/40">ZONE DE TIR (ATTAQUE)</h3>
+                <div class="relative glass rounded-2xl overflow-hidden aspect-square border-2 border-red-500/30">
+                    <div id="target-grid" class="grid grid-cols-10 h-full p-2 gap-1"></div>
+                </div>
+                <div id="turn-indicator" class="text-center py-3 bg-white/5 rounded-xl text-xs">-</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const API = 'api_ship.php';
+        const shipSizes = [5, 4, 3, 3, 2];
+
+        let gameMode = 'local'; // Default to local
+        let localOpponent = 'ai'; // Default to AI
+
+        let gameState = {
+            roomId: new URLSearchParams(window.location.search).get('room'),
+            myName: '',
+            myIdx: -1,
+            status: 'setup', // setup, playing, finished
+            players: [], // [{name, ships:[], shotsReceived:[], ready:bool}, ...]
+            turn: 0, // index of currentPlayer in players array
+            myShips: [], // temporary storage for player's ship placement
+        };
+
+        // Onload to set initial mode/opponent from URL or defaults
+        window.onload = () => {
+            if(gameState.roomId) {
+                document.getElementById('mode-selector').classList.add('hidden');
+                document.getElementById('local-options').classList.add('hidden');
+                document.getElementById('setup-title').innerHTML = "REJOINDRE <span class='text-slate-200'>ARENA</span>";
+                gameMode = 'remote';
+            } else {
+                setMode('local');
+                setOpponent('ai'); // Ensure AI is selected by default in local mode
+            }
+        };
+
+        // Helper functions for setup UI
+        function setMode(m) {
+            gameMode = m;
+            document.getElementById('m-local').className = (m === 'local') ? "bg-sky-600 text-white py-4 rounded-2xl shadow-lg transition font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl transition font-black";
+            document.getElementById('m-remote').className = (m === 'remote') ? "bg-sky-600 text-white py-4 rounded-2xl shadow-lg transition font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl transition font-black";
+            document.getElementById('local-options').classList.toggle('hidden', m !== 'local');
+            document.getElementById('btn-copy').classList.toggle('hidden', m !== 'remote'); // Hide/show copy link in setup
+        }
+
+        function setOpponent(opp) {
+            localOpponent = opp;
+            document.getElementById('opp-ai').className = (opp === 'ai') ? "bg-sky-600 text-white py-4 rounded-2xl text-xs font-black shadow-md" : "bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black";
+            // document.getElementById('opp-human').className = (opp === 'human') ? "bg-sky-600 text-white py-4 rounded-2xl text-xs font-black shadow-md" : "bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black";
+        }
+
+        const me = () => gameState.players[gameState.myIdx];
+        const opponent = () => gameState.players[1 - gameState.myIdx];
+
+        function createGrids() {
+            const myGrid = document.getElementById('my-grid');
+            const targetGrid = document.getElementById('target-grid');
+            myGrid.innerHTML = ''; targetGrid.innerHTML = '';
+
+            for(let i=0; i<100; i++) {
+                myGrid.innerHTML += `<div id="my-${i}" class="grid-cell rounded-md"></div>`;
+                targetGrid.innerHTML += `<div id="tgt-${i}" onclick="shoot(${i})" class="grid-cell rounded-md"></div>`;
+            }
+        }
+
+        async function startAction() {
+            gameState.myName = document.getElementById('my-name-in').value.trim();
+            if(!gameState.myName) return alert("Pseudo !");
+
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+            createGrids();
+
+            if (gameMode === 'local') {
+                if(!gameState.roomId) gameState.roomId = Math.random().toString(36).substring(2, 8);
+                window.history.pushState({}, '', `?room=${gameState.roomId}`);
+
+                gameState.players = [
+                    { name: gameState.myName, ships: [], shotsReceived: [], ready: false },
+                    { name: 'AI', ships: [], shotsReceived: [], ready: false }
+                ];
+                gameState.myIdx = 0; // Player is always index 0 in local AI mode
+                gameState.turn = 0; // Player goes first
+                // Ships will be placed by autoPlace and confirmed by confirmShips
+                // Initial UI update is enough for now, real game starts after ship placement
+                updateUI();
+
+            } else { // remote mode
+                if(!gameState.roomId) gameState.roomId = Math.random().toString(36).substring(2, 8);
+                window.history.pushState({}, '', `?room=${gameState.roomId}`);
+
+                await syncPull();
+                gameState.myIdx = gameState.players.findIndex(p => p.name === gameState.myName);
+                if(gameState.myIdx === -1) {
+                    if(gameState.players.length >= 2) return alert("Partie pleine !");
+                    gameState.players.push({ name: gameState.myName, ships: [], shotsReceived: [], ready: false });
+                    gameState.myIdx = gameState.players.length - 1;
+                }
+                
+                await syncPush();
+                setInterval(syncPull, 2000);
+            }
+        }
+
+        function autoPlace() {
+            gameState.myShips = [];
+            shipSizes.forEach(size => {
+                let placed = false;
+                while(!placed) {
+                    let horizontal = Math.random() > 0.5;
+                    let x = Math.floor(Math.random() * (horizontal ? (11 - size) : 10));
+                    let y = Math.floor(Math.random() * (horizontal ? 10 : (11 - size)));
+                    let coords = [];
+                    for(let i=0; i<size; i++) coords.push(horizontal ? (y * 10 + x + i) : ((y + i) * 10 + x));
+                    
+                    if(!coords.some(c => gameState.myShips.includes(c))) {
+                        gameState.myShips = [...gameState.myShips, ...coords];
+                        placed = true;
+                    }
+                }
+            });
+            renderMyFleet();
+            document.getElementById('btn-ready').classList.remove('hidden');
+        }
+
+        function renderMyFleet() {
+            for(let i=0; i<100; i++) {
+                const el = document.getElementById(`my-${i}`);
+                el.className = 'grid-cell rounded-md';
+                if(gameState.myShips.includes(i)) el.classList.add('ship');
+                if(me() && me().shotsReceived.includes(i)) {
+                    el.classList.add(gameState.myShips.includes(i) ? 'hit' : 'miss');
+                }
+            }
+        }
+
+        function renderTargetGrid() {
+            if(!opponent()) return;
+            for(let i=0; i<100; i++) {
+                const el = document.getElementById(`tgt-${i}`);
+                el.className = 'grid-cell rounded-md';
+                if(opponent().shotsReceived.includes(i)) {
+                    const isHit = opponent().ships.includes(i);
+                    el.classList.add(isHit ? 'hit' : 'miss');
+                }
+            }
+        }
+
+        async function confirmShips() {
+            me().ships = gameState.myShips;
+            me().ready = true;
+            document.getElementById('setup-controls').classList.add('hidden');
+            
+            if (gameMode === 'local') {
+                const response = await fetch(`${API}?action=init_ai_game&roomId=${gameState.roomId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playerShips: gameState.myShips, playerName: gameState.myName })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    Object.assign(gameState, data.gameState); 
+                    // Make sure players are correctly set in the local gameState from the server response
+                    // The server ensures AI player is at index 1 and player at 0.
+                    gameState.myIdx = 0; 
+                    gameState.status = 'playing'; 
+                    updateUI();
+                } else {
+                    alert('Erreur lors de l\'initialisation de la partie IA.');
+                }
+            } else { // remote mode
+                await syncPush();
+            }
+        }
+
+        async function shoot(idx) {
+            if(gameState.status !== 'playing' || gameState.players[gameState.turn].name !== gameState.myName) return;
+            // Prevent shooting if it's not player's turn or if the spot has already been shot
+            if (opponent().shotsReceived.includes(idx)) return;
+
+            // Update local state first for responsiveness
+            opponent().shotsReceived.push(idx);
+            renderTargetGrid(); // Update target grid immediately
+
+            // Send shot to the server API
+            const shotResult = await fetch(`${API}?action=shoot&roomId=${gameState.roomId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shotIdx: idx, playerIdx: gameState.myIdx })
+            });
+            const data = await shotResult.json();
+
+            if (data.success) {
+                // Update local gameState with the server's response
+                Object.assign(gameState, data.gameState); 
+                updateUI();
+
+                if (gameState.status === 'finished') {
+                    showEndScreen(gameState.winner === gameState.myName);
+                } else if (gameMode === 'local' && gameState.turn === 1) { // It's AI's turn
+                    setTimeout(makeAIMove, 1500); // Small delay for AI to "think"
+                }
+            } else {
+                alert('Erreur lors du tir.');
+            }
+        }
+
+        async function makeAIMove() {
+            if (gameState.status !== 'playing' || gameState.turn !== 1) return; // Ensure it's AI's turn
+
+            const aiMoveResult = await fetch(`${API}?action=ai_shoot&roomId=${gameState.roomId}`);
+            const data = await aiMoveResult.json();
+
+            if (data.success) {
+                Object.assign(gameState, data.gameState); // Get updated gameState from server
+                updateUI();
+
+                if (gameState.status === 'finished') {
+                    showEndScreen(gameState.winner === gameState.myName);
+                }
+            } else {
+                alert('Erreur lors du tour de l\'IA.');
+            }
+        }
+
+
+        async function syncPush() {
+            if (gameMode === 'local') {
+                // In local mode, game state is primarily managed by client and updated via specific API calls (init_ai_game, shoot, ai_shoot).
+                // No generic syncPush needed for the local game state itself to the server.
+                return;
+            }
+            // For remote mode, continue syncing the full game state
+            const { myName, myIdx, myShips, ...dataToSync } = gameState; // myShips is client-side only
+            await fetch(`${API}?action=sync&roomId=${gameState.roomId}`, { method: 'POST', body: JSON.stringify(dataToSync) });
+        }
+
+        async function syncPull() {
+            if(!gameState.roomId || gameMode === 'local') return; // No syncPull needed for local AI mode
+
+            const r = await fetch(`${API}?action=sync&roomId=${gameState.roomId}`);
+            const data = await r.json();
+            if(data) {
+                Object.assign(gameState, data);
+
+                if(gameMode === 'remote' && gameState.status === 'setup' && gameState.players.length === 2 && gameState.players.every(p => p.ready)) {
+                    gameState.status = 'playing';
+                    await syncPush();
+                }
+
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            if(gameState.myIdx === -1) return; // Player not fully initialized yet
+            renderMyFleet();
+            renderTargetGrid();
+
+            const turnMsg = document.getElementById('turn-indicator');
+            const statusMsg = document.getElementById('status-msg');
+
+            // Determine opponent's name for display
+            let opponentName = '';
+            if (gameMode === 'local') {
+                opponentName = 'IA';
+            } else if (gameState.players.length > 1) {
+                opponentName = gameState.players[1 - gameState.myIdx].name;
+            }
+
+            if(gameState.status === 'setup') {
+                if (gameMode === 'local') {
+                    statusMsg.innerText = "PLACEZ VOTRE FLOTTE !";
+                    turnMsg.innerText = "PHASE DE PRÉPARATION";
+                } else { // remote
+                    statusMsg.innerText = me().ready ? "EN ATTENTE DE L'ADVERSAIRE..." : "PLACEZ VOTRE FLOTTE !";
+                    turnMsg.innerText = "PHASE DE PRÉPARATION";
+                }
+            } else if(gameState.status === 'playing') {
+                const currentPlayerName = gameState.players[gameState.turn].name;
+                const isMyTurn = (currentPlayerName === gameState.myName);
+                
+                statusMsg.innerText = isMyTurn ? "À VOUS DE TIRER !" : `${currentPlayerName} RIPOSTE...`;
+                statusMsg.className = isMyTurn ? "text-xs tracking-widest text-red-400 animate-pulse" : "text-xs tracking-widest text-sky-400";
+                turnMsg.innerText = isMyTurn ? "VOTRE TOUR" : `TOUR DE ${currentPlayerName}`;
+
+                // If it's AI's turn in local mode, trigger the AI move
+                if (gameMode === 'local' && gameState.turn === 1 && !aiMoveTriggered) {
+                    aiMoveTriggered = true; // Prevent multiple triggers
+                    setTimeout(makeAIMove, 1500); 
+                } else if (gameMode === 'local' && gameState.turn === 0) {
+                    aiMoveTriggered = false; // Reset trigger for player's turn
+                }
+
+
+            } else if(gameState.status === 'finished') {
+                // The showEndScreen is now called directly from shoot/makeAIMove once game is finished
+            }
+        }
+        
+        function showEndScreen(iWon) {
+            const modal = document.getElementById('win-modal');
+            document.getElementById('win-icon').innerText = iWon ? '🎉' : '💀';
+            document.getElementById('win-title').innerText = iWon ? 'VICTOIRE' : 'DÉFAITE';
+            document.getElementById('winner-msg').innerText = iWon ? 'Vous avez anéanti la flotte ennemie !' : 'Vos navires ont été coulés...';
+            document.getElementById('winner-msg').className = iWon ? 'text-xl text-green-500 mb-6 font-black uppercase' : 'text-xl text-red-500 mb-6 font-black uppercase';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // Stop syncing in remote game if game is finished
+            if (gameMode === 'remote' && syncInterval) {
+                clearInterval(syncInterval); // Assuming syncInterval is globally defined
+            }
+        }
+
+        function copyLink() { 
+            navigator.clipboard.writeText(window.location.href); 
+            alert("Lien d'invitation copié !"); 
+        }
+
+        // Global interval variable for remote game sync
+        let syncInterval;
+        let aiMoveTriggered = false; // To prevent AI move from being triggered multiple times by updateUI
+
+        // Override opponent() and me() for local AI mode to simplify player access
+        // The server response for init_ai_game should already set players correctly.
+        // Re-defining these to ensure they access the latest gameState.players array correctly after server updates.
+        // const me = () => gameState.players[0]; // Player is always index 0
+        // const opponent = () => gameState.players[1]; // AI is always index 1
+    </script>
+</body>
+</html>
