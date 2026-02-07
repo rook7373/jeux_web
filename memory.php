@@ -111,7 +111,7 @@ if (isset($_GET['action'])) {
         <div class="bg-white rounded-[3rem] p-10 max-w-sm w-full text-center text-slate-900 animate-pop shadow-2xl">
             <p id="win-text" class="text-3xl font-black mb-8 italic tracking-tighter uppercase"></p>
             <div class="w-full space-y-4">
-                 <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl">REJOUER</button>
+                 <button onclick="resetAndStartGame()" class="w-full bg-black text-white py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl">REJOUER</button>
                  <a href="index.html" class="block w-full bg-slate-200 text-slate-600 py-5 rounded-2xl font-black text-lg hover:scale-105 transition-all shadow-inner">ACCUEIL</a>
             </div>
         </div>
@@ -174,19 +174,21 @@ if (isset($_GET['action'])) {
                 if (!roomId) roomId = Math.random().toString(36).substring(2, 8);
                 window.history.pushState({}, '', `?room=${roomId}`);
                 await syncPull();
-                if (!gameState.players.find(p => p.name === myName)) {
+                
+                // If this is the first player, or if rejoining and game is over (meaning new game should start)
+                if (!gameState.players.find(p => p.name === myName) || gameState.gameOver) {
                     if (gameState.players.length < 2) {
-                        gameState.players.push({ name: myName, score: 0 });
-                        if (gameState.players.length === 1) { // First player sets the board
-                            gameState.gridSize = selectedSize;
-                            initBoard();
-                        }
-                    } else return alert("Plein !");
+                        resetGameState(); // Reset state
+                        gameState.gridSize = selectedSize; // Set grid size from setup
+                        initBoard(); // Create new board
+                        gameState.players.push({ name: myName, score: 0 }); // Add player
+                    } else return alert("Plein !"); // Room is full
                 } 
                 syncInterval = setInterval(syncPull, 1000);
             } else {
-                gameState.gridSize = selectedSize;
-                initBoard();
+                resetGameState(); // Reset state for local game
+                gameState.gridSize = selectedSize; // Set grid size from setup
+                initBoard(); // Create new board
                 gameState.players = [{ name: myName, score: 0 }, { name: localOpponent === 'ai' ? 'IA 🤖' : 'JOUEUR 2', score: 0 }];
                 if (localOpponent === 'ai') gameState.aiMemory = Array(gameState.gridSize * gameState.gridSize).fill(null);
             }
@@ -202,6 +204,43 @@ if (isset($_GET['action'])) {
             let selectedImages = kittenImages.slice(0, numPairs);
             let pairs = [...selectedImages, ...selectedImages].sort(() => Math.random() - 0.5);
             gameState.board = pairs;
+        }
+
+        // New function to reset game state to initial values
+        function resetGameState() {
+            gameState.board = [];
+            gameState.currentPlayerIdx = 0;
+            gameState.flipped = [];
+            gameState.matched = [];
+            gameState.gameOver = false;
+            gameState.winner = '';
+            gameState.aiMemory = []; // Reset AI memory
+            gameState.players.forEach(p => p.score = 0); // Reset player scores
+            isWaitingForAnimation = false; // Clear any lingering animation flags
+        }
+
+        // Function to reset and start a new game
+        async function resetAndStartGame() {
+            resetGameState(); // Reset all game state variables
+            initBoard(); // Initialize the board with new pairs
+
+            if (gameMode === 'remote') {
+                // In remote mode, push the new state to the server to synchronize with other players
+                await syncPush();
+            } else if (gameMode === 'local' && localOpponent === 'ai') {
+                // If local AI game, ensure AI memory is cleared
+                gameState.aiMemory = Array(gameState.gridSize * gameState.gridSize).fill(null);
+            }
+            
+            render(); // Render the new game state
+            // Hide the win overlay if it was visible
+            document.getElementById('win-overlay').classList.add('hidden');
+            document.getElementById('win-overlay').classList.remove('flex');
+
+            // If it's a local AI game and AI's turn, make AI move
+            if (gameMode === 'local' && localOpponent === 'ai' && gameState.players[gameState.currentPlayerIdx].name === 'IA 🤖') {
+                 setTimeout(aiMove, 500);
+            }
         }
 
         async function syncPush() { if(roomId && gameMode === 'remote') await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(gameState) }); }
