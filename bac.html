@@ -218,7 +218,7 @@
 
         function renderInputs() {
             if (isInputRendered) return;
-            document.getElementById('bac-inputs').innerHTML = selectedCats.map(c => `<div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">${c}</label><input type="text" oninput="updateWord(\`${c}\`, this.value)" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none"></div>`).join('');
+            document.getElementById('bac-inputs').innerHTML = selectedCats.map(c => `<div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">${c}</label><input type="text" oninput="updateWord(${JSON.stringify(c)}, this.value)" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none"></div>`).join('');
             isInputRendered = true;
         }
 
@@ -311,7 +311,12 @@
                 });
                 p.rounds.push(score);
             });
-            status = 'setup'; currentLetter = ''; await syncPush();
+            status = 'setup'; 
+            currentLetter = '';
+            refusedWords = [];
+            players.forEach(p => p.currentInputs = {});
+            isInputRendered = false;
+            await syncPush();
         }
 
         function copyRoomLink() { navigator.clipboard.writeText(window.location.href); alert("Lien copié !"); }
