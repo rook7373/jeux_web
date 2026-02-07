@@ -25,7 +25,7 @@ if (isset($_GET['action'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Memory Arena - Kittens</title>
+    <title>Memory Arena</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Yams_multi theme */
@@ -70,7 +70,7 @@ if (isset($_GET['action'])) {
 <body class="p-4 flex items-center justify-center font-sans uppercase font-black">
 
     <div id="setup" class="max-w-md w-full bg-white p-8 md:p-12 rounded-[3.5rem] shadow-2xl text-slate-900 z-50">
-        <h2 id="setup-title" class="text-4xl font-black mb-8 text-green-900 text-center italic tracking-tighter uppercase">Memory <span class="text-slate-300">Kittens</span></h2>
+        <h2 id="setup-title" class="text-4xl font-black mb-8 text-green-900 text-center italic tracking-tighter uppercase">Memory</h2>
         
         <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
             <button type="button" onclick="setMode('local')" id="m-local" class="bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black">Local</button>
@@ -212,6 +212,7 @@ if (isset($_GET['action'])) {
                     if (gameState.players.length < 2) {
                         resetGameState(); // Reset state
                         gameState.gridSize = selectedSize; // Set grid size from setup
+                        gameState.selectedThemeTag = selectedTheme; // Set the selected theme
                         gameState.selectedThemeTag = selectedTheme; // Set the selected theme
                         initBoard(); // Create new board
                         gameState.players.push({ name: myName, score: 0 }); // Add player
