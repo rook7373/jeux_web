@@ -109,7 +109,7 @@ if (isset($_GET['action'])) {
 
     <div id="game" class="hidden max-w-4xl w-full bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] border-4 border-white/5">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-            <a href="memory.php" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black uppercase">QUITTER</a>
+            <a href="index.html" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black uppercase">QUITTER</a>
             <div id="players-display" class="flex gap-4 text-sm tracking-widest items-center"></div>
             <button onclick="copyLink()" id="btn-copy" class="hidden bg-green-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg uppercase">INVITER 🔗</button>
         </div>

@@ -46,6 +46,7 @@
             </div>
             <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full bg-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-green-400 font-black uppercase shadow-inner">
             <button onclick="startAction()" class="w-full bg-black text-white py-7 rounded-3xl font-black text-2xl shadow-xl active:scale-95 transition-all">Démarrer</button>
+            <a href="index.html" class="block w-full text-center text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</a>
         </div>
     </div>
 
@@ -56,6 +57,7 @@
                 <div id="cur-letter" class="bg-green-600 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl shadow-md">?</div>
                 <div id="timer-display" class="font-mono font-black text-red-400 text-2xl hidden">0s</div>
             </div>
+            <a href="index.html" class="text-[10px] bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition font-black">MENU</a>
             <button onclick="copyRoomLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all font-black uppercase">Lien</button>
         </div>
 
@@ -93,7 +95,7 @@
         let maxTime = 120, maxRounds = 5, currentRoundCount = 0, timeLeft = 0;
         let timerInterval = null, isInputRendered = false;
         const API = 'api.php';
-        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Dans ma chambre", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal", "Dans une voiture", "Dans une école", "Dans la forêt", "Excuse d'absence"];
+        const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Dans ma chambre", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime","Super-héros", "Dieu Mythologique", "Site web", "Application", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Dans une voiture", "Dans une école", "Dans la forêt", "Excuse d'absence"];
 
         window.onload = () => {
             renderCatList();
