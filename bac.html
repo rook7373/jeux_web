@@ -3,85 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Petit Bac LIVE - Emojis Edition</title>
+    <title>Petit Bac Arena - Live</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style> 
-        .word-refused { text-decoration: line-through; color: #ef4444 !important; opacity: 0.5; border-color: #fecaca !important; background-color: #fef2f2 !important; } 
-        .word-duplicate { color: #d97706 !important; border-color: #fcd34d !important; background-color: #fffbeb !important; }
+    <style>
+        /* Yams_multi theme */
+        body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); color: white; min-height: 100vh; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        input::placeholder { color: #9ca3af; }
+        
         .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
         @media (min-width: 768px) { .cat-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1200px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
-        .cat-chip { transition: all 0.2s; border: 2px solid #e2e8f0; text-align: center; padding: 0.8rem; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; border-radius: 1rem; background: white; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; }
-        .cat-chip.active { background-color: #fbbf24; color: white; border-color: #d97706; }
+        
+        .cat-chip { transition: all 0.2s; border: 2px solid rgba(255,255,255,0.1); text-align: center; padding: 0.8rem; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; border-radius: 1rem; background: rgba(0,0,0,0.3); cursor: pointer; user-select: none; }
+        .cat-chip.active { background-color: #16a34a; color: white; border-color: #15803d; }
+        
         .emoji-bubble { animation: popOut 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popOut { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .floating-reactions { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 100px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .emoji-btn { font-size: 1.5rem; cursor: pointer; transition: transform 0.1s; }
-        .emoji-btn:active { transform: scale(1.4); }
+        @keyframes popOut { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } } 
+
         .google-link { background: #4285F4; color: white; padding: 2px 6px; border-radius: 5px; font-size: 10px; margin-left: 8px; transition: opacity 0.2s; }
         .google-link:hover { opacity: 0.8; }
+        
+        .validation-item { background: rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.1); }
+        .word-refused { text-decoration: line-through; color: #f87171 !important; opacity: 0.6; border-color: rgba(239, 68, 68, 0.4) !important; background-color: rgba(239, 68, 68, 0.1) !important; } 
+        .word-duplicate { color: #fbbf24 !important; border-color: rgba(251, 191, 36, 0.4) !important; background-color: rgba(251, 191, 36, 0.1) !important; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 font-sans text-slate-900 pb-24">
+<body class="p-4 font-sans text-white uppercase font-black">
 
-    <div id="setup" class="max-w-7xl mx-auto mt-2 bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-white">
-        <h2 class="text-3xl font-black mb-6 text-yellow-500 uppercase italic text-center">Petit Bac <span class="text-slate-200">Live</span></h2>
+    <div id="setup" class="max-w-xl mx-auto mt-10 bg-white p-8 md:p-12 rounded-[3.5rem] text-slate-900 shadow-2xl">
+        <h2 class="text-4xl font-black mb-8 text-green-900 text-center italic tracking-tighter">PETIT BAC ARENA</h2>
         <div class="space-y-6">
             <div id="creator-fields" class="space-y-4">
-                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Thèmes</p>
-                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-indigo-600 text-white px-5 py-2 rounded-full uppercase">🎲 Aléatoire</button>
+                <div class="flex justify-between items-center bg-slate-100 p-3 rounded-2xl border">
+                    <p class="text-[10px] font-black text-slate-400">Thèmes</p>
+                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-green-600 text-white px-5 py-2 rounded-full">🎲 Aléatoire</button>
                 </div>
-                <div id="cat-list" class="cat-grid p-3 bg-slate-50 rounded-2xl border max-h-60 overflow-y-auto"></div>
+                <div id="cat-list" class="cat-grid p-3 bg-slate-100 rounded-2xl border max-h-60 overflow-y-auto"></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="number" id="max-time-in" value="120" placeholder="Temps" class="p-4 border text-center font-black rounded-2xl">
-                    <input type="number" id="max-rounds-in" value="5" placeholder="Manches" class="p-4 border text-center font-black rounded-2xl">
+                    <input type="number" id="max-time-in" value="120" placeholder="Temps" class="w-full bg-slate-100 p-5 rounded-2xl outline-none text-xl text-center focus:border-green-400 font-black shadow-inner">
+                    <input type="number" id="max-rounds-in" value="5" placeholder="Manches" class="w-full bg-slate-100 p-5 rounded-2xl outline-none text-xl text-center focus:border-green-400 font-black shadow-inner">
                 </div>
             </div>
-            <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full p-5 rounded-2xl border-2 border-yellow-200 text-center font-black text-xl shadow-sm">
-            <button onclick="startAction()" class="w-full bg-black text-white py-6 rounded-2xl font-black uppercase text-xl shadow-xl">Démarrer</button>
+            <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full bg-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-green-400 font-black uppercase shadow-inner">
+            <button onclick="startAction()" class="w-full bg-black text-white py-7 rounded-3xl font-black text-2xl shadow-xl active:scale-95 transition-all">Démarrer</button>
         </div>
     </div>
 
     <div id="game" class="hidden max-w-5xl mx-auto">
-        <div class="bg-white p-4 rounded-3xl shadow-xl mb-4 flex justify-between items-center border-t-8 border-yellow-500">
+        <div class="bg-black/40 backdrop-blur-xl p-4 rounded-3xl mb-4 flex justify-between items-center border-2 border-white/5">
             <div class="flex items-center gap-3">
-                <div id="round-indicator" class="text-[10px] font-black bg-slate-100 px-3 py-1 rounded-full text-slate-400">0/0</div>
-                <div id="cur-letter" class="bg-yellow-500 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl shadow-md">?</div>
-                <div id="timer-display" class="font-mono font-black text-red-500 text-2xl hidden">0s</div>
+                <div id="round-indicator" class="text-[10px] font-black bg-black/40 px-3 py-1 rounded-full text-slate-400">0/0</div>
+                <div id="cur-letter" class="bg-green-600 text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black text-3xl shadow-md">?</div>
+                <div id="timer-display" class="font-mono font-black text-red-400 text-2xl hidden">0s</div>
             </div>
-            <button onclick="copyRoomLink()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black border uppercase">Lien</button>
+            <button onclick="copyRoomLink()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all font-black uppercase">Lien</button>
         </div>
 
-        <div id="reaction-bar" class="floating-reactions hidden">
-            <span class="emoji-btn" onclick="sendReaction('😂')">😂</span>
-            <span class="emoji-btn" onclick="sendReaction('😮')">😮</span>
-            <span class="emoji-btn" onclick="sendReaction('😡')">😡</span>
-            <span class="emoji-btn" onclick="sendReaction('🔥')">🔥</span>
-            <span class="emoji-btn" onclick="sendReaction('💩')">💩</span>
-            <span class="emoji-btn" onclick="sendReaction('👍')">👍</span>
+        <div id="reaction-bar" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex gap-3 bg-black/80 backdrop-blur-sm p-3 rounded-full border border-white/10">
+            <span class="emoji-btn" onclick="sendReaction('😂')">😂</span><span class="emoji-btn" onclick="sendReaction('😮')">😮</span><span class="emoji-btn" onclick="sendReaction('😡')">😡</span><span class="emoji-btn" onclick="sendReaction('🔥')">🔥</span><span class="emoji-btn" onclick="sendReaction('💩')">💩</span><span class="emoji-btn" onclick="sendReaction('👍')">👍</span>
         </div>
 
-        <div id="play-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl mb-6 border-4 border-yellow-400">
+        <div id="play-area" class="hidden bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] mb-6 border-4 border-white/5">
             <div id="bac-inputs" class="space-y-4"></div>
-            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-2xl shadow-xl">STOP !</button>
+            <button onclick="triggerStop()" class="w-full mt-8 bg-red-600 text-white py-6 rounded-full font-black uppercase text-3xl shadow-2xl border-b-8 border-red-800 active:scale-95 transition-transform">STOP !</button>
         </div>
 
-        <div id="val-area" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl border-4 border-green-500 mb-6">
-            <h3 class="text-center font-black text-green-700 mb-6 uppercase italic">Correction</h3>
+        <div id="val-area" class="hidden bg-black/40 backdrop-blur-xl p-6 rounded-[3.5rem] border-4 border-green-500/50 mb-6">
+            <h3 class="text-center font-black text-green-400 mb-6 uppercase italic">Correction</h3>
             <div id="val-list" class="space-y-6"></div>
-            <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-8 bg-black text-white py-5 rounded-2xl font-black uppercase shadow-xl">Valider la manche</button>
+            <button id="btn-confirm-round" onclick="confirmRound()" class="hidden w-full mt-8 bg-white text-black py-6 rounded-full font-black uppercase shadow-xl text-2xl border-b-8 border-slate-300">Valider la manche</button>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border">
-            <table class="w-full text-sm">
-                <thead id="t-head" class="bg-slate-50 text-[10px] uppercase text-slate-400"></thead>
-                <tbody id="t-body" class="text-center font-black"></tbody>
-                <tfoot id="t-foot" class="bg-slate-900 text-white"></tfoot>
+        <div class="bg-black/40 backdrop-blur-xl rounded-[3.5rem] overflow-hidden border-2 border-white/5">
+            <table class="w-full text-sm border-separate border-spacing-x-0">
+                <thead id="t-head"></thead>
+                <tbody id="t-body"></tbody>
+                <tfoot id="t-foot"></tfoot>
             </table>
             <div id="creator-controls" class="hidden">
-                <button onclick="startLetter(false)" class="w-full bg-yellow-500 text-white py-6 font-black text-xl uppercase tracking-widest shadow-inner">Manche Suivante</button>
-                <button onclick="startLetter(true)" class="w-full bg-indigo-600 text-white py-4 font-black text-xs uppercase border-t border-indigo-400">🎲 Nouvelle Manche + Aléatoire</button>
+                <button onclick="startLetter(false)" class="w-full bg-green-600 text-white py-6 font-black text-xl uppercase tracking-widest">Manche Suivante</button>
+                <button onclick="startLetter(true)" class="w-full bg-green-800 text-white py-4 font-black text-xs uppercase border-t border-green-700">🎲 Nouvelle Manche + Aléatoire</button>
             </div>
         </div>
     </div>
@@ -92,8 +93,6 @@
         let maxTime = 120, maxRounds = 5, currentRoundCount = 0, timeLeft = 0;
         let timerInterval = null, isInputRendered = false;
         const API = 'api.php';
-
-        // Liste nettoyée (sans humour gras) et correction du bug d'apostrophe
         const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Dans ma chambre", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime", "Manga", "Super-héros", "Dieu Mythologique", "Site web", "Application", "YouTubeur", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Qui pue", "Qui gratte", "Qui fait peur", "Qui fait plaisir", "Qui fait mal", "Dans une voiture", "Dans une école", "Dans la forêt", "Excuse d'absence"];
 
         window.onload = () => {
@@ -105,25 +104,18 @@
         };
 
         function renderCatList() {
-            // Utilisation de backticks pour éviter le bug de l'apostrophe dans toggleCat
-            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `<div id="cat-${c.replace(/'/g, "_")}" onclick="toggleCat(\`${c}\`)" class="cat-chip font-black">${c}</div>`).join('');
+            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `<div id="cat-${c.replace(/'/g, "_")}" onclick="toggleCat(\"` + '`' + `${c}\"` + '`' + `)" class="cat-chip font-black">${c}</div>`).join('');
         }
 
         function toggleCat(c) {
             const idx = selectedCats.indexOf(c);
             const safeId = c.replace(/'/g, "_");
-            if(idx > -1) { 
-                selectedCats.splice(idx, 1); 
-                document.getElementById(`cat-${safeId}`).classList.remove('active'); 
-            }
-            else { 
-                selectedCats.push(c); 
-                document.getElementById(`cat-${safeId}`).classList.add('active'); 
-            }
+            if(idx > -1) { selectedCats.splice(idx, 1); document.getElementById(`cat-${safeId}`).classList.remove('active');  }
+            else { selectedCats.push(c); document.getElementById(`cat-${safeId}`).classList.add('active'); }
         }
 
         function pickRandom6() {
-            document.querySelectorAll('.cat-chip').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.cat-chip.active').forEach(el => el.classList.remove('active'));
             selectedCats = [...categoriesList].sort(() => 0.5 - Math.random()).slice(0, 6);
             selectedCats.forEach(c => {
                 const safeId = c.replace(/'/g, "_");
@@ -132,7 +124,7 @@
         }
 
         async function startAction() {
-            myName = document.getElementById('my-name-in').value.trim();
+            myName = document.getElementById('my-name-in').value.trim().toUpperCase();
             if(!myName) return alert("Pseudo requis");
             if (!roomId) {
                 roomId = Math.random().toString(36).substring(2, 8);
@@ -164,11 +156,8 @@
                 const data = await r.json();
                 if (!data) return;
 
-                if (data.status === 'validation') {
-                    status = 'validation'; clearInterval(timerInterval);
-                } else if (players[0] && myName !== players[0].name) {
-                    status = data.status;
-                }
+                if (data.status === 'validation') { status = 'validation'; clearInterval(timerInterval); } 
+                else if (players.length > 0 && players[0] && myName !== players[0].name) { status = data.status; }
 
                 data.players.forEach(pSrv => {
                     let pLoc = players.find(pl => pl.name === pSrv.name);
@@ -179,7 +168,7 @@
                     } else { players.push(pSrv); }
                 });
 
-                if (players[0] && myName !== players[0].name) {
+                if (players.length > 0 && players[0] && myName !== players[0].name) {
                     if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
                         selectedCats = data.selectedCats; isInputRendered = false;
                     }
@@ -188,21 +177,18 @@
                 currentLetter = data.currentLetter; usedLetters = data.usedLetters || [];
                 refusedWords = data.refusedWords || []; maxTime = data.maxTime;
                 maxRounds = data.maxRounds; currentRoundCount = data.currentRoundCount;
-                if (players[0] && myName !== players[0].name) timeLeft = data.timeLeft;
+                if (players.length > 0 && players[0] && myName !== players[0].name) timeLeft = data.timeLeft;
                 refreshUI();
             } catch(e) {}
         }
 
         function sendReaction(emoji) {
             const me = players.find(p => p.name === myName);
-            me.reaction = emoji;
-            syncPush();
-            refreshUI();
-            setTimeout(() => { me.reaction = ''; syncPush(); }, 3000);
+            if(me) { me.reaction = emoji; syncPush(); setTimeout(() => { me.reaction = ''; syncPush(); }, 3000); }
         }
 
         function refreshUI() {
-            const isCreator = players[0] && players[0].name === myName;
+            const isCreator = players.length > 0 && players[0].name === myName;
             document.getElementById('cur-letter').innerText = currentLetter || '?';
             document.getElementById('round-indicator').innerText = `${currentRoundCount}/${maxRounds}`;
             document.getElementById('timer-display').innerText = timeLeft + "s";
@@ -218,43 +204,34 @@
 
         function renderInputs() {
             if (isInputRendered) return;
-            document.getElementById('bac-inputs').innerHTML = selectedCats.map(c => `<div><label class="text-[10px] font-black uppercase text-slate-400 ml-1">${c}</label><input type="text" oninput="updateWord(${JSON.stringify(c)}, this.value)" class="w-full p-4 border-2 rounded-2xl font-bold text-lg focus:border-yellow-500 outline-none"></div>`).join('');
+            document.getElementById('bac-inputs').innerHTML = selectedCats.map(c => `<div><label class="text-[10px] font-black uppercase text-slate-400 ml-3">${c}</label><input type="text" oninput="updateWord(${JSON.stringify(c)}, this.value)" class="w-full p-4 bg-white/5 border-2 border-white/10 rounded-2xl font-bold text-lg focus:border-green-500 outline-none text-white"></div>`).join('');
             isInputRendered = true;
         }
 
         function updateWord(cat, val) {
-            players.find(p => p.name === myName).currentInputs[cat] = val;
+            const me = players.find(p => p.name === myName);
+            if(me) me.currentInputs[cat] = val;
             syncPush();
         }
 
         function renderValidation() {
             const list = document.getElementById('val-list');
-            let h = "";
-            selectedCats.forEach(cat => {
-                h += `<div class="bg-slate-50 p-4 rounded-3xl border shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">${cat}</p><div class="space-y-2">`;
+            list.innerHTML = selectedCats.map(cat => {
+                let catHTML = `<div class="bg-black/20 p-4 rounded-3xl border border-white/5 shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-2 ml-2">${cat}</p><div class="space-y-2">`;
                 players.forEach((p, pi) => {
                     const id = `${pi}-${cat}`;
-                    const word = (p.currentInputs[cat] || '').trim();
+                    const word = (p.currentInputs[cat] || '').trim().toLowerCase();
                     const isRefused = refusedWords.includes(id);
                     const isDup = word && players.some((o, oi) => oi !== pi && (o.currentInputs[cat] || '').trim().toLowerCase() === word.toLowerCase());
-                    let pts = isRefused ? 0 : (isDup ? 5 : 10); if (!word) pts = 0;
-                    
-                    // Génération du lien Google
-                    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(cat + ' ' + word)}`;
-                    const googleBtn = word ? `<a href="${searchUrl}" target="_blank" class="google-link" onclick="event.stopPropagation()">🔍 Vérifier</a>` : '';
-
-                    h += `<div onclick="toggleRefuse('${id}')" class="w-full flex justify-between items-center p-4 rounded-2xl border-2 cursor-pointer transition-all ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : 'bg-white border-white')}">
-                        <span class="font-bold text-sm uppercase flex items-center">
-                            ${p.name}: ${word || '-'} 
-                            ${googleBtn}
-                            ${p.reaction ? `<span class="emoji-bubble ml-2">${p.reaction}</span>` : ''}
-                        </span>
-                        <span class="text-[10px] font-black">${pts} PTS</span>
+                    let pts = isRefused ? 0 : (isDup ? 5 : (word ? 10 : 0));
+                    const googleBtn = word ? `<a href="https://www.google.com/search?q=${encodeURIComponent(cat + ' ' + word)}" target="_blank" class="google-link" onclick="event.stopPropagation()">🔍</a>` : '';
+                    catHTML += `<div onclick="toggleRefuse('${id}')" class="validation-item w-full flex justify-between items-center p-4 rounded-2xl cursor-pointer transition-all ${isRefused ? 'word-refused' : (isDup ? 'word-duplicate' : '')}">
+                        <span class="font-bold text-sm uppercase flex items-center">${p.name}: ${word || '-'} ${googleBtn} ${p.reaction ? `<span class="emoji-bubble ml-2">${p.reaction}</span>` : ''}</span>
+                        <span class="text-base font-black">${pts}</span>
                     </div>`;
                 });
-                h += `</div></div>`;
-            });
-            list.innerHTML = h;
+                return catHTML + `</div></div>`;
+            }).join('');
         }
 
         function toggleRefuse(id) {
@@ -263,9 +240,7 @@
             syncPush();
         }
 
-        async function triggerStop() {
-            status = 'validation'; clearInterval(timerInterval); await syncPush();
-        }
+        async function triggerStop() { status = 'validation'; clearInterval(timerInterval); await syncPush(); }
 
         function startLetter(isRandom) {
             const alpha = "ABCDEFGHIJKLMNOPRSTUV";
@@ -291,12 +266,11 @@
         }
 
         function renderTable() {
-            let h = `<tr><th class="p-4 text-[10px] text-slate-400">Joueurs</th>${players.map(p => `<th class="p-4 border-l text-indigo-600 font-black uppercase text-sm relative">${p.name} ${p.reaction ? `<div class="absolute -top-2 left-1/2 -translate-x-1/2 emoji-bubble text-xl">${p.reaction}</div>` : ''}</th>`).join('')}</tr>`;
-            document.getElementById('t-head').innerHTML = h;
+            document.getElementById('t-head').innerHTML = `<tr><th class="p-4 text-left text-[10px] text-slate-400">Joueurs</th>${players.map(p => `<th class="p-4 text-green-400 font-black uppercase text-sm relative">${p.name} ${p.reaction ? `<div class="absolute -top-2 left-1/2 -translate-x-1/2 emoji-bubble text-xl">${p.reaction}</div>` : ''}</th>`).join('')}</tr>`;
             let b = ""; const rCount = players[0]?.rounds.length || 0;
-            for(let r=0; r<rCount; r++) { b += `<tr class="border-t"><td class="text-xs text-slate-400 font-bold italic">M${r+1}</td>${players.map(p => `<td class="p-4 border-l font-black text-slate-600">${p.rounds[r] || 0}</td>`).join('')}</tr>`; }
+            for(let r=0; r<rCount; r++) { b += `<tr class="border-t border-white/5"><td class="p-4 text-xs text-slate-400 font-bold italic">M${r+1}</td>${players.map(p => `<td class="p-4 font-black text-slate-300">${p.rounds[r] || 0}</td>`).join('')}</tr>`; }
             document.getElementById('t-body').innerHTML = b;
-            document.getElementById('t-foot').innerHTML = `<tr class="bg-slate-900 text-white"><td class="p-5 font-black uppercase text-xs">Total</td>${players.map(p => `<td class="p-5 border-l font-black text-yellow-500 text-2xl">${p.rounds.reduce((a,b)=>a+b,0)}</td>`).join('')}</tr>`;
+            document.getElementById('t-foot').innerHTML = `<tr class="bg-black/40"><td class="p-5 font-black uppercase text-xs">Total</td>${players.map(p => `<td class="p-5 font-black text-yellow-400 text-2xl">${p.rounds.reduce((a,b)=>a+b,0)}</td>`).join('')}</tr>`;
         }
 
         async function confirmRound() {
@@ -305,17 +279,13 @@
                 selectedCats.forEach(cat => {
                     const word = (p.currentInputs[cat] || '').trim().toLowerCase();
                     if (word && !refusedWords.includes(`${pi}-${cat}`)) {
-                        const isDup = players.some((o, oi) => oi !== pi && (o.currentInputs[cat] || '').trim().toLowerCase() === word);
-                        score += isDup ? 5 : 10;
+                        score += players.some((o, oi) => oi !== pi && (o.currentInputs[cat] || '').trim().toLowerCase() === word) ? 5 : 10;
                     }
                 });
                 p.rounds.push(score);
             });
-            status = 'setup'; 
-            currentLetter = '';
-            refusedWords = [];
-            players.forEach(p => p.currentInputs = {});
-            isInputRendered = false;
+            status = 'setup'; currentLetter = ''; refusedWords = [];
+            players.forEach(p => p.currentInputs = {}); isInputRendered = false;
             await syncPush();
         }
 

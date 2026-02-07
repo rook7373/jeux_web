@@ -6,48 +6,65 @@
     <title>Tic-Tac-Toe Arena - Live</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: radial-gradient(circle at center, #1e293b 0%, #000000 100%); color: white; min-height: 100vh; overflow-x: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        /* Yams_multi theme */
+        body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); color: white; min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
         
         #board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; width: 100%; max-width: 400px; }
-        .cell { background-color: #0f172a; border-radius: 1.5rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 900; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: inset 0 4px 8px rgba(0,0,0,0.5); }
-        .cell:hover { background-color: #1e293b; transform: scale(1.05); }
+        .cell { 
+            background-color: rgba(0,0,0,0.4); 
+            border-radius: 1.5rem; 
+            aspect-ratio: 1 / 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 5rem; 
+            font-weight: 900; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.5); 
+        }
+        .cell:hover { background-color: rgba(255,255,255,0.1); transform: scale(1.05); }
 
-        .cell.X { color: #38bdf8; }
-        .cell.O { color: #fbbf24; }
+        .cell.X { color: #60a5fa; text-shadow: 0 0 20px #60a5fa; } /* blue-400 */
+        .cell.O { color: #f87171; text-shadow: 0 0 20px #f87171; } /* red-400 */
 
-        .winning-cell { animation: pulse-win 1s infinite; }
-        @keyframes pulse-win { 0% { background-color: #fde047; } 50% { background-color: #1e293b; } 100% { background-color: #fde047; } }
+        .winning-cell { animation: pulse-win 1.2s infinite; }
+        @keyframes pulse-win { 
+            0% { background-color: rgba(29, 255, 175, 0.4); } 
+            50% { background-color: rgba(0,0,0,0.4); } 
+            100% { background-color: rgba(29, 255, 175, 0.4); } 
+        }
+        input::placeholder { color: #9ca3af; }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center font-sans uppercase font-black">
 
-    <div id="setup" class="max-w-md w-full bg-white p-10 rounded-[3.5rem] shadow-2xl text-slate-900 z-50">
-        <h2 id="setup-title" class="text-4xl font-black mb-8 text-sky-600 text-center italic tracking-tighter uppercase">TIC-TAC-TOE ARENA</h2>
+    <div id="setup" class="max-w-md w-full bg-white p-8 md:p-12 rounded-[3.5rem] shadow-2xl text-slate-900 z-50">
+        <h2 id="setup-title" class="text-4xl font-black mb-8 text-green-900 text-center italic tracking-tighter uppercase">TIC-TAC-TOE ARENA</h2>
         
         <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
-            <button type="button" onclick="setMode('local')" id="m-local" class="bg-sky-600 text-white py-4 rounded-2xl shadow-lg transition font-black">LOCAL</button>
+            <button type="button" onclick="setMode('local')" id="m-local" class="bg-green-600 text-white py-4 rounded-2xl shadow-lg transition font-black">LOCAL</button>
             <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-200 text-slate-500 py-4 rounded-2xl transition font-black">EN LIGNE</button>
         </div>
 
         <div class="space-y-6">
-            <input type="text" id="my-name-in" onkeydown="if(event.key === 'Enter') addPlayer()" placeholder="TON PSEUDO..." class="w-full bg-slate-100 border-2 border-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-sky-400 font-black uppercase">
+            <input type="text" id="my-name-in" onkeydown="if(event.key === 'Enter') startAction()" placeholder="TON PSEUDO..." class="w-full bg-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-green-400 font-black uppercase shadow-inner">
             
-            <button onclick="startAction()" class="w-full bg-black text-white py-6 rounded-[2rem] text-xl shadow-2xl active:scale-95 transition-all font-black">DÉMARRER</button>
-            <button onclick="window.location.href='index.html'" class="w-full text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</button>
+            <button onclick="startAction()" class="w-full bg-black text-white py-7 rounded-3xl text-2xl shadow-xl active:scale-95 transition-all font-black">DÉMARRER</button>
+            <a href="index.html" class="block w-full text-center text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</a>
         </div>
     </div>
 
-    <div id="game" class="hidden max-w-2xl w-full glass p-8 rounded-[4rem] border border-white/10 shadow-2xl">
+    <div id="game" class="hidden relative max-w-2xl w-full bg-black/40 backdrop-blur-xl p-6 md:p-8 rounded-[3.5rem] border-4 border-white/5">
         <div class="flex justify-between items-center mb-8">
-            <button onclick="window.location.href='index.html'" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black">MENU</button>
-            <div id="players-display" class="flex gap-8 text-[12px] tracking-widest items-center font-black"></div>
-            <button onclick="copyLink()" id="btn-copy" class="hidden bg-sky-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg uppercase">LIEN</button>
+            <a href="index.html" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black">MENU</a>
+            <div id="players-display" class="flex gap-4 md:gap-8 text-sm md:text-base tracking-widest items-center font-black"></div>
+            <button onclick="copyLink()" id="btn-copy" class="hidden bg-green-600 text-white text-[10px] px-4 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all font-black uppercase">LIEN</button>
         </div>
-        <div class="flex justify-center mb-10"><div id="board"></div></div>
-        <div id="win-overlay" class="hidden text-center">
+        <div class="flex justify-center mb-6"><div id="board"></div></div>
+        <div id="win-overlay" class="hidden text-center backdrop-blur-sm bg-black/50 absolute inset-0 m-4 md:m-8 rounded-[3rem] flex-col items-center justify-center">
             <p id="win-text" class="text-5xl text-yellow-400 mb-8 italic tracking-tighter"></p>
-            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition uppercase">ENREGISTRER & QUITTER</button>
+            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-2xl hover:scale-105 transition uppercase">ENREGISTRER & QUITTER</button>
         </div>
     </div>
 
@@ -69,8 +86,8 @@
 
         function setMode(m) { 
             gameMode = m; 
-            document.getElementById('m-local').className = (m === 'local') ? "bg-sky-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
-            document.getElementById('m-remote').className = (m === 'remote') ? "bg-purple-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
+            document.getElementById('m-local').className = (m === 'local') ? "bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
+            document.getElementById('m-remote').className = (m === 'remote') ? "bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
         }
 
         async function startAction() {
@@ -105,7 +122,14 @@
             try { 
                 const r = await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); 
                 const data = await r.json(); 
-                if (data) { gameState = data; render(); } 
+                if (data) { 
+                    const isGameOver = gameState.gameOver;
+                    gameState = data; 
+                    if(isGameOver !== gameState.gameOver) {
+                         document.getElementById('win-overlay').classList.toggle('hidden', !gameState.gameOver);
+                    }
+                    render();
+                } 
             } catch(e) {}
         }
 
@@ -128,11 +152,7 @@
         }
 
         function checkWin() {
-            const lines = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-                [0, 4, 8], [2, 4, 6]  // diagonals
-            ];
+            const lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
             for (let line of lines) {
                 const [a, b, c] = line;
                 if (gameState.board[a] && gameState.board[a] === gameState.board[b] && gameState.board[a] === gameState.board[c]) {
@@ -148,7 +168,7 @@
             for (let i = 0; i < 9; i++) {
                 const cell = document.createElement('div');
                 cell.className = `cell ${gameState.board[i] || ''}`;
-                if (gameState.winningLine.includes(i)) {
+                if (gameState.winningLine.includes(i) && gameState.gameOver) {
                     cell.classList.add('winning-cell');
                 }
                 cell.innerText = gameState.board[i] || '';
@@ -158,31 +178,25 @@
             const p1 = gameState.players.find(p => p.mark === 'X') || { name: '...', mark: 'X' };
             const p2 = gameState.players.find(p => p.mark === 'O') || { name: '...', mark: 'O' };
             document.getElementById('players-display').innerHTML = `
-                <span class="${gameState.currentPlayer === p1.mark ? 'ring-2 ring-white/20 bg-white/5' : 'opacity-40'} px-4 py-2 rounded-2xl" style="color:#38bdf8">${p1.name} (X)</span>
-                <span class="text-slate-700 font-bold italic">VS</span>
-                <span class="${gameState.currentPlayer === p2.mark ? 'ring-2 ring-white/20 bg-white/5' : 'opacity-40'} px-4 py-2 rounded-2xl" style="color:#fbbf24">${p2.name} (O)</span>
+                <span class="${gameState.currentPlayer === p1.mark ? 'ring-2 ring-white/30 bg-white/10' : 'opacity-40'} px-4 py-2 rounded-2xl" style="color:#60a5fa; text-shadow: 0 0 10px #60a5fa;">${p1.name} (X)</span>
+                <span class="text-slate-600 font-bold italic">VS</span>
+                <span class="${gameState.currentPlayer === p2.mark ? 'ring-2 ring-white/30 bg-white/10' : 'opacity-40'} px-4 py-2 rounded-2xl" style="color:#f87171; text-shadow: 0 0 10px #f87171;">${p2.name} (O)</span>
             `;
             if (gameState.gameOver) { 
                 document.getElementById('win-overlay').classList.remove('hidden'); 
-                document.getElementById('win-text').innerText = gameState.winner === "Personne" ? "ÉGALITÉ !" : gameState.winner + " GAGNE !";
+                document.getElementById('win-text').innerText = gameState.winner === "Personne" ? "ÉGALITÉ !" : `${gameState.winner} GAGNE !`;
+            } else {
+                document.getElementById('win-overlay').classList.add('hidden');
             }
         }
 
         async function saveAndReset() {
-            const gameData = { 
-                game: "Tic-Tac-Toe", 
-                date: new Date().toLocaleDateString('fr-FR'), 
-                results: gameState.players.map(p => ({ name: p.name, score: p.name === gameState.winner ? 1 : 0 })), 
-                winner: gameState.winner 
-            };
+            if (gameMode === 'local') { window.location.href='index.html'; return; }
+            const gameData = { game: "Tic-Tac-Toe", date: new Date().toLocaleDateString('fr-FR'), winner: gameState.winner };
             try { 
-                const r = await fetch(`${API}?action=stats`); 
-                let history = await r.json(); 
-                if (!Array.isArray(history)) history = []; 
-                history.push(gameData);
-                await fetch(`${API}?action=stats`, { method: 'POST', body: JSON.stringify(history) }); 
-                window.location.href = 'index.html';
-            } catch (e) { window.location.href = 'index.html'; }
+                await fetch(`${API}?action=stats`, { method: 'POST', body: JSON.stringify(gameData) }); 
+            } catch (e) { console.error("Save failed:", e); }
+            finally { window.location.href = 'index.html'; }
         }
         function copyLink() { navigator.clipboard.writeText(window.location.href); alert("LIEN COPIÉ !"); }
     </script>
