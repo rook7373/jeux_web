@@ -20,15 +20,33 @@
 </head>
 <body class="p-4 font-sans uppercase font-black">
 
-    <div id="finish-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-xl items-center justify-center p-4">
-        <div class="bg-white rounded-[3rem] p-10 max-w-sm w-full text-center text-slate-900 animate-pop shadow-2xl">
-            <div class="text-6xl mb-4">🏆</div>
-            <h2 class="text-3xl font-black mb-2 italic tracking-tighter uppercase">Terminé !</h2>
-            <p id="winner-msg" class="text-xl text-green-600 mb-6 font-black uppercase"></p>
-            <div id="final-scores-list" class="space-y-2 mb-8 text-left bg-slate-50 p-6 rounded-2xl border border-slate-200"></div>
-            <button onclick="saveAndExit()" class="w-full bg-black text-white py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl">ENREGISTRER & QUITTER</button>
+        <div id="finish-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-xl items-center justify-center p-4">
+
+            <div class="bg-white rounded-[3rem] p-10 max-w-sm w-full text-center text-slate-900 animate-pop shadow-2xl">
+
+                <div class="text-6xl mb-4">🏆</div>
+
+                <h2 class="text-3xl font-black mb-2 italic tracking-tighter uppercase">Terminé !</h2>
+
+                <p id="winner-msg" class="text-xl text-green-600 mb-6 font-black uppercase"></p>
+
+                
+
+                <div id="final-scores-list" class="space-y-2 mb-8 text-left bg-slate-50 p-6 rounded-2xl border border-slate-200"></div>
+
+                
+
+                <div class="w-full space-y-4">
+
+                    <button onclick="location.reload()" class="w-full bg-slate-200 text-slate-600 py-5 rounded-2xl font-black text-lg hover:scale-105 transition-all shadow-inner">REJOUER</button>
+
+                    <button onclick="saveAndExit()" class="w-full bg-black text-white py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl">ACCUEIL & SAUVER</button>
+
+                </div>
+
+            </div>
+
         </div>
-    </div>
 
     <div class="max-w-4xl mx-auto">
         <header class="mb-8 text-center">

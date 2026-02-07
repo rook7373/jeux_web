@@ -156,8 +156,16 @@
                 const data = await r.json();
                 if (!data) return;
 
-                if (data.status === 'validation') { status = 'validation'; clearInterval(timerInterval); } 
-                else if (players.length > 0 && players[0] && myName !== players[0].name) { status = data.status; }
+                if (data.status === 'validation') { 
+                    status = 'validation'; 
+                    clearInterval(timerInterval); 
+                    console.log("syncPull: Status received as 'validation'. Clearing timer.");
+                } else if (players.length > 0 && players[0] && myName !== players[0].name) { 
+                    status = data.status; 
+                    console.log(`syncPull: Status received as '${data.status}' (from other player).`);
+                } else {
+                    console.log(`syncPull: Current status is '${status}'. Data status is '${data.status}'.`);
+                }
 
                 data.players.forEach(pSrv => {
                     let pLoc = players.find(pl => pl.name === pSrv.name);
@@ -171,6 +179,7 @@
                 if (players.length > 0 && players[0] && myName !== players[0].name) {
                     if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
                         selectedCats = data.selectedCats; isInputRendered = false;
+                        console.log("syncPull: Categories updated from server.");
                     }
                 }
 
@@ -178,8 +187,11 @@
                 refusedWords = data.refusedWords || []; maxTime = data.maxTime;
                 maxRounds = data.maxRounds; currentRoundCount = data.currentRoundCount;
                 if (players.length > 0 && players[0] && myName !== players[0].name) timeLeft = data.timeLeft;
+                console.log(`syncPull: Calling refreshUI. Current status: ${status}`);
                 refreshUI();
-            } catch(e) {}
+            } catch(e) {
+                console.error("syncPull error:", e);
+            }
         }
 
         function sendReaction(emoji) {
@@ -188,6 +200,7 @@
         }
 
         function refreshUI() {
+            console.log(`refreshUI: Current game status is '${status}'`);
             const isCreator = players.length > 0 && players[0].name === myName;
             document.getElementById('cur-letter').innerText = currentLetter || '?';
             document.getElementById('round-indicator').innerText = `${currentRoundCount}/${maxRounds}`;
@@ -195,8 +208,14 @@
             document.getElementById('timer-display').classList.toggle('hidden', status !== 'playing' || maxTime <= 0);
             document.getElementById('play-area').classList.toggle('hidden', status !== 'playing');
             document.getElementById('val-area').classList.toggle('hidden', status !== 'validation');
-            if (status === 'playing') renderInputs();
-            if (status === 'validation') renderValidation();
+            if (status === 'playing') {
+                console.log("refreshUI: Status is 'playing', rendering inputs.");
+                renderInputs();
+            }
+            if (status === 'validation') {
+                console.log("refreshUI: Status is 'validation', rendering validation.");
+                renderValidation();
+            }
             document.getElementById('btn-confirm-round').classList.toggle('hidden', !isCreator || status !== 'validation');
             document.getElementById('creator-controls').classList.toggle('hidden', !isCreator || status !== 'setup' || currentRoundCount >= maxRounds);
             renderTable();

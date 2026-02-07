@@ -107,10 +107,15 @@ if (isset($_GET['action'])) {
             <button onclick="copyLink()" id="btn-copy" class="hidden bg-green-600 px-6 py-3 rounded-full text-[10px] font-black shadow-lg uppercase">INVITER 🔗</button>
         </div>
         <div id="grid"></div>
-        <div id="win-overlay" class="hidden text-center mt-10">
-            <p id="win-text" class="text-5xl text-yellow-400 mb-8 italic tracking-tighter"></p>
-            <button onclick="location.reload()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-xl hover:scale-105 transition uppercase">REJOUER</button>
+        <div id="win-overlay" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-xl items-center justify-center p-4">
+        <div class="bg-white rounded-[3rem] p-10 max-w-sm w-full text-center text-slate-900 animate-pop shadow-2xl">
+            <p id="win-text" class="text-3xl font-black mb-8 italic tracking-tighter uppercase"></p>
+            <div class="w-full space-y-4">
+                 <button onclick="location.reload()" class="w-full bg-black text-white py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl">REJOUER</button>
+                 <a href="index.html" class="block w-full bg-slate-200 text-slate-600 py-5 rounded-2xl font-black text-lg hover:scale-105 transition-all shadow-inner">ACCUEIL</a>
+            </div>
         </div>
+    </div>
     </div>
 
     <script>
@@ -328,7 +333,9 @@ if (isset($_GET['action'])) {
             `;
 
             if (gameState.gameOver) {
-                document.getElementById('win-overlay').classList.remove('hidden');
+                const modal = document.getElementById('win-overlay');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
                 document.getElementById('win-text').innerText = gameState.winner === 'ÉGALITÉ' ? 'ÉGALITÉ !' : gameState.winner + " GAGNE !";
             }
         }

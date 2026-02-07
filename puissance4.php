@@ -95,7 +95,10 @@
         <div class="flex justify-center mb-6"><div id="board"></div></div>
         <div id="win-overlay" class="hidden text-center backdrop-blur-sm bg-black/50 absolute inset-0 m-4 md:m-8 rounded-[3rem] flex-col items-center justify-center">
             <p id="win-text" class="text-5xl text-yellow-400 mb-8 italic tracking-tighter"></p>
-            <button onclick="saveAndReset()" class="bg-white text-black px-12 py-5 rounded-full text-sm font-black shadow-2xl hover:scale-105 transition uppercase">ENREGISTRER & QUITTER</button>
+            <div class="flex gap-4">
+                <button onclick="location.reload()" class="bg-white/20 text-white px-10 py-4 rounded-full text-sm font-black shadow-xl hover:bg-white/30 transition uppercase">Rejouer</button>
+                <button onclick="saveAndReset()" class="bg-white text-black px-10 py-4 rounded-full text-sm font-black shadow-xl hover:scale-105 transition uppercase">Accueil</button>
+            </div>
         </div>
     </div>
 
