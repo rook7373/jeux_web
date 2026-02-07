@@ -94,6 +94,13 @@ if (isset($_GET['action'])) {
             </div>
         </div>
 
+        <div id="theme-selector" class="mb-8">
+            <p class="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Thème :</p>
+            <div class="grid grid-cols-3 gap-2" id="themes-grid">
+                <!-- Theme buttons will be rendered here by JavaScript -->
+            </div>
+        </div>
+
         <div class="space-y-6">
             <input type="text" id="my-name-in" autocomplete="off" onkeydown="if(event.key === 'Enter') startAction()" placeholder="TON PSEUDO..." class="w-full bg-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-green-400 font-black uppercase shadow-inner">
             <button type="button" onclick="startAction()" class="w-full bg-black text-white py-7 rounded-3xl text-2xl shadow-xl active:scale-95 transition-all font-black">Démarrer</button>
@@ -127,15 +134,27 @@ if (isset($_GET['action'])) {
         let syncInterval;
 
         let gameState = { 
-            players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '', gridSize: 6, aiMemory: []
+            players: [], board: [], currentPlayerIdx: 0, flipped: [], matched: [], gameOver: false, winner: '', gridSize: 6, aiMemory: [], selectedThemeTag: 'kitten'
         };
 
-        const kittenImages = Array.from({length: 32}, (_, i) => `https://loremflickr.com/200/200/kitten?lock=${i}`);
+        const themes = [
+            { name: "Kittens", tag: "kitten" },
+            { name: "Puppies", tag: "puppy" },
+            { name: "Foods", tag: "food" },
+            { name: "Nature", tag: "nature" },
+            { name: "Cars", tag: "car" }
+        ];
+        let selectedTheme = "kitten"; // Default theme tag
+
+        // Old kittenImages array is no longer needed as images will be generated dynamically
+        // const kittenImages = Array.from({length: 32}, (_, i) => `https://loremflickr.com/200/200/kitten?lock=${i}`);
 
         window.onload = () => {
+            renderThemeSelector();
             if(roomId) {
                 document.getElementById('mode-selector').classList.add('hidden');
                 document.getElementById('difficulty-selector').classList.add('hidden');
+                document.getElementById('theme-selector').classList.add('hidden'); // Also hide theme selector for joining players
                 document.getElementById('local-options').classList.add('hidden');
                 document.getElementById('setup-title').innerHTML = "REJOINDRE <span class='text-slate-200'>ARENA</span>";
                 setMode('remote');
@@ -144,13 +163,26 @@ if (isset($_GET['action'])) {
             }
         };
 
+        function renderThemeSelector() {
+            const themesGrid = document.getElementById('themes-grid');
+            themesGrid.innerHTML = themes.map(theme => `
+                <button type="button" onclick="setTheme('${theme.tag}')" id="btn-theme-${theme.tag}" class="py-3 rounded-xl text-xs font-black ${selectedTheme === theme.tag ? 'bg-green-600 text-white shadow-md' : 'bg-slate-200 text-slate-500'}">
+                    ${theme.name}
+                </button>
+            `).join('');
+        }
+
+        function setTheme(themeTag) {
+            selectedTheme = themeTag;
+            renderThemeSelector(); // Re-render to update active state
+        }
+
         function setMode(m) {
             gameMode = m;
             document.getElementById('m-local').className = (m === 'local') ? "bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
             document.getElementById('m-remote').className = (m === 'remote') ? "bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black" : "bg-slate-200 text-slate-500 py-4 rounded-2xl font-black";
             document.getElementById('local-options').classList.toggle('hidden', m !== 'local');
-            if (m === 'remote') document.getElementById('difficulty-selector').classList.add('hidden');
-            else document.getElementById('difficulty-selector').classList.remove('hidden');
+            // Remove the line that hides difficulty-selector for remote mode
         }
 
         function setGridSize(s) {
@@ -180,6 +212,7 @@ if (isset($_GET['action'])) {
                     if (gameState.players.length < 2) {
                         resetGameState(); // Reset state
                         gameState.gridSize = selectedSize; // Set grid size from setup
+                        gameState.selectedThemeTag = selectedTheme; // Set the selected theme
                         initBoard(); // Create new board
                         gameState.players.push({ name: myName, score: 0 }); // Add player
                     } else return alert("Plein !"); // Room is full
@@ -188,6 +221,7 @@ if (isset($_GET['action'])) {
             } else {
                 resetGameState(); // Reset state for local game
                 gameState.gridSize = selectedSize; // Set grid size from setup
+                gameState.selectedThemeTag = selectedTheme; // Set the selected theme for local games
                 initBoard(); // Create new board
                 gameState.players = [{ name: myName, score: 0 }, { name: localOpponent === 'ai' ? 'IA 🤖' : 'JOUEUR 2', score: 0 }];
                 if (localOpponent === 'ai') gameState.aiMemory = Array(gameState.gridSize * gameState.gridSize).fill(null);
@@ -201,8 +235,9 @@ if (isset($_GET['action'])) {
 
         function initBoard() {
             const numPairs = (gameState.gridSize * gameState.gridSize) / 2;
-            let selectedImages = kittenImages.slice(0, numPairs);
-            let pairs = [...selectedImages, ...selectedImages].sort(() => Math.random() - 0.5);
+            // Dynamically generate images based on the selected theme tag
+            let images = Array.from({length: numPairs}, (_, i) => `https://loremflickr.com/200/200/${gameState.selectedThemeTag}?lock=${i}`);
+            let pairs = [...images, ...images].sort(() => Math.random() - 0.5);
             gameState.board = pairs;
         }
 
