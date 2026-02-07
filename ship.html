@@ -206,7 +206,8 @@
         
         function renderMyFleet() {
             const grid = document.getElementById('my-grid');
-            const allMyShipCoords = me()?.ships.flat() || gameState.myShips.flat();
+            const allMyShipCoords = (gameState.status === 'setup') ? gameState.myShips.flat() : (me()?.ships.flat() || []);
+            
             for (let i = 0; i < 100; i++) {
                 const cell = grid.children[i];
                 cell.className = 'grid-cell rounded-md';

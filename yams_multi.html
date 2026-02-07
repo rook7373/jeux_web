@@ -40,7 +40,7 @@
 
         .cat-label { font-size: 1.1rem; font-weight: 900; color: #e2e8f0; } 
         .potential-score { color: #94a3b8; opacity: 0.8; font-size: 1.8rem; cursor: pointer; font-style: italic; }
-        .locked-score { font-weight: 900; font-size: 2.5rem; line-height: 0.8; }
+        .locked-score { font-weight: 900; font-size: 2.5rem; line-height: 0.8; text-shadow: 0 0 15px var(--player-accent); }
         
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -254,7 +254,7 @@
             document.getElementById('table-body').innerHTML = cats.map(c => `
                 <tr class="${["BONUS (63+)", "TOTAL SUP", "TOTAL GLOBAL"].includes(c) ? 'total-row' : ''} border-b border-white/5">
                     <td class="py-5 pr-6 cat-label text-left">${c}</td>
-                    ${players.map((p,pi)=>`<td onclick="lock('${c}', ${pi})" id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[100px]">-</td>`).join('')}
+                    ${players.map((p,pi)=>`<td id="s-${pi}-${c}" class="text-center font-black px-4 min-w-[100px]">-</td>`).join('')}
                 </tr>`).join('');
         }
 
@@ -290,27 +290,33 @@
                 cats.forEach(c => {
                     const cell = document.getElementById(`s-${pi}-${c}`);
                     if(!cell) return;
+
+                    // Clear previous state
+                    cell.onclick = null;
+                    cell.style.color = "";
                     
                     let newVal = "-";
-                    let isLocked = false;
-                    
-                    if(c === "BONUS (63+)") newVal = bonus;
-                    else if(c === "TOTAL SUP") newVal = sSup + bonus;
-                    else if(c === "TOTAL GLOBAL") newVal = sSup + bonus + sInf;
-                    else if(player.scores[c] !== undefined) { newVal = player.scores[c]; isLocked = true; }
-                    else if(pi === cIdx && player.name === myName && rolls > 0) newVal = calculatePotential(c);
+                    const isLocked = player.scores[c] !== undefined;
+                    const isAuto = ["BONUS (63+)", "TOTAL SUP", "TOTAL GLOBAL"].includes(c);
+                    const isMyTurnAndPlayable = pi === cIdx && player.name === myName && rolls > 0 && !isLocked && !isAuto;
 
-                    cell.innerText = newVal;
-                    if(isLocked) {
+                    if(isAuto) {
+                        if(c === "BONUS (63+)") newVal = bonus;
+                        else if(c === "TOTAL SUP") newVal = sSup + bonus;
+                        else if(c === "TOTAL GLOBAL") newVal = sSup + bonus + sInf;
+                        cell.className = "text-center locked-score px-4";
+                    } else if(isLocked) {
+                        newVal = player.scores[c];
                         cell.className = "text-center locked-score px-4";
                         cell.style.color = player.color.b;
-                    } else if(pi === cIdx && player.name === myName && rolls > 0) {
+                    } else if(isMyTurnAndPlayable) {
+                        newVal = calculatePotential(c);
                         cell.className = "text-center potential-score px-4";
-                        cell.style.color = "";
-                    } else { 
-                        cell.className = "text-center px-4 opacity-10 text-xl"; 
-                        cell.style.color = ""; 
+                        cell.onclick = () => lock(c, pi);
+                    } else {
+                        cell.className = "text-center px-4 opacity-40 text-xl"; 
                     }
+                    cell.innerText = newVal;
                 });
             });
             dice.forEach((d,i)=> document.getElementById(`d${i}`).classList.toggle('held', d.held));
