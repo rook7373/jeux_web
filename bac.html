@@ -154,38 +154,58 @@
         }
 
         async function syncPull() {
-                        if(!roomId) return;
-                        try {
-                            const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
-                            const data = await r.json();
-                            console.log('syncPull - Received data:', JSON.parse(JSON.stringify(data)));
-                            if (!data) { console.warn('syncPull - No data received from server.'); return; }
-            
-                            if (data.status === 'validation') { status = 'validation'; clearInterval(timerInterval); }
-                            else if (players.length > 0 && players[0] && myName !== players[0].name) { status = data.status; }
-            
-                            data.players.forEach(pSrv => {
-                                let pLoc = players.find(pl => pl.name === pSrv.name);
-                                if (pLoc) {
-                                    pLoc.rounds = pSrv.rounds;
-                                    pLoc.reaction = pSrv.reaction;
-                                    pLoc.currentInputs = pSrv.currentInputs; // This was the previous fix
-                                } else { players.push(pSrv); }
-                            });
-                            console.log('syncPull - Players after processing:', JSON.parse(JSON.stringify(players)));
-            
-                if (players.length > 0 && players[0] && myName !== players[0].name) {
-                    if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
-                        selectedCats = data.selectedCats;
-                    }
+            if (!roomId) return;
+
+            try {
+                const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
+                const data = await r.json();
+                if (!data) return;
+
+                // Status
+                if (data.status === 'validation') {
+                    status = 'validation';
+                    clearInterval(timerInterval);
+                } else if (players[0]?.name !== myName) {
+                    status = data.status;
                 }
 
-                currentLetter = data.currentLetter; usedLetters = data.usedLetters || [];
-                refusedWords = data.refusedWords || []; maxTime = data.maxTime;
-                maxRounds = data.maxRounds; currentRoundCount = data.currentRoundCount;
-                if (players.length > 0 && players[0] && myName !== players[0].name) timeLeft = data.timeLeft;
+                // Sync players
+                data.players.forEach(pSrv => {
+                    let pLoc = players.find(p => p.name === pSrv.name);
+
+                    if (!pLoc) {
+                        players.push(pSrv);
+                        return;
+                    }
+
+                    // Always sync score & reaction
+                    pLoc.rounds = pSrv.rounds;
+                    pLoc.reaction = pSrv.reaction;
+
+                    // 🚨 IMPORTANT FIX
+                    // Never overwrite my inputs while playing
+                    if (pLoc.name !== myName || status !== 'playing') {
+                        pLoc.currentInputs = pSrv.currentInputs || {};
+                    }
+                });
+
+                // Global state
+                currentLetter = data.currentLetter;
+                usedLetters = data.usedLetters || [];
+                refusedWords = data.refusedWords || [];
+                maxTime = data.maxTime;
+                maxRounds = data.maxRounds;
+                currentRoundCount = data.currentRoundCount;
+
+                if (players[0]?.name !== myName) {
+                    timeLeft = data.timeLeft;
+                    selectedCats = data.selectedCats || [];
+                }
+
                 refreshUI();
-            } catch(e) {}
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         function sendReaction(emoji) {
