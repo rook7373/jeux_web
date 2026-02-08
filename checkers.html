@@ -313,13 +313,19 @@
         }
 
         function handleSquareClick(row, col) {
-            if (gameState.gameOver || (gameMode === 'remote' && gameState.currentPlayer !== myColor)) return;
+            if (gameState.gameOver) return;
 
             const piece = gameState.board[row][col];
-            const isMyTurn = gameState.players.find(p => p.name === myName)?.color === gameState.currentPlayer;
-            if (gameMode === 'local' && localOpponent === 'human') { /* let any move */ }
-            else if(!isMyTurn) return;
+            const myPlayerObj = gameState.players.find(p => p.name === myName);
+            const myPlayerColor = myPlayerObj ? myPlayerObj.color : null;
+            const isCurrentPlayerTurnForThisClient = (myPlayerColor === gameState.currentPlayer);
 
+            if (gameMode === 'remote' || (gameMode === 'local' && localOpponent === 'ai')) {
+                if (!isCurrentPlayerTurnForThisClient) {
+                    return;
+                }
+            }
+            
             const isMyPiece = piece && piece.startsWith(gameState.currentPlayer);
 
             if (mustContinueJump) {
