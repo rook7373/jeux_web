@@ -34,15 +34,16 @@
         <h2 class="text-4xl font-black mb-8 text-green-900 text-center italic tracking-tighter">PETIT BAC ARENA</h2>
         <div class="space-y-6">
             <div id="creator-fields" class="space-y-4">
-                <div class="flex justify-between items-center bg-slate-100 p-3 rounded-2xl border">
-                    <p class="text-[10px] font-black text-slate-400">Choix des catégories</p>
-                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-green-600 text-white px-5 py-2 rounded-full">🎲 Aléatoire</button>
+                <p class="text-[10px] font-black text-slate-400 text-center uppercase tracking-widest mb-3">Choix des catégories</p>
+                <div class="flex justify-between items-center bg-slate-100 p-3 rounded-2xl border mb-3">
+                    <p class="text-[10px] font-black text-slate-400">Sélectionner ou...</p>
+                    <button onclick="pickRandom6()" class="text-[10px] font-black bg-green-600 text-white px-5 py-2 rounded-full">🎲 Aléatoire (6)</button>
                 </div>
-                <div id="cat-list" class="cat-grid p-3 bg-slate-100 rounded-2xl border max-h-60 overflow-y-auto"></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="number" id="max-time-in" value="120" placeholder="Temps" class="w-full bg-slate-100 p-5 rounded-2xl outline-none text-xl text-center focus:border-green-400 font-black shadow-inner">
-                    <input type="number" id="max-rounds-in" value="5" placeholder="Manches" class="w-full bg-slate-100 p-5 rounded-2xl outline-none text-xl text-center focus:border-green-400 font-black shadow-inner">
-                </div>
+                <div id="cat-list" class="cat-grid p-3 bg-slate-100 rounded-2xl border max-h-60 overflow-y-auto mb-4"></div>
+                <p class="text-[10px] font-black text-slate-400 text-center uppercase tracking-widest mb-3">Temps par round (secondes)</p>
+                <input type="number" id="max-time-in" value="120" placeholder="Temps" class="w-full bg-slate-100 p-5 rounded-2xl outline-none text-xl text-center focus:border-green-400 font-black shadow-inner mb-4">
+                <p class="text-[10px] font-black text-slate-400 text-center uppercase tracking-widest mb-3">Nombre de rounds</p>
+                <input type="number" id="max-rounds-in" value="5" placeholder="Manches" class="w-full bg-slate-100 p-5 rounded-2xl outline-none text-xl text-center focus:border-green-400 font-black shadow-inner">
             </div>
             <input type="text" id="my-name-in" placeholder="Ton Pseudo..." class="w-full bg-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-green-400 font-black uppercase shadow-inner">
             <button onclick="startAction()" class="w-full bg-black text-white py-7 rounded-3xl font-black text-2xl shadow-xl active:scale-95 transition-all">Démarrer</button>
