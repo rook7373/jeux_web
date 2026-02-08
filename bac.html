@@ -148,28 +148,32 @@
         async function syncPush() {
             if(!roomId) return;
             const data = { players, status, currentLetter, usedLetters, selectedCats, refusedWords, maxTime, maxRounds, currentRoundCount, timeLeft };
+            console.log('syncPush - Sending data:', JSON.parse(JSON.stringify(data))); // Deep copy to prevent mutation issues in log
             await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(data) });
+
         }
 
         async function syncPull() {
-            if(!roomId) return;
-            try {
-                const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
-                const data = await r.json();
-                if (!data) return;
-
-                if (data.status === 'validation') { status = 'validation'; clearInterval(timerInterval); } 
-                else if (players.length > 0 && players[0] && myName !== players[0].name) { status = data.status; }
-
-                data.players.forEach(pSrv => {
-                    let pLoc = players.find(pl => pl.name === pSrv.name);
-                    if (pLoc) {
-                        pLoc.rounds = pSrv.rounds;
-                        pLoc.reaction = pSrv.reaction;
-                        pLoc.currentInputs = pSrv.currentInputs;
-                    } else { players.push(pSrv); }
-                });
-
+                        if(!roomId) return;
+                        try {
+                            const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
+                            const data = await r.json();
+                            console.log('syncPull - Received data:', JSON.parse(JSON.stringify(data)));
+                            if (!data) { console.warn('syncPull - No data received from server.'); return; }
+            
+                            if (data.status === 'validation') { status = 'validation'; clearInterval(timerInterval); }
+                            else if (players.length > 0 && players[0] && myName !== players[0].name) { status = data.status; }
+            
+                            data.players.forEach(pSrv => {
+                                let pLoc = players.find(pl => pl.name === pSrv.name);
+                                if (pLoc) {
+                                    pLoc.rounds = pSrv.rounds;
+                                    pLoc.reaction = pSrv.reaction;
+                                    pLoc.currentInputs = pSrv.currentInputs; // This was the previous fix
+                                } else { players.push(pSrv); }
+                            });
+                            console.log('syncPull - Players after processing:', JSON.parse(JSON.stringify(players)));
+            
                 if (players.length > 0 && players[0] && myName !== players[0].name) {
                     if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
                         selectedCats = data.selectedCats; isInputRendered = false;
@@ -213,10 +217,14 @@
         function updateWord(cat, val) {
             const me = players.find(p => p.name === myName);
             if(me) me.currentInputs[cat] = val;
+            console.log('updateWord - myName:', myName, 'Cat:', cat, 'Value:', val, 'currentInputs:', me.currentInputs);
+
             syncPush();
         }
 
         function renderValidation() {
+            console.log('renderValidation - Players:', JSON.parse(JSON.stringify(players)));
+            console.log('renderValidation - Selected Categories:', JSON.parse(JSON.stringify(selectedCats)));
             const list = document.getElementById('val-list');
             list.innerHTML = selectedCats.map(cat => {
                 let catHTML = `<div class="bg-black/20 p-4 rounded-3xl border border-white/5 shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-2 ml-2">${cat}</p><div class="space-y-2">`;
