@@ -93,7 +93,7 @@
         let players = [], selectedCats = [], usedLetters = [], refusedWords = [], status = 'setup', currentLetter = '', myName = '';
         let roomId = new URLSearchParams(window.location.search).get('room');
         let maxTime = 120, maxRounds = 5, currentRoundCount = 0, timeLeft = 0;
-        let timerInterval = null, isInputRendered = false;
+        let timerInterval = null
         const API = 'api.php';
         const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Dans ma chambre", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime","Super-héros", "Dieu Mythologique", "Site web", "Application", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Dans une voiture", "Dans une école", "Dans la forêt", "Excuse d'absence"];
 
@@ -176,7 +176,7 @@
             
                 if (players.length > 0 && players[0] && myName !== players[0].name) {
                     if (JSON.stringify(selectedCats) !== JSON.stringify(data.selectedCats)) {
-                        selectedCats = data.selectedCats; isInputRendered = false;
+                        selectedCats = data.selectedCats;
                     }
                 }
 
@@ -209,9 +209,20 @@
         }
 
         function renderInputs() {
-            if (isInputRendered) return;
-            document.getElementById('bac-inputs').innerHTML = selectedCats.map(c => `<div><label class="text-[10px] font-black uppercase text-slate-400 ml-3">${c}</label><input type="text" oninput="updateWord(${JSON.stringify(c)}, this.value)" class="w-full p-4 bg-white/5 border-2 border-white/10 rounded-2xl font-bold text-lg focus:border-green-500 outline-none text-white"></div>`).join('');
-            isInputRendered = true;
+            const me = players.find(p => p.name === myName);
+            if (!me) return;
+
+            document.getElementById('bac-inputs').innerHTML = selectedCats.map(cat => `
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 ml-3">${cat}</label>
+                    <input
+                        type="text"
+                        value="${me.currentInputs[cat] || ''}"
+                        oninput="updateWord(${JSON.stringify(cat)}, this.value)"
+                        class="w-full p-4 bg-white/5 border-2 border-white/10 rounded-2xl font-bold text-lg focus:border-green-500 outline-none text-white"
+                    >
+                </div>
+            `).join('');
         }
 
         function updateWord(cat, val) {
@@ -250,7 +261,7 @@
             syncPush();
         }
 
-        async function triggerStop() { status = 'validation'; clearInterval(timerInterval); await syncPush(); }
+        async function triggerStop() { status = 'validation'; clearInterval(timerInterval); await syncPush(); await syncPull() }
 
         function startLetter(isRandom) {
             const alpha = "ABCDEFGHIJKLMNOPRSTUV";
@@ -260,7 +271,6 @@
             currentLetter = available[Math.floor(Math.random() * available.length)];
             usedLetters.push(currentLetter);
             status = 'playing'; currentRoundCount++; refusedWords = [];
-            players.forEach(p => p.currentInputs = {}); isInputRendered = false;
             if (maxTime > 0) { timeLeft = maxTime; startTimer(); }
             syncPush();
         }
@@ -295,7 +305,6 @@
                 p.rounds.push(score);
             });
             status = 'setup'; currentLetter = ''; refusedWords = [];
-            players.forEach(p => p.currentInputs = {}); isInputRendered = false;
             await syncPush();
         }
 
