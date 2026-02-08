@@ -11,8 +11,8 @@
         
         #board { 
             display: grid; 
-            grid-template-columns: repeat(8, 1fr); 
-            grid-template-rows: repeat(8, 1fr);
+            grid-template-columns: repeat(10, 1fr); 
+            grid-template-rows: repeat(10, 1fr);
             width: 100%; 
             max-width: 600px;
             aspect-ratio: 1 / 1;
@@ -107,7 +107,7 @@
 
     <script>
         const API = 'api_checkers.php';
-        const ROWS = 8, COLS = 8;
+        const ROWS = 10, COLS = 10; // Changed to 10x10
         let roomId = new URLSearchParams(window.location.search).get('room');
         let myName = '', myColor = 'red', gameMode = roomId ? 'remote' : 'local', localOpponent = 'ai';
         let gameState = { 
@@ -121,15 +121,18 @@
             possibleMoves: []
         };
 
+        // Initial board for 10x10 (International Draughts)
         const initialBoard = [
-            ['', 'bp', '', 'bp', '', 'bp', '', 'bp'],
-            ['bp', '', 'bp', '', 'bp', '', 'bp', ''],
-            ['', 'bp', '', 'bp', '', 'bp', '', 'bp'],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['rp', '', 'rp', '', 'rp', '', 'rp', ''],
-            ['', 'rp', '', 'rp', '', 'rp', '', 'rp'],
-            ['rp', '', 'rp', '', 'rp', '', 'rp', '']
+            ['', 'bp', '', 'bp', '', 'bp', '', 'bp', '', 'bp'],
+            ['bp', '', 'bp', '', 'bp', '', 'bp', '', 'bp', ''],
+            ['', 'bp', '', 'bp', '', 'bp', '', 'bp', '', 'bp'],
+            ['bp', '', 'bp', '', 'bp', '', 'bp', '', 'bp', ''],
+            ['', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', ''],
+            ['', 'rp', '', 'rp', '', 'rp', '', 'rp', '', 'rp'],
+            ['rp', '', 'rp', '', 'rp', '', 'rp', '', 'rp', ''],
+            ['', 'rp', '', 'rp', '', 'rp', '', 'rp', '', 'rp'],
+            ['rp', '', 'rp', '', 'rp', '', 'rp', '', 'rp', '']
         ];
         
         window.onload = () => {
@@ -280,7 +283,6 @@
             mustContinueJump = false;
             jumpingPiece = null;
             gameState.lastMove = { from, to, pieceMoved: piece }; 
-            checkGameEnd();
         }
 
         function handleSquareClick(row, col) {
@@ -305,6 +307,7 @@
                             gameState.selectedPiece = null;
                             gameState.possibleMoves = [];
                             gameState.currentPlayer = (gameState.currentPlayer === 'red' ? 'black' : 'red');
+                            checkGameEnd(); // Check for game end after player change
                             if(gameMode === 'local' && localOpponent === 'ai' && gameState.players[1].name === "IA" && gameState.currentPlayer === gameState.players[1].color) {
                                 setTimeout(aiMove, 1000);
                             }
@@ -322,6 +325,7 @@
                             gameState.selectedPiece = null;
                             gameState.possibleMoves = [];
                             gameState.currentPlayer = (gameState.currentPlayer === 'red' ? 'black' : 'red');
+                            checkGameEnd(); // Check for game end after player change
                             if(gameMode === 'local' && localOpponent === 'ai' && gameState.players[1].name === "IA" && gameState.currentPlayer === gameState.players[1].color) {
                                 setTimeout(aiMove, 1000);
                             }
@@ -367,6 +371,7 @@
             makeMove(randomMove.from, randomMove.to);
             if (!mustContinueJump) {
                 gameState.currentPlayer = (gameState.currentPlayer === 'red' ? 'black' : 'red');
+                checkGameEnd(); // Check for game end after AI player change
                 gameState.selectedPiece = null;
                 gameState.possibleMoves = [];
             } else { setTimeout(aiMove, 500); }
