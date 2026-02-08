@@ -183,23 +183,78 @@ function makeMove(from,to){
 
 function handleSquareClick(row,col){
     if(gameState.gameOver) return;
-    const piece=gameState.board[row][col];
-    const myPlayerObj=gameState.players.find(p=>p.name===myName); const myPlayerColor=myPlayerObj?myPlayerObj.color:null;
-    if((gameMode==='remote' || (gameMode==='local' && localOpponent==='ai')) && myPlayerColor!==gameState.currentPlayer) return;
-    const isMyPiece=piece && piece.startsWith(gameState.currentPlayer);
 
+    const piece=gameState.board[row][col];
+    
+    // Determine whose turn it is
+    let activePlayerColor = gameState.currentPlayer;
+
+    // In local human vs human mode, allow the correct player to move
+    if(gameMode==='local' && localOpponent==='human'){
+        const currentPlayerIndex = gameState.players.findIndex(p => p.color === gameState.currentPlayer);
+        const isMyTurn = (currentPlayerIndex === 0 && myName === gameState.players[0].name) ||
+                         (currentPlayerIndex === 1 && myName === gameState.players[1].name);
+        if(!isMyTurn) return; // not this player's turn
+    } else if(gameMode==='local' && localOpponent==='ai'){
+        if(myColor !== gameState.currentPlayer) return; // AI's turn, human can't click
+    } else if(gameMode==='remote'){
+        const myPlayerObj=gameState.players.find(p=>p.name===myName);
+        if(!myPlayerObj || myPlayerObj.color !== gameState.currentPlayer) return;
+    }
+
+    const isMyPiece = piece && piece.startsWith(gameState.currentPlayer);
+
+    // Handle multiple jumps
     if(mustContinueJump){
-        if(row===jumpingPiece.row && col===jumpingPiece.col){ gameState.selectedPiece={row,col}; render(); } 
-        else { const move=gameState.possibleMoves.find(m=>m.row===row && m.col===col); if(move){ makeMove(jumpingPiece,move); if(!mustContinueJump){ gameState.selectedPiece=null; gameState.possibleMoves=[]; gameState.currentPlayer=(gameState.currentPlayer==='red'?'black':'red'); checkGameEnd(); if(gameMode==='local' && localOpponent==='ai' && gameState.players[1].name==='IA' && gameState.currentPlayer===gameState.players[1].color) setTimeout(aiMove,1000); if(gameMode==='remote') syncPush(); } render(); } }
+        if(row===jumpingPiece.row && col===jumpingPiece.col){
+            gameState.selectedPiece={row,col};
+            render();
+        } else {
+            const move = gameState.possibleMoves.find(m=>m.row===row && m.col===col);
+            if(move){
+                makeMove(jumpingPiece,move);
+                if(!mustContinueJump){
+                    gameState.selectedPiece=null;
+                    gameState.possibleMoves=[];
+                    gameState.currentPlayer=(gameState.currentPlayer==='red'?'black':'red');
+                    checkGameEnd();
+                    if(gameMode==='local' && localOpponent==='ai' && gameState.currentPlayer==='black') setTimeout(aiMove,1000);
+                    if(gameMode==='remote') syncPush();
+                }
+                render();
+            }
+        }
     } else {
         if(gameState.selectedPiece){
-            const move=gameState.possibleMoves.find(m=>m.row===row && m.col===col);
-            if(move){ makeMove(gameState.selectedPiece,move); if(!mustContinueJump){ gameState.selectedPiece=null; gameState.possibleMoves=[]; gameState.currentPlayer=(gameState.currentPlayer==='red'?'black':'red'); checkGameEnd(); if(gameMode==='local' && localOpponent==='ai' && gameState.players[1].name==='IA' && gameState.currentPlayer===gameState.players[1].color) setTimeout(aiMove,1000); if(gameMode==='remote') syncPush(); } render(); }
-            else if(isMyPiece){ gameState.selectedPiece={row,col}; gameState.possibleMoves=getPossibleMoves(row,col); render(); }
-            else{ gameState.selectedPiece=null; gameState.possibleMoves=[]; render(); }
-        } else if(isMyPiece){ gameState.selectedPiece={row,col}; gameState.possibleMoves=getPossibleMoves(row,col); render(); }
+            const move = gameState.possibleMoves.find(m=>m.row===row && m.col===col);
+            if(move){
+                makeMove(gameState.selectedPiece,move);
+                if(!mustContinueJump){
+                    gameState.selectedPiece=null;
+                    gameState.possibleMoves=[];
+                    gameState.currentPlayer=(gameState.currentPlayer==='red'?'black':'red');
+                    checkGameEnd();
+                    if(gameMode==='local' && localOpponent==='ai' && gameState.currentPlayer==='black') setTimeout(aiMove,1000);
+                    if(gameMode==='remote') syncPush();
+                }
+                render();
+            } else if(isMyPiece){
+                gameState.selectedPiece={row,col};
+                gameState.possibleMoves=getPossibleMoves(row,col);
+                render();
+            } else {
+                gameState.selectedPiece=null;
+                gameState.possibleMoves=[];
+                render();
+            }
+        } else if(isMyPiece){
+            gameState.selectedPiece={row,col};
+            gameState.possibleMoves=getPossibleMoves(row,col);
+            render();
+        }
     }
 }
+
 
 function render(){
     const boardEl=document.getElementById('board'); boardEl.innerHTML='';
