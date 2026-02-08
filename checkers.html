@@ -226,7 +226,28 @@
             return `<div style="width: 75%; height: 75%; background-color: ${pieceColor}; border-radius: 50%; position:relative; box-shadow: inset 0 -4px 8px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center;">${crown}</div>`;
         }
 
+        // NOUVELLE FONCTION : Vérifier si des captures sont disponibles pour un joueur
+        function hasAnyCapturesForPlayer(color) {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (gameState.board[r][c]?.startsWith(color)) {
+                        const moves = getPossibleMovesForPiece(r, c, false);
+                        if (moves.some(m => m.isCapture)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // FONCTION MODIFIÉE : Obtenir les mouvements possibles avec gestion des captures obligatoires
         function getPossibleMoves(row, col) {
+            const mustCapture = hasAnyCapturesForPlayer(gameState.currentPlayer);
+            return getPossibleMovesForPiece(row, col, mustCapture);
+        }
+
+        function getPossibleMovesForPiece(row, col, mustCapture) {
             const moves = [];
             const piece = gameState.board[row][col];
             if (!piece) return moves;
@@ -242,12 +263,18 @@
             for (const dir of directions) {
                 const jumpedRow = row + dir.dr, jumpedCol = col + dir.dc;
                 const landingRow = row + 2 * dir.dr, landingCol = col + 2 * dir.dc;
-                if (isOnBoard(landingRow, landingCol) && gameState.board[jumpedRow][jumpedCol]?.startsWith(opponentColor) && !gameState.board[landingRow][landingCol]) {
+                if (isOnBoard(landingRow, landingCol) && gameState.board[jumpedRow]?.[jumpedCol]?.startsWith(opponentColor) && !gameState.board[landingRow][landingCol]) {
                     captureMoves.push({row: landingRow, col: landingCol, isCapture: true, captured: {row: jumpedRow, col: jumpedCol}});
                 }
             }
+            
+            // Si des captures sont disponibles, retourner uniquement les captures
             if (captureMoves.length > 0) return captureMoves;
+            
+            // Si des captures sont obligatoires ailleurs, ne pas permettre de mouvements simples
+            if (mustCapture) return [];
 
+            // Sinon, retourner les mouvements simples
             for (const dir of directions) {
                 const newRow = row + dir.dr, newCol = col + dir.dc;
                 if (isOnBoard(newRow, newCol) && !gameState.board[newRow][newCol]) {
@@ -267,7 +294,7 @@
 
             if (to.isCapture) {
                 gameState.board[to.captured.row][to.captured.col] = '';
-                const subsequentJumps = getPossibleMoves(to.row, to.col).filter(move => move.isCapture);
+                const subsequentJumps = getPossibleMovesForPiece(to.row, to.col, false).filter(move => move.isCapture);
                 if (subsequentJumps.length > 0) {
                     mustContinueJump = true;
                     jumpingPiece = {row: to.row, col: to.col};
@@ -286,14 +313,14 @@
         }
 
         function handleSquareClick(row, col) {
-            if (gameState.gameOver || (gameMode === 'remote' && gameState.currentPlayer.charAt(0) !== myColor.charAt(0))) return;
+            if (gameState.gameOver || (gameMode === 'remote' && gameState.currentPlayer !== myColor)) return;
 
             const piece = gameState.board[row][col];
             const isMyTurn = gameState.players.find(p => p.name === myName)?.color === gameState.currentPlayer;
             if (gameMode === 'local' && localOpponent === 'human') { /* let any move */ }
             else if(!isMyTurn) return;
 
-            const isMyPiece = piece && piece.startsWith(gameState.currentPlayer.charAt(0));
+            const isMyPiece = piece && piece.startsWith(gameState.currentPlayer);
 
             if (mustContinueJump) {
                 if (row === jumpingPiece.row && col === jumpingPiece.col) {
@@ -307,7 +334,7 @@
                             gameState.selectedPiece = null;
                             gameState.possibleMoves = [];
                             gameState.currentPlayer = (gameState.currentPlayer === 'red' ? 'black' : 'red');
-                            checkGameEnd(); // Check for game end after player change
+                            checkGameEnd();
                             if(gameMode === 'local' && localOpponent === 'ai' && gameState.players[1].name === "IA" && gameState.currentPlayer === gameState.players[1].color) {
                                 setTimeout(aiMove, 1000);
                             }
@@ -325,7 +352,7 @@
                             gameState.selectedPiece = null;
                             gameState.possibleMoves = [];
                             gameState.currentPlayer = (gameState.currentPlayer === 'red' ? 'black' : 'red');
-                            checkGameEnd(); // Check for game end after player change
+                            checkGameEnd();
                             if(gameMode === 'local' && localOpponent === 'ai' && gameState.players[1].name === "IA" && gameState.currentPlayer === gameState.players[1].color) {
                                 setTimeout(aiMove, 1000);
                             }
@@ -354,27 +381,35 @@
             const aiColor = gameState.players.find(p => p.name === 'IA').color;
             let allPossibleAIMoves = [];
             
+            // Vérifier d'abord si des captures sont disponibles
+            const mustCapture = hasAnyCapturesForPlayer(aiColor);
+            
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
                     if (gameState.board[r][c]?.startsWith(aiColor)) {
-                        const movesForPiece = getPossibleMoves(r, c);
+                        const movesForPiece = getPossibleMovesForPiece(r, c, mustCapture);
                         movesForPiece.forEach(move => allPossibleAIMoves.push({ from: {row: r, col: c}, to: move }));
                     }
                 }
             }
-            if (allPossibleAIMoves.length === 0) { checkGameEnd(); render(); return; }
+            
+            if (allPossibleAIMoves.length === 0) { 
+                checkGameEnd(); 
+                render(); 
+                return; 
+            }
 
-            const captureMoves = allPossibleAIMoves.filter(move => move.to.isCapture);
-            const movesToConsider = captureMoves.length > 0 ? captureMoves : allPossibleAIMoves;
-            const randomMove = movesToConsider[Math.floor(Math.random() * movesToConsider.length)];
+            const randomMove = allPossibleAIMoves[Math.floor(Math.random() * allPossibleAIMoves.length)];
             
             makeMove(randomMove.from, randomMove.to);
             if (!mustContinueJump) {
                 gameState.currentPlayer = (gameState.currentPlayer === 'red' ? 'black' : 'red');
-                checkGameEnd(); // Check for game end after AI player change
+                checkGameEnd();
                 gameState.selectedPiece = null;
                 gameState.possibleMoves = [];
-            } else { setTimeout(aiMove, 500); }
+            } else { 
+                setTimeout(aiMove, 500); 
+            }
             render();
         }
 
@@ -382,11 +417,14 @@
             if(gameState.gameOver) return;
             const currentPlayerColor = gameState.currentPlayer;
             let hasPieces = false, hasMoves = false;
+            
+            const mustCapture = hasAnyCapturesForPlayer(currentPlayerColor);
+            
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
                     if (gameState.board[r][c]?.startsWith(currentPlayerColor)) {
                         hasPieces = true;
-                        if (getPossibleMoves(r, c).length > 0) {
+                        if (getPossibleMovesForPiece(r, c, mustCapture).length > 0) {
                             hasMoves = true;
                             break;
                         }
