@@ -3,73 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-<title>Dames - Arena 51</title>
+<title>Dames - Arena 51 (Corrigé)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); color: white; min-height: 100vh; overflow-x: hidden; font-family: 'Inter', sans-serif; }
-#board { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); width: 100%; max-width: 600px; aspect-ratio: 1/1; box-shadow: 0 25px 50px rgba(0,0,0,0.8); border-radius: 1.5rem; overflow: hidden; border: 4px solid rgba(255,255,255,0.05);}
-.square { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;cursor:pointer;position:relative;transition: background-color 0.2s;}
-.light-square { background-color: rgba(255, 255, 255, 0.2); }
-.dark-square { background-color: rgba(0, 50, 25, 0.7); }
-.piece { user-select:none;width:100%;height:100%;display:flex;align-items:center;justify-content:center; }
-.selected { background-color: rgba(29,255,175,0.4) !important; }
-.highlight-move { background-color: rgba(29,255,175,0.4) !important; }
-.highlight-capture { background-color: rgba(255,200,29,0.5) !important; }
-.color-dot { width:45px;height:45px;border-radius:50%;cursor:pointer;border:4px solid transparent;transition:0.3s; }
-.color-dot.active { border-color:#000; transform:scale(1.2); box-shadow:0 0 10px rgba(0,0,0,0.2);}
-input::placeholder { color: #9ca3af; }
+    body { background: radial-gradient(circle at center, #0a2f1a 0%, #000000 100%); color: white; min-height: 100vh; overflow-x: hidden; font-family: 'Inter', sans-serif; }
+    #board { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(10, 1fr); width: 100%; max-width: 600px; aspect-ratio: 1/1; box-shadow: 0 25px 50px rgba(0,0,0,0.8); border-radius: 1.5rem; overflow: hidden; border: 4px solid rgba(255,255,255,0.05);}
+    .square { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;cursor:pointer;position:relative;transition: background-color 0.2s;}
+    .light-square { background-color: rgba(255, 255, 255, 0.2); }
+    .dark-square { background-color: rgba(0, 50, 25, 0.7); }
+    .piece { user-select:none;width:100%;height:100%;display:flex;align-items:center;justify-content:center; }
+    .selected { background-color: rgba(29,255,175,0.4) !important; }
+    .highlight-move { background-color: rgba(29,255,175,0.4) !important; box-shadow: inset 0 0 10px rgba(29,255,175,0.8); }
+    .highlight-capture { background-color: rgba(255,200,29,0.5) !important; box-shadow: inset 0 0 10px rgba(255,200,29,0.8); }
+    .color-dot { width:45px;height:45px;border-radius:50%;cursor:pointer;border:4px solid transparent;transition:0.3s; }
+    .color-dot.active { border-color:#fff; transform:scale(1.2); box-shadow:0 0 15px rgba(255,255,255,0.5);}
+    input::placeholder { color: #9ca3af; }
 </style>
 </head>
 <body class="p-4 flex items-center justify-center font-sans uppercase font-black">
 
-<!-- Setup -->
 <div id="setup" class="max-w-md w-full bg-white p-8 md:p-12 rounded-[3.5rem] shadow-2xl text-slate-900 z-50">
-<h2 id="setup-title" class="text-4xl font-black mb-8 text-green-900 text-center italic tracking-tighter uppercase">DAMES ARENA</h2>
+    <h2 id="setup-title" class="text-4xl font-black mb-8 text-green-900 text-center italic tracking-tighter uppercase">DAMES ARENA</h2>
 
-<div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
-<button type="button" onclick="setMode('local')" id="m-local" class="bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black">LOCAL</button>
-<button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-200 text-slate-500 py-4 rounded-2xl font-black">EN LIGNE</button>
+    <div id="mode-selector" class="grid grid-cols-2 gap-4 mb-8">
+        <button type="button" onclick="setMode('local')" id="m-local" class="bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black">LOCAL</button>
+        <button type="button" onclick="setMode('remote')" id="m-remote" class="bg-slate-200 text-slate-500 py-4 rounded-2xl font-black">EN LIGNE</button>
+    </div>
+
+    <div id="local-options" class="space-y-4 mb-8">
+        <p class="text-center text-[10px] font-black text-slate-400">CHOIX DE L'ADVERSAIRE :</p>
+        <div class="grid grid-cols-2 gap-3">
+            <button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-green-600 text-white py-4 rounded-2xl text-xs font-black shadow-md">🤖 IA</button>
+            <button type="button" onclick="setOpponent('human')" id="opp-human" class="bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black">👤 HUMAIN</button>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <div class="text-center">
+            <p class="text-[10px] text-slate-400 mb-4 tracking-widest uppercase">TA COULEUR</p>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <div onclick="setColor('red')" id="c-red" class="color-dot active" style="background-color:#f87171;"></div>
+                <div onclick="setColor('black')" id="c-black" class="color-dot" style="background-color:#60a5fa;"></div>
+            </div>
+        </div>
+
+        <input type="text" id="my-name-in" onkeydown="if(event.key==='Enter') startAction()" placeholder="TON PSEUDO..." class="w-full bg-slate-100 p-5 rounded-3xl outline-none text-xl text-center font-black uppercase shadow-inner">
+
+        <button onclick="startAction()" class="w-full bg-black text-white py-7 rounded-3xl text-2xl shadow-xl active:scale-95 transition-all font-black">DÉMARRER</button>
+        <a href="index.html" class="block w-full text-center text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</a>
+    </div>
 </div>
 
-<div id="local-options" class="space-y-4 mb-8">
-<p class="text-center text-[10px] font-black text-slate-400">CHOIX DE L'ADVERSAIRE :</p>
-<div class="grid grid-cols-2 gap-3">
-<button type="button" onclick="setOpponent('ai')" id="opp-ai" class="bg-green-600 text-white py-4 rounded-2xl text-xs font-black shadow-md">🤖 IA</button>
-<button type="button" onclick="setOpponent('human')" id="opp-human" class="bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black">👤 HUMAIN</button>
-</div>
-</div>
-
-<div class="space-y-6">
-<div class="text-center">
-<p class="text-[10px] text-slate-400 mb-4 tracking-widest uppercase">COULEUR DES PIONS</p>
-<div class="flex justify-center gap-4 flex-wrap">
-<div onclick="setColor('red')" id="c-red" class="color-dot active" style="background-color:#f87171;"></div>
-<div onclick="setColor('black')" id="c-black" class="color-dot" style="background-color:#60a5fa;"></div>
-</div>
-</div>
-
-<input type="text" id="my-name-in" onkeydown="if(event.key==='Enter') startAction()" placeholder="TON PSEUDO..." class="w-full bg-slate-100 p-5 rounded-3xl outline-none text-xl text-center font-black uppercase shadow-inner">
-
-<button onclick="startAction()" class="w-full bg-black text-white py-7 rounded-3xl text-2xl shadow-xl active:scale-95 transition-all font-black">DÉMARRER</button>
-<a href="index.html" class="block w-full text-center text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</a>
-</div>
-</div>
-
-<!-- Game -->
 <div id="game" class="hidden relative max-w-4xl w-full bg-black/40 backdrop-blur-xl p-6 md:p-8 rounded-[3.5rem] border-4 border-white/5">
-<div class="flex justify-between items-center mb-8">
-<a href="index.html" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black">MENU</a>
-<div id="players-display" class="flex gap-4 md:gap-8 text-sm md:text-base tracking-widest items-center font-black"></div>
-<button onclick="copyLink()" id="btn-copy" class="hidden bg-green-600 text-white text-[10px] px-4 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all font-black uppercase">LIEN</button>
-</div>
-<div class="flex justify-center mb-6"><div id="board"></div></div>
-<div id="win-overlay" class="hidden text-center backdrop-blur-sm bg-black/50 absolute inset-0 m-4 md:m-8 rounded-[3rem] flex flex-col items-center justify-center">
-<p id="win-text" class="text-5xl text-yellow-400 mb-8 italic tracking-tighter"></p>
-<div class="flex gap-4">
-<button onclick="location.reload()" class="bg-white/20 text-white px-10 py-4 rounded-full text-sm font-black shadow-xl hover:bg-white/30 transition uppercase">Rejouer</button>
-<button onclick="saveAndReset()" class="bg-white text-black px-10 py-4 rounded-full text-sm font-black shadow-xl hover:scale-105 transition uppercase">Accueil</button>
-</div>
-</div>
+    <div class="flex justify-between items-center mb-8">
+        <a href="index.html" class="text-[10px] bg-white/10 px-6 py-3 rounded-full hover:bg-white/20 transition font-black">QUITTER</a>
+        <div id="players-display" class="flex gap-4 md:gap-8 text-sm md:text-base tracking-widest items-center font-black"></div>
+        <div id="turn-indicator" class="text-xs bg-white/10 px-3 py-1 rounded"></div>
+        <button onclick="copyLink()" id="btn-copy" class="hidden bg-green-600 text-white text-[10px] px-4 py-2 rounded-full tracking-widest shadow-lg active:scale-90 transition-all font-black uppercase">LIEN</button>
+    </div>
+    
+    <div class="flex justify-center mb-6 relative">
+        <div id="board"></div>
+    </div>
+    
+    <div id="win-overlay" class="hidden text-center backdrop-blur-md bg-black/80 absolute inset-0 m-4 md:m-8 rounded-[3rem] flex flex-col items-center justify-center z-50">
+        <p id="win-text" class="text-5xl text-yellow-400 mb-8 italic tracking-tighter"></p>
+        <div class="flex gap-4">
+            <button onclick="location.reload()" class="bg-white/20 text-white px-10 py-4 rounded-full text-sm font-black shadow-xl hover:bg-white/30 transition uppercase">Rejouer</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -79,91 +81,184 @@ let roomId=new URLSearchParams(window.location.search).get('room');
 let myName='',myColor='red',gameMode=roomId?'remote':'local',localOpponent='ai';
 let gameState={players:[],board:[],currentPlayer:'',lastMove:null,gameOver:false,winner:'',selectedPiece:null,possibleMoves:[]};
 
-// Initialize 10x10 international board
+// Board 10x10 International
+// bp = black piece, rp = red piece
 const initialBoard=[
-['','bp','','bp','','bp','','bp','','bp'],
-['bp','','bp','','bp','','bp','','bp',''],
-['','bp','','bp','','bp','','bp','','bp'],
-['bp','','bp','','bp','','bp','','bp',''],
-['','','','','','','','','',''],
-['','','','','','','','','',''],
-['rp','','rp','','rp','','rp','','rp',''],
-['','rp','','rp','','rp','','rp','','rp'],
-['rp','','rp','','rp','','rp','','rp',''],
-['','rp','','rp','','rp','','rp','','rp']
+    ['','bp','','bp','','bp','','bp','','bp'],
+    ['bp','','bp','','bp','','bp','','bp',''],
+    ['','bp','','bp','','bp','','bp','','bp'],
+    ['bp','','bp','','bp','','bp','','bp',''],
+    ['','','','','','','','','',''],
+    ['','','','','','','','','',''],
+    ['rp','','rp','','rp','','rp','','rp',''],
+    ['','rp','','rp','','rp','','rp','','rp'],
+    ['rp','','rp','','rp','','rp','','rp',''],
+    ['','rp','','rp','','rp','','rp','','rp']
 ];
 
 window.onload=()=>{
-    if(roomId){document.getElementById('mode-selector').classList.add('hidden');document.getElementById('local-options').classList.add('hidden');document.getElementById('setup-title').innerHTML="REJOINDRE <span class='text-slate-200'>ARENA</span>";gameMode='remote';} else {setMode('local');setOpponent('ai');}
+    if(roomId){
+        document.getElementById('mode-selector').classList.add('hidden');
+        document.getElementById('local-options').classList.add('hidden');
+        document.getElementById('setup-title').innerHTML="REJOINDRE <span class='text-slate-200'>ARENA</span>";
+        gameMode='remote';
+    } else {
+        setMode('local');
+        setOpponent('ai');
+    }
 }
 
-function setMode(m){ gameMode=m; document.getElementById('m-local').className=(m==='local'?"bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black":"bg-slate-200 text-slate-500 py-4 rounded-2xl font-black"); document.getElementById('m-remote').className=(m==='remote'?"bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black":"bg-slate-200 text-slate-500 py-4 rounded-2xl font-black"); document.getElementById('local-options').classList.toggle('hidden', m!=='local'); }
-function setOpponent(opp){ localOpponent=opp; document.getElementById('opp-ai').className=(opp==='ai'?"bg-green-600 text-white py-4 rounded-2xl text-xs font-black shadow-md":"bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black"); document.getElementById('opp-human').className=(opp==='human'?"bg-green-600 text-white py-4 rounded-2xl text-xs font-black shadow-md":"bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black"); }
-function setColor(c){ myColor=c; document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active')); document.getElementById('c-'+c).classList.add('active'); }
+function setMode(m){ 
+    gameMode=m; 
+    document.getElementById('m-local').className=(m==='local'?"bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black":"bg-slate-200 text-slate-500 py-4 rounded-2xl font-black"); 
+    document.getElementById('m-remote').className=(m==='remote'?"bg-green-600 text-white py-4 rounded-2xl shadow-lg font-black":"bg-slate-200 text-slate-500 py-4 rounded-2xl font-black"); 
+    document.getElementById('local-options').classList.toggle('hidden', m!=='local'); 
+}
+
+function setOpponent(opp){ 
+    localOpponent=opp; 
+    document.getElementById('opp-ai').className=(opp==='ai'?"bg-green-600 text-white py-4 rounded-2xl text-xs font-black shadow-md":"bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black"); 
+    document.getElementById('opp-human').className=(opp==='human'?"bg-green-600 text-white py-4 rounded-2xl text-xs font-black shadow-md":"bg-slate-200 text-slate-500 py-4 rounded-2xl text-xs font-black"); 
+}
+
+function setColor(c){ 
+    myColor=c; 
+    document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active')); 
+    document.getElementById('c-'+c).classList.add('active'); 
+}
 
 async function startAction(){
-    const name=document.getElementById('my-name-in').value.trim(); if(!name)return alert("Pseudo !"); myName=name.toUpperCase();
+    const name=document.getElementById('my-name-in').value.trim(); 
+    if(!name) return alert("Choisis un pseudo !"); 
+    myName=name.toUpperCase();
+    
     gameState.board=JSON.parse(JSON.stringify(initialBoard));
+    
     if(gameMode==='remote'){
-        if(!roomId) roomId=Math.random().toString(36).substring(2,8); window.history.pushState({},'',`?room=${roomId}`);
+        if(!roomId) roomId=Math.random().toString(36).substring(2,8); 
+        window.history.pushState({},'',`?room=${roomId}`);
         await syncPull();
         if(!gameState.players.find(p=>p.name===myName)){
-            if(gameState.players.length<2){ gameState.players.push({name:myName,color:myColor}); if(gameState.players.length===1) gameState.currentPlayer='red'; }
-            else return alert("Plein !");
-        } setInterval(syncPull,2000);
+            if(gameState.players.length<2){ 
+                gameState.players.push({name:myName,color:myColor}); 
+                if(gameState.players.length===1) gameState.currentPlayer='red'; 
+            } else return alert("La salle est pleine !");
+        } 
+        setInterval(syncPull,2000);
     } else {
-        gameState.players=[{name:myName,color:myColor},{name:localOpponent==='ai'?'IA':'JOUEUR 2',color:(myColor==='red'?'black':'red')}];
+        // Mode Local
+        // Si je suis Rouge, je suis J1. Si je suis Noir, je suis J1 mais je joue les noirs.
+        // Les rouges commencent TOUJOURS.
+        gameState.players=[
+            {name:myName, color:myColor},
+            {name:localOpponent==='ai'?'IA':'JOUEUR 2', color:(myColor==='red'?'black':'red')}
+        ];
         gameState.currentPlayer='red';
     }
-    document.getElementById('setup').classList.add('hidden'); document.getElementById('game').classList.remove('hidden'); 
-    if(gameMode==='remote') { document.getElementById('btn-copy').classList.remove('hidden'); await syncPush(); }
+
+    document.getElementById('setup').classList.add('hidden'); 
+    document.getElementById('game').classList.remove('hidden'); 
+    
+    if(gameMode==='remote') { 
+        document.getElementById('btn-copy').classList.remove('hidden'); 
+        await syncPush(); 
+    }
+    
     render();
+
+    // CORRECTION IMPORTANTE : Si c'est à l'IA de jouer (ex: je suis Noir, donc IA est Rouge), on lance l'IA
+    if(gameMode === 'local' && localOpponent === 'ai' && gameState.currentPlayer !== myColor){
+        setTimeout(aiMove, 1000);
+    }
 }
 
-// SYNC
+// SYNC (backend simple)
 async function syncPush(){ if(roomId) await fetch(`${API}?action=sync&roomId=${roomId}`,{method:'POST',body:JSON.stringify(gameState)}); }
-async function syncPull(){ if(!roomId) return; try{ const r=await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); const data=await r.json(); if(data){ const wasOver=gameState.gameOver; gameState=data; if(wasOver!==gameState.gameOver) document.getElementById('win-overlay').classList.toggle('hidden',!gameState.gameOver); render(); } } catch(e){ console.error(e);} }
+async function syncPull(){ 
+    if(!roomId) return; 
+    try{ 
+        const r=await fetch(`${API}?action=sync&roomId=${roomId}&t=${Date.now()}`); 
+        const data=await r.json(); 
+        if(data){ 
+            const wasOver=gameState.gameOver; 
+            gameState=data; 
+            if(wasOver!==gameState.gameOver) document.getElementById('win-overlay').classList.toggle('hidden',!gameState.gameOver); 
+            render(); 
+        } 
+    } catch(e){ console.error(e);} 
+}
 
 const isOnBoard=(r,c)=>r>=0&&r<ROWS&&c>=0&&c<COLS;
 
-// Returns piece HTML with crown if king
 function getCheckersPieceChar(piece){
     const color=piece.charAt(0);
     const isKing=piece.charAt(1)==='k';
-    const pieceColor=color==='r'?'#f87171':'#60a5fa';
-    const crown=isKing?'<span style="color:#facc15;font-size:0.6em;position:absolute;top:-2px;left:50%;transform:translateX(-50%);text-shadow:0 0 5px black;">👑</span>':'';
-    return `<div style="width:75%;height:75%;background-color:${pieceColor};border-radius:50%;position:relative;box-shadow:inset 0 -4px 8px rgba(0,0,0,0.4),0 2px 4px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;">${crown}</div>`;
+    const pieceColor=color==='r'?'#f87171':'#60a5fa'; // Rouge vs Bleu/Noir
+    const crown=isKing?'<span style="color:#facc15;font-size:1.5rem;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-shadow:0 0 5px black;">👑</span>':'';
+    return `<div class="piece" style="width:80%;height:80%;background-color:${pieceColor};border-radius:50%;position:relative;box-shadow:inset 0 -4px 8px rgba(0,0,0,0.4),0 4px 8px rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.1);">${crown}</div>`;
 }
 
-// INTERNATIONAL: check if any captures exist for color
 function hasAnyCapturesForPlayer(color){
-    for(let r=0;r<ROWS;r++){ for(let c=0;c<COLS;c++){ const piece=gameState.board[r][c]; if(piece?.startsWith(color)){ const moves=getPossibleMovesForPiece(r,c,true); if(moves.some(m=>m.isCapture)) return true; } } } return false;
+    for(let r=0;r<ROWS;r++){ 
+        for(let c=0;c<COLS;c++){ 
+            const piece=gameState.board[r][c]; 
+            if(piece?.startsWith(color)){ 
+                const moves=getPossibleMovesForPiece(r,c,true); 
+                if(moves.some(m=>m.isCapture)) return true; 
+            } 
+        } 
+    } 
+    return false;
 }
 
-// Get possible moves with capture rules (including flying kings)
-function getPossibleMoves(row,col){ const mustCapture=hasAnyCapturesForPlayer(gameState.currentPlayer); return getPossibleMovesForPiece(row,col,mustCapture); }
+function getPossibleMoves(row,col){ 
+    const mustCapture=hasAnyCapturesForPlayer(gameState.currentPlayer); 
+    return getPossibleMovesForPiece(row,col,mustCapture); 
+}
+
 function getPossibleMovesForPiece(row,col,mustCapture){
     const piece=gameState.board[row][col]; if(!piece) return [];
-    const color=piece.charAt(0),opponent=color==='r'?'b':'r',isKing=piece.charAt(1)==='k';
+    const color=piece.charAt(0);
+    const opponent=color==='r'?'b':'r';
+    const isKing=piece.charAt(1)==='k';
     const directions=[{dr:-1,dc:-1},{dr:-1,dc:1},{dr:1,dc:-1},{dr:1,dc:1}]; 
     const moves=[]; 
+    
     for(const dir of directions){
+        // CORRECTION : Un pion ne peut avancer que dans son sens (Rouge vers le haut -1, Noir vers le bas +1) sauf s'il est Roi
+        const isForward = (color === 'r' && dir.dr === -1) || (color === 'b' && dir.dr === 1);
+
         let r=row+dir.dr,c=col+dir.dc; 
+        
         while(isOnBoard(r,c)){
             if(!gameState.board[r][c]){
-                if(!mustCapture) moves.push({row:r,col:c,isCapture:false});
+                // Déplacement simple (pas de capture)
+                // Autorisé seulement si : on ne DOIT pas capturer ET (c'est un Roi OU c'est vers l'avant)
+                if(!mustCapture && (isKing || isForward)){
+                    moves.push({row:r,col:c,isCapture:false});
+                }
+                // Les dames (rois) volantes peuvent aller plus loin, mais les pions s'arrêtent à 1 case
+                if(!isKing) break; 
             } else if(gameState.board[r][c].startsWith(opponent)){
-                let jumpR=r+dir.dr,jumpC=c+dir.dc; let capturedPositions=[{row:r,col:c}];
+                // Capture
+                let jumpR=r+dir.dr,jumpC=c+dir.dc; 
+                let capturedPositions=[{row:r,col:c}];
+                
+                // Vérifier la case derrière l'adversaire
                 while(isOnBoard(jumpR,jumpC) && !gameState.board[jumpR][jumpC]){
                     moves.push({row:jumpR,col:jumpC,isCapture:true,captured:[...capturedPositions]});
-                    if(!isKing) break; // simple piece can't go further
+                    if(!isKing) break; // Le pion atterrit juste derrière
                     jumpR+=dir.dr;jumpC+=dir.dc;
                 }
-                break;
-            } else break; // same color piece
-            if(!isKing) break; r+=dir.dr;c+=dir.dc;
+                break; // On ne peut pas sauter par dessus 2 pièces collées
+            } else {
+                break; // Bloqué par sa propre couleur
+            }
+            if(!isKing) break; // Le pion ne boucle pas
+            r+=dir.dr;c+=dir.dc;
         }
     }
+    
     if(mustCapture) return moves.filter(m=>m.isCapture);
     return moves;
 }
@@ -172,122 +267,216 @@ let mustContinueJump=false,jumpingPiece=null;
 
 function makeMove(from,to){
     const piece=gameState.board[from.row][from.col];
-    gameState.board[to.row][to.col]=piece; gameState.board[from.row][from.col]='';
-    if(to.isCapture) to.captured.forEach(p=>gameState.board[p.row][p.col]='');
-    const subsequentJumps=getPossibleMovesForPiece(to.row,to.col,true).filter(m=>m.isCapture);
-    if(subsequentJumps.length>0){ mustContinueJump=true; jumpingPiece={row:to.row,col:to.col}; gameState.possibleMoves=subsequentJumps; gameState.selectedPiece={row:to.row,col:to.col}; return; }
-    if(piece.charAt(0)==='r' && to.row===0) gameState.board[to.row][to.col]='rk';
-    else if(piece.charAt(0)==='b' && to.row===ROWS-1) gameState.board[to.row][to.col]='bk';
-    mustContinueJump=false; jumpingPiece=null; gameState.lastMove={from,to,pieceMoved:piece};
+    gameState.board[to.row][to.col]=piece; 
+    gameState.board[from.row][from.col]='';
+    
+    if(to.isCapture) {
+        to.captured.forEach(p=>gameState.board[p.row][p.col]='');
+    }
+    
+    // Check Promotion
+    let promoted = false;
+    if(piece==='rp' && to.row===0) { gameState.board[to.row][to.col]='rk'; promoted=true; }
+    else if(piece==='bp' && to.row===ROWS-1) { gameState.board[to.row][to.col]='bk'; promoted=true; }
+
+    // Multi-jump logic
+    if(to.isCapture && !promoted){
+        // Si on vient de promouvoir, le tour s'arrête (règle usuelle)
+        const subsequentJumps=getPossibleMovesForPiece(to.row,to.col,true).filter(m=>m.isCapture);
+        if(subsequentJumps.length>0){ 
+            mustContinueJump=true; 
+            jumpingPiece={row:to.row,col:to.col}; 
+            gameState.possibleMoves=subsequentJumps; 
+            gameState.selectedPiece={row:to.row,col:to.col}; 
+            return; // Le tour ne change pas
+        }
+    }
+
+    mustContinueJump=false; 
+    jumpingPiece=null; 
+    gameState.lastMove={from,to,pieceMoved:piece};
+    
+    // Switch turn
+    gameState.currentPlayer=(gameState.currentPlayer==='red'?'black':'red');
+    gameState.selectedPiece=null;
+    gameState.possibleMoves=[];
+    
+    checkGameEnd();
+    
+    if(gameMode==='remote') syncPush();
+    
+    // Trigger AI si nécessaire
+    if(!gameState.gameOver && gameMode==='local' && localOpponent==='ai' && gameState.currentPlayer !== myColor){
+        setTimeout(aiMove, 700);
+    }
 }
+
 function handleSquareClick(row,col){
     if(gameState.gameOver) return;
 
-    const piece=gameState.board[row][col];
-
-    // Determine if it's allowed to click this piece
-    const isCurrentPlayerPiece = piece && piece.startsWith(gameState.currentPlayer);
-
-    if(gameMode==='local'){
-        if(localOpponent==='ai'){
-            // In AI mode, human can only click own pieces
-            if(myColor !== gameState.currentPlayer) return;
+    // IMPORTANT : On ne peut jouer que si c'est notre tour
+    // En local vs AI : currentPlayer doit être égal à myColor
+    // En local vs Humain : tout le monde peut cliquer selon le tour
+    let canClick = false;
+    if(gameMode === 'local'){
+        if(localOpponent === 'ai'){
+            if(gameState.currentPlayer === myColor) canClick = true;
         } else {
-            // Human vs human: any piece of current player is clickable
-            if(!isCurrentPlayerPiece && !(mustContinueJump && jumpingPiece.row===row && jumpingPiece.col===col)) return;
-        }
-    } else if(gameMode==='remote'){
-        const myPlayerObj=gameState.players.find(p=>p.name===myName);
-        if(!myPlayerObj || myPlayerObj.color !== gameState.currentPlayer) return;
-    }
-
-    // Handle multiple jumps
-    if(mustContinueJump){
-        if(row===jumpingPiece.row && col===jumpingPiece.col){
-            gameState.selectedPiece={row,col};
-            render();
-        } else {
-            const move = gameState.possibleMoves.find(m=>m.row===row && m.col===col);
-            if(move){
-                makeMove(jumpingPiece,move);
-                if(!mustContinueJump){
-                    gameState.selectedPiece=null;
-                    gameState.possibleMoves=[];
-                    gameState.currentPlayer=(gameState.currentPlayer==='red'?'black':'red');
-                    checkGameEnd();
-                    if(gameMode==='local' && localOpponent==='ai' && gameState.currentPlayer==='black') setTimeout(aiMove,1000);
-                    if(gameMode==='remote') syncPush();
-                }
-                render();
-            }
+            // Humain vs Humain : toujours clickable
+            canClick = true;
         }
     } else {
-        if(gameState.selectedPiece){
+        // Remote
+        if(gameState.currentPlayer === myColor) canClick = true;
+    }
+
+    if(!canClick) return; // Ce n'est pas à toi !
+
+    const piece=gameState.board[row][col];
+    const isCurrentPlayerPiece = piece && piece.startsWith(gameState.currentPlayer);
+
+    if(mustContinueJump){
+        // Obligation de jouer la pièce qui saute
+        if(row!==jumpingPiece.row || col!==jumpingPiece.col){
+            // Si on clique sur la destination valide
             const move = gameState.possibleMoves.find(m=>m.row===row && m.col===col);
-            if(move){
-                makeMove(gameState.selectedPiece,move);
-                if(!mustContinueJump){
-                    gameState.selectedPiece=null;
-                    gameState.possibleMoves=[];
-                    gameState.currentPlayer=(gameState.currentPlayer==='red'?'black':'red');
-                    checkGameEnd();
-                    if(gameMode==='local' && localOpponent==='ai' && gameState.currentPlayer==='black') setTimeout(aiMove,1000);
-                    if(gameMode==='remote') syncPush();
-                }
-                render();
-            } else if(isCurrentPlayerPiece){
-                gameState.selectedPiece={row,col};
-                gameState.possibleMoves=getPossibleMoves(row,col);
-                render();
-            } else {
-                gameState.selectedPiece=null;
-                gameState.possibleMoves=[];
-                render();
-            }
+            if(move) makeMove(jumpingPiece, move);
+        }
+        render();
+        return;
+    }
+
+    // Mouvement normal
+    if(gameState.selectedPiece){
+        const move = gameState.possibleMoves.find(m=>m.row===row && m.col===col);
+        if(move){
+            makeMove(gameState.selectedPiece,move);
         } else if(isCurrentPlayerPiece){
+            // Changement de sélection
             gameState.selectedPiece={row,col};
             gameState.possibleMoves=getPossibleMoves(row,col);
-            render();
+        } else {
+            // Déselection
+            gameState.selectedPiece=null;
+            gameState.possibleMoves=[];
         }
+    } else if(isCurrentPlayerPiece){
+        // Première sélection
+        gameState.selectedPiece={row,col};
+        gameState.possibleMoves=getPossibleMoves(row,col);
     }
+    render();
 }
 
 
 function render(){
-    const boardEl=document.getElementById('board'); boardEl.innerHTML='';
+    const boardEl=document.getElementById('board'); 
+    boardEl.innerHTML='';
     for(let r=0;r<ROWS;r++){
         for(let c=0;c<COLS;c++){
-            const sq=document.createElement('div'); sq.className='square '+((r+c)%2===0?'light-square':'dark-square');
+            const sq=document.createElement('div'); 
+            sq.className='square '+((r+c)%2===0?'light-square':'dark-square');
             sq.onclick=()=>handleSquareClick(r,c);
-            const piece=gameState.board[r][c]; if(piece) sq.innerHTML=getCheckersPieceChar(piece);
-            if(gameState.selectedPiece && gameState.selectedPiece.row===r && gameState.selectedPiece.col===c) sq.classList.add('selected');
-            if(gameState.possibleMoves.some(m=>m.row===r && m.col===c)) sq.classList.add(gameState.possibleMoves.find(m=>m.row===r && m.col===c).isCapture?'highlight-capture':'highlight-move');
+            
+            const piece=gameState.board[r][c]; 
+            if(piece) sq.innerHTML=getCheckersPieceChar(piece);
+            
+            // Highlight sélection
+            if(gameState.selectedPiece && gameState.selectedPiece.row===r && gameState.selectedPiece.col===c) 
+                sq.classList.add('selected');
+            
+            // Highlight coups possibles
+            const move = gameState.possibleMoves.find(m=>m.row===r && m.col===c);
+            if(move) sq.classList.add(move.isCapture?'highlight-capture':'highlight-move');
+            
+            // Highlight dernier coup (optionnel pour debug)
+             if(gameState.lastMove && ((gameState.lastMove.from.row===r && gameState.lastMove.from.col===c) || (gameState.lastMove.to.row===r && gameState.lastMove.to.col===c))){
+                 sq.style.backgroundColor = "rgba(255,255,255,0.1)";
+             }
+
             boardEl.appendChild(sq);
         }
     }
-    const playersEl=document.getElementById('players-display'); playersEl.innerHTML=gameState.players.map(p=>`${p.name} (${p.color})`).join(' VS ');
+    
+    // Update infos
+    const curP = gameState.currentPlayer==='red'?"ROUGES":"BLEUS";
+    document.getElementById('players-display').innerText = `TOUR : ${curP}`;
+    document.getElementById('players-display').style.color = gameState.currentPlayer==='red'?"#f87171":"#60a5fa";
 }
 
 function checkGameEnd(){
     const reds=gameState.board.flat().filter(p=>p?.startsWith('r')).length;
     const blacks=gameState.board.flat().filter(p=>p?.startsWith('b')).length;
-    if(reds===0){gameState.gameOver=true;gameState.winner='black';document.getElementById('win-text').innerText=`BLACK WIN`;document.getElementById('win-overlay').classList.remove('hidden');}
-    if(blacks===0){gameState.gameOver=true;gameState.winner='red';document.getElementById('win-text').innerText=`RED WIN`;document.getElementById('win-overlay').classList.remove('hidden');}
+    
+    // Possibilité de blocage (plus de mouvements possibles)
+    // Pour une version simple, on check juste le nombre de pièces
+    
+    if(reds===0){ endGame('black'); }
+    else if(blacks===0){ endGame('red'); }
+}
+
+function endGame(winnerColor){
+    gameState.gameOver=true;
+    gameState.winner=winnerColor;
+    document.getElementById('win-text').innerText=`${winnerColor==='red'?'ROUGES':'BLEUS'} GAGNENT !`;
+    document.getElementById('win-text').className = "text-5xl mb-8 italic tracking-tighter " + (winnerColor==='red'?"text-red-400":"text-blue-400");
+    document.getElementById('win-overlay').classList.remove('hidden');
 }
 
 function aiMove(){
-    // simple AI: random capture or move
-    const pieces=[]; for(let r=0;r<ROWS;r++){for(let c=0;c<COLS;c++){ if(gameState.board[r][c].startsWith('b')){ const moves=getPossibleMoves(r,c); if(moves.length) pieces.push({r,c,moves}); } } }
-    if(pieces.length===0) return checkGameEnd();
-    const choice=pieces[Math.floor(Math.random()*pieces.length)];
-    const move=choice.moves[Math.floor(Math.random()*choice.moves.length)];
-    makeMove({row:choice.r,col:choice.c},move);
-    if(!mustContinueJump){ gameState.currentPlayer='red'; checkGameEnd(); render(); }
-    else { gameState.selectedPiece={row:jumpingPiece.row,col:jumpingPiece.col}; gameState.possibleMoves=getPossibleMoves(jumpingPiece.row,jumpingPiece.col); render(); setTimeout(aiMove,1000); }
+    if(gameState.gameOver) return;
+    
+    // IA joue les pièces qui ne sont PAS myColor
+    const aiColor = (myColor === 'red') ? 'b' : 'r'; 
+    // Mais attention, gameState.currentPlayer doit correspondre
+    if(!gameState.currentPlayer.startsWith(aiColor === 'r' ? 'red' : 'black')) return;
+
+    let possiblePlays = [];
+
+    // Si on est déjà en train de sauter (rafle)
+    if(mustContinueJump){
+         const moves = getPossibleMovesForPiece(jumpingPiece.row, jumpingPiece.col, true);
+         if(moves.length > 0){
+             const randomMove = moves[Math.floor(Math.random()*moves.length)];
+             makeMove(jumpingPiece, randomMove);
+             render();
+             return; // makeMove rappellera aiMove si besoin
+         }
+    }
+
+    // Recherche de tous les coups possibles
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            if(gameState.board[r][c].startsWith(aiColor)){
+                const moves=getPossibleMoves(r,c);
+                if(moves.length > 0){
+                    possiblePlays.push({r,c,moves});
+                }
+            }
+        }
+    }
+
+    if(possiblePlays.length===0){
+        // IA bloquée, elle perd
+        endGame(myColor);
+        return;
+    }
+
+    // Prioriser les captures (obligatoire aux dames)
+    const captures = possiblePlays.filter(p => p.moves.some(m => m.isCapture));
+    const selectionPool = captures.length > 0 ? captures : possiblePlays;
+
+    // Choix aléatoire
+    const choice = selectionPool[Math.floor(Math.random()*selectionPool.length)];
+    // Si capture obligatoire, filtrer les moves de capture
+    const validMoves = captures.length > 0 ? choice.moves.filter(m=>m.isCapture) : choice.moves;
+    const move = validMoves[Math.floor(Math.random()*validMoves.length)];
+
+    makeMove({row:choice.r,col:choice.c}, move);
+    render();
 }
 
 function copyLink(){ navigator.clipboard.writeText(window.location.href).then(()=>alert("Lien copié !")); }
-function saveAndReset(){ location.href='index.html'; }
 
 </script>
 </body>
