@@ -94,7 +94,7 @@
         let roomId = new URLSearchParams(window.location.search).get('room');
         let maxTime = 120, maxRounds = 5, currentRoundCount = 0, timeLeft = 0;
         let timerInterval = null;
-        let inputsRendered = false; // Flag pour éviter de re-render pendant la saisie
+        let inputsRendered = false;
         const API = 'api.php';
         const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Dans ma chambre", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime","Super-héros", "Dieu Mythologique", "Site web", "Application", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Dans une voiture", "Dans une école", "Dans la forêt", "Excuse d'absence"];
 
@@ -107,26 +107,41 @@
         };
 
         function renderCatList() {
-            document.getElementById('cat-list').innerHTML = categoriesList.map(c => {
-                const safeId = c.replace(/'/g, "_");
-                const safeCat = c.replace(/'/g, "\\'");
-                return `<div id="cat-${safeId}" onclick="toggleCat('${safeCat}')" class="cat-chip font-black">${c}</div>`;
-            }).join('');
+            const container = document.getElementById('cat-list');
+            container.innerHTML = '';
+            categoriesList.forEach((c, idx) => {
+                const div = document.createElement('div');
+                div.id = `cat-${idx}`;
+                div.className = 'cat-chip font-black';
+                div.textContent = c;
+                div.dataset.category = c;
+                div.addEventListener('click', function() {
+                    toggleCat(this.dataset.category);
+                });
+                container.appendChild(div);
+            });
         }
 
         function toggleCat(c) {
             const idx = selectedCats.indexOf(c);
-            const safeId = c.replace(/'/g, "_");
-            if(idx > -1) { selectedCats.splice(idx, 1); document.getElementById(`cat-${safeId}`).classList.remove('active');  }
-            else { selectedCats.push(c); document.getElementById(`cat-${safeId}`).classList.add('active'); }
+            const catIdx = categoriesList.indexOf(c);
+            const element = document.getElementById(`cat-${catIdx}`);
+            
+            if(idx > -1) { 
+                selectedCats.splice(idx, 1); 
+                element.classList.remove('active');  
+            } else { 
+                selectedCats.push(c); 
+                element.classList.add('active'); 
+            }
         }
 
         function pickRandom6() {
             document.querySelectorAll('.cat-chip.active').forEach(el => el.classList.remove('active'));
             selectedCats = [...categoriesList].sort(() => 0.5 - Math.random()).slice(0, 6);
             selectedCats.forEach(c => {
-                const safeId = c.replace(/'/g, "_");
-                document.getElementById(`cat-${safeId}`)?.classList.add('active');
+                const catIdx = categoriesList.indexOf(c);
+                document.getElementById(`cat-${catIdx}`)?.classList.add('active');
             });
         }
 
@@ -164,8 +179,6 @@
                 const r = await fetch(`${API}?action=sync&roomId=${roomId}`);
                 const data = await r.json();
                 if (!data) return;
-
-                const previousStatus = status;
 
                 // Status - créateur contrôle, autres suivent
                 if (data.status === 'validation' && status === 'playing') {
@@ -247,17 +260,30 @@
             const me = players.find(p => p.name === myName);
             if (!me) return;
 
-            document.getElementById('bac-inputs').innerHTML = selectedCats.map(cat => `
-                <div>
-                    <label class="text-[10px] font-black uppercase text-slate-400 ml-3">${cat}</label>
-                    <input
-                        type="text"
-                        value="${me.currentInputs[cat] || ''}"
-                        oninput="updateWord(${JSON.stringify(cat)}, this.value)"
-                        class="w-full p-4 bg-white/5 border-2 border-white/10 rounded-2xl font-bold text-lg focus:border-green-500 outline-none text-white"
-                    >
-                </div>
-            `).join('');
+            const container = document.getElementById('bac-inputs');
+            container.innerHTML = '';
+            
+            selectedCats.forEach(cat => {
+                const wrapper = document.createElement('div');
+                
+                const label = document.createElement('label');
+                label.className = 'text-[10px] font-black uppercase text-slate-400 ml-3';
+                label.textContent = cat;
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = me.currentInputs[cat] || '';
+                input.className = 'w-full p-4 bg-white/5 border-2 border-white/10 rounded-2xl font-bold text-lg focus:border-green-500 outline-none text-white';
+                input.dataset.category = cat;
+                
+                input.addEventListener('input', function() {
+                    updateWord(this.dataset.category, this.value);
+                });
+                
+                wrapper.appendChild(label);
+                wrapper.appendChild(input);
+                container.appendChild(wrapper);
+            });
         }
 
         function updateWord(cat, val) {
