@@ -148,9 +148,8 @@
         async function syncPush() {
             if(!roomId) return;
             const data = { players, status, currentLetter, usedLetters, selectedCats, refusedWords, maxTime, maxRounds, currentRoundCount, timeLeft };
-            console.log('syncPush - Sending data:', JSON.parse(JSON.stringify(data))); // Deep copy to prevent mutation issues in log
+            console.log('syncPush - Sending data:', JSON.parse(JSON.stringify(data)));
             await fetch(`${API}?action=sync&roomId=${roomId}`, { method: 'POST', body: JSON.stringify(data) });
-
         }
 
         async function syncPull() {
@@ -161,8 +160,8 @@
                 const data = await r.json();
                 if (!data) return;
 
-                // Status
-                if (data.status === 'validation') {
+                // Status - créateur contrôle, autres suivent
+                if (data.status === 'validation' && status === 'playing') {
                     status = 'validation';
                     clearInterval(timerInterval);
                 } else if (players[0]?.name !== myName) {
@@ -182,9 +181,8 @@
                     pLoc.rounds = pSrv.rounds;
                     pLoc.reaction = pSrv.reaction;
 
-                    // 🚨 IMPORTANT FIX
-                    // Never overwrite my inputs while playing
-                    if (pLoc.name !== myName || status !== 'playing') {
+                    // 🚨 FIX CRITIQUE : Ne jamais écraser MES inputs pendant que je tape
+                    if (pLoc.name !== myName) {
                         pLoc.currentInputs = pSrv.currentInputs || {};
                     }
                 });
@@ -247,15 +245,15 @@
 
         function updateWord(cat, val) {
             const me = players.find(p => p.name === myName);
-            if(me) me.currentInputs[cat] = val;
-            console.log('updateWord - myName:', myName, 'Cat:', cat, 'Value:', val, 'currentInputs:', me.currentInputs);
-
-            syncPush();
+            if(me) {
+                me.currentInputs[cat] = val;
+                console.log('updateWord - Cat:', cat, 'Value:', val);
+                syncPush();
+            }
         }
 
         function renderValidation() {
-            console.log('renderValidation - Players detailed:', players.map(p => ({ name: p.name, currentInputs: p.currentInputs })));
-            console.log('renderValidation - Selected Categories:', JSON.parse(JSON.stringify(selectedCats)));
+            console.log('renderValidation - Players:', players.map(p => ({ name: p.name, currentInputs: p.currentInputs })));
             const list = document.getElementById('val-list');
             list.innerHTML = selectedCats.map(cat => {
                 let catHTML = `<div class="bg-black/20 p-4 rounded-3xl border border-white/5 shadow-sm"><p class="text-[10px] font-black uppercase text-slate-400 mb-2 ml-2">${cat}</p><div class="space-y-2">`;
@@ -281,7 +279,13 @@
             syncPush();
         }
 
-        async function triggerStop() { status = 'validation'; clearInterval(timerInterval); await syncPush(); await syncPull() }
+        async function triggerStop() {
+            status = 'validation';
+            clearInterval(timerInterval);
+            await syncPush();
+            // Petit délai pour laisser le temps aux autres joueurs de synchroniser
+            setTimeout(() => syncPull(), 500);
+        }
 
         function startLetter(isRandom) {
             const alpha = "ABCDEFGHIJKLMNOPRSTUV";
@@ -291,6 +295,10 @@
             currentLetter = available[Math.floor(Math.random() * available.length)];
             usedLetters.push(currentLetter);
             status = 'playing'; currentRoundCount++; refusedWords = [];
+            
+            // Réinitialiser les inputs de tous les joueurs pour la nouvelle manche
+            players.forEach(p => p.currentInputs = {});
+            
             if (maxTime > 0) { timeLeft = maxTime; startTimer(); }
             syncPush();
         }
@@ -299,7 +307,12 @@
             clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 if (status === 'playing' && players[0]?.name === myName) {
-                    timeLeft--; if (timeLeft <= 0) { timeLeft = 0; status = 'validation'; }
+                    timeLeft--; 
+                    if (timeLeft <= 0) { 
+                        timeLeft = 0; 
+                        status = 'validation';
+                        clearInterval(timerInterval);
+                    }
                     syncPush();
                 }
             }, 1000);
@@ -325,6 +338,8 @@
                 p.rounds.push(score);
             });
             status = 'setup'; currentLetter = ''; refusedWords = [];
+            // Réinitialiser les inputs après validation
+            players.forEach(p => p.currentInputs = {});
             await syncPush();
         }
 
