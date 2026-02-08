@@ -203,8 +203,11 @@
                     pLoc.rounds = pSrv.rounds;
                     pLoc.reaction = pSrv.reaction;
 
-                    // Always update currentInputs from server - this makes the server state authoritative
-                    pLoc.currentInputs = pSrv.currentInputs || {};
+                    // 🚨 FIX CRITIQUE : Ne JAMAIS écraser MES inputs pendant que je tape
+                    // C'EST LA LIGNE LA PLUS IMPORTANTE DU CODE !
+                    if (pLoc.name !== myName) {
+                        pLoc.currentInputs = pSrv.currentInputs || {};
+                    }
                 });
 
                 // Global state
