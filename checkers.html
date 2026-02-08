@@ -180,29 +180,26 @@ function makeMove(from,to){
     else if(piece.charAt(0)==='b' && to.row===ROWS-1) gameState.board[to.row][to.col]='bk';
     mustContinueJump=false; jumpingPiece=null; gameState.lastMove={from,to,pieceMoved:piece};
 }
-
 function handleSquareClick(row,col){
     if(gameState.gameOver) return;
 
     const piece=gameState.board[row][col];
-    
-    // Determine whose turn it is
-    let activePlayerColor = gameState.currentPlayer;
 
-    // In local human vs human mode, allow the correct player to move
-    if(gameMode==='local' && localOpponent==='human'){
-        const currentPlayerIndex = gameState.players.findIndex(p => p.color === gameState.currentPlayer);
-        const isMyTurn = (currentPlayerIndex === 0 && myName === gameState.players[0].name) ||
-                         (currentPlayerIndex === 1 && myName === gameState.players[1].name);
-        if(!isMyTurn) return; // not this player's turn
-    } else if(gameMode==='local' && localOpponent==='ai'){
-        if(myColor !== gameState.currentPlayer) return; // AI's turn, human can't click
+    // Determine if it's allowed to click this piece
+    const isCurrentPlayerPiece = piece && piece.startsWith(gameState.currentPlayer);
+
+    if(gameMode==='local'){
+        if(localOpponent==='ai'){
+            // In AI mode, human can only click own pieces
+            if(myColor !== gameState.currentPlayer) return;
+        } else {
+            // Human vs human: any piece of current player is clickable
+            if(!isCurrentPlayerPiece && !(mustContinueJump && jumpingPiece.row===row && jumpingPiece.col===col)) return;
+        }
     } else if(gameMode==='remote'){
         const myPlayerObj=gameState.players.find(p=>p.name===myName);
         if(!myPlayerObj || myPlayerObj.color !== gameState.currentPlayer) return;
     }
-
-    const isMyPiece = piece && piece.startsWith(gameState.currentPlayer);
 
     // Handle multiple jumps
     if(mustContinueJump){
@@ -238,7 +235,7 @@ function handleSquareClick(row,col){
                     if(gameMode==='remote') syncPush();
                 }
                 render();
-            } else if(isMyPiece){
+            } else if(isCurrentPlayerPiece){
                 gameState.selectedPiece={row,col};
                 gameState.possibleMoves=getPossibleMoves(row,col);
                 render();
@@ -247,7 +244,7 @@ function handleSquareClick(row,col){
                 gameState.possibleMoves=[];
                 render();
             }
-        } else if(isMyPiece){
+        } else if(isCurrentPlayerPiece){
             gameState.selectedPiece={row,col};
             gameState.possibleMoves=getPossibleMoves(row,col);
             render();
