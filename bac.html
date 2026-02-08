@@ -106,7 +106,7 @@
         };
 
         function renderCatList() {
-            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `<div id="cat-${c.replace(/'/g, "_")}" onclick="toggleCat(\"` + '`' + `${c}\"` + '`' + `)" class="cat-chip font-black">${c}</div>`).join('');
+            document.getElementById('cat-list').innerHTML = categoriesList.map(c => `<div id="cat-${c.replace(/'/g, "_")}" onclick="toggleCat('${c.replace(/'/g, "\\'")}')" class="cat-chip font-black">${c}</div>`).join('');
         }
 
         function toggleCat(c) {
