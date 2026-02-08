@@ -93,7 +93,8 @@
         let players = [], selectedCats = [], usedLetters = [], refusedWords = [], status = 'setup', currentLetter = '', myName = '';
         let roomId = new URLSearchParams(window.location.search).get('room');
         let maxTime = 120, maxRounds = 5, currentRoundCount = 0, timeLeft = 0;
-        let timerInterval = null
+        let timerInterval = null;
+        let inputsRendered = false; // Flag pour éviter de re-render pendant la saisie
         const API = 'api.php';
         const categoriesList = ["Prénom", "Ville", "Pays", "Animal", "Métier", "Objet", "Fruit", "Légume", "Marque", "Célébrité", "Film", "Série TV", "Chanson", "Dans ma chambre", "Disney", "Sport", "Boisson", "Instrument", "Vêtement", "Partie du corps", "Qualité", "Défaut", "Phobie", "Maladie", "Couleur", "Arbre", "Fleur", "Plat cuisiné", "Épice", "Fromage", "Dessert", "Alcool", "Artiste Peintre", "Écrivain", "Monument", "Station de métro", "Monnaie", "Langue", "Capitale", "Région", "Département", "Fleuve", "Mer/Océan", "Dessin animé", "Anime","Super-héros", "Dieu Mythologique", "Site web", "Application", "Historique", "Muscle", "Élément chimique", "Planète", "Constellation", "Dans une voiture", "Dans une école", "Dans la forêt", "Excuse d'absence"];
 
@@ -219,7 +220,15 @@
             document.getElementById('timer-display').classList.toggle('hidden', status !== 'playing' || maxTime <= 0);
             document.getElementById('play-area').classList.toggle('hidden', status !== 'playing');
             document.getElementById('val-area').classList.toggle('hidden', status !== 'validation');
-            if (status === 'playing') renderInputs();
+            
+            // ✅ FIX : Ne render les inputs QU'UNE SEULE FOIS au début de la manche
+            if (status === 'playing' && !inputsRendered) {
+                renderInputs();
+                inputsRendered = true;
+            } else if (status !== 'playing') {
+                inputsRendered = false; // Reset pour la prochaine manche
+            }
+            
             if (status === 'validation') renderValidation();
             document.getElementById('btn-confirm-round').classList.toggle('hidden', !isCreator || status !== 'validation');
             document.getElementById('creator-controls').classList.toggle('hidden', !isCreator || status !== 'setup' || currentRoundCount >= maxRounds);
@@ -295,6 +304,7 @@
             currentLetter = available[Math.floor(Math.random() * available.length)];
             usedLetters.push(currentLetter);
             status = 'playing'; currentRoundCount++; refusedWords = [];
+            inputsRendered = false; // Reset pour forcer le render des nouveaux inputs
             
             // Réinitialiser les inputs de tous les joueurs pour la nouvelle manche
             players.forEach(p => p.currentInputs = {});
