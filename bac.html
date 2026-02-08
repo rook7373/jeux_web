@@ -223,7 +223,7 @@
         }
 
         function renderValidation() {
-            console.log('renderValidation - Players:', JSON.parse(JSON.stringify(players)));
+            console.log('renderValidation - Players detailed:', players.map(p => ({ name: p.name, currentInputs: p.currentInputs })));
             console.log('renderValidation - Selected Categories:', JSON.parse(JSON.stringify(selectedCats)));
             const list = document.getElementById('val-list');
             list.innerHTML = selectedCats.map(cat => {
