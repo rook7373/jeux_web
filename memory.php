@@ -104,6 +104,7 @@ if (isset($_GET['action'])) {
         <div class="space-y-6">
             <input type="text" id="my-name-in" autocomplete="off" onkeydown="if(event.key === 'Enter') startAction()" placeholder="TON PSEUDO..." class="w-full bg-slate-100 p-5 rounded-3xl outline-none text-xl text-center focus:border-green-400 font-black uppercase shadow-inner">
             <button type="button" onclick="startAction()" class="w-full bg-black text-white py-7 rounded-3xl text-2xl shadow-xl active:scale-95 transition-all font-black">Démarrer</button>
+            <a href="index.html" class="block w-full text-center text-slate-400 text-[10px] tracking-widest uppercase font-black py-2">RETOUR HUB</a>
         </div>
     </div>
 
